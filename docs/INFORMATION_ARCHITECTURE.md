@@ -1,0 +1,101 @@
+# Information Architecture
+
+## Site Map
+
+```
+/                          Weekly Stats (main view)
+  ├── Summary cards        Games, playtime, top 4 rate
+  ├── Player table         Per-player stats with all columns
+  └── Rank chart           Line chart with weekly/all-time toggle
+
+/players                   Manage Players
+  ├── Add summoner form    Riot ID + Tagline input
+  ├── Capacity indicator   X/10 progress bar
+  ├── Seed squad button    (conditional, only when empty)
+  └── Tracked player list  Cards with rank, W/L, delete
+```
+
+## Data Hierarchy
+
+### Primary Entity: Player
+A player is identified by their Riot `puuid` and has three data facets:
+
+```
+Player (TrackedPlayer)
+├── Identity:  gameName, tagLine, puuid, summonerId, region
+├── Current:   tier, rank, lp, wins, losses, lastUpdated
+├── History:   [{ date, tier, rank, lp, wins, losses }]  (daily snapshots)
+└── Matches:   [{ matchId, placement, duration, timestamp }]  (last 100)
+```
+
+### Derived Metrics (computed client-side)
+These are NOT stored — they're calculated from matches on render:
+
+| Metric | Derivation |
+|--------|------------|
+| Total games | `matches.length` |
+| Games this week | `matches.filter(m => m.timestamp >= mondayEpoch).length` |
+| Top 4 rate | `matches.filter(m => m.placement <= 4).length / total * 100` |
+| 1st place rate | `matches.filter(m => m.placement === 1).length / total * 100` |
+| Time played (weekly) | `weeklyMatches.reduce(sum, m.duration)` |
+| Time played (total) | `allMatches.reduce(sum, m.duration)` |
+| Rank numeric value | `RANK_VALUES[tier] + DIVISION_VALUES[rank] + lp` |
+
+### Week Boundary
+"This week" starts Monday 00:00 local time (via `getStartOfWeek()` in `lib/utils.ts`).
+
+## Content Priority
+
+### Weekly Stats page — reading order:
+1. **Page title + sync button** — orient user, allow refresh
+2. **Three stat cards** — quick pulse check (games, time, top 4%)
+3. **Player table** — detailed per-player breakdown (the core content)
+4. **Rank chart** — trend visualization (secondary, scroll to view)
+
+### Manage Players page — reading order:
+1. **Page title + description** — explain the page's purpose
+2. **Add form** (left column) — primary action
+3. **Capacity bar** — constraint awareness
+4. **Seed button** (conditional) — onboarding affordance
+5. **Player list** (right column) — current roster with management actions
+
+## Navigation Model
+
+Simple flat structure — no nesting, no breadcrumbs needed.
+
+- **Sidebar** (desktop >=768px): fixed left, 224px wide, two nav items
+- **Bottom nav** (mobile <768px): fixed bottom, 64px tall, two icons
+
+Active state indicated by:
+- Sidebar: gold background tint + right border bar
+- Bottom nav: gold icon + label color
+
+## URL Structure
+
+| URL | Page | Data Source |
+|-----|------|-------------|
+| `/` | Weekly Stats | `GET /api/players` (all player data) |
+| `/players` | Manage Players | `GET /api/players` (player list only) |
+
+Both pages fetch the same endpoint. The Weekly Stats page uses the full response (current, matches, history). The Manage Players page only uses identity + current stats.
+
+## Empty States
+
+| Context | Message | Action |
+|---------|---------|--------|
+| No players in table | "No players tracked yet. Add players to get started." | Navigate to /players |
+| No players in list | "No players tracked yet. Add a summoner to get started." | Use add form or seed |
+| No chart history | "No history data yet. Sync to start tracking." | Click Sync Now |
+| Seed card | Shows original squad names | Click "Load Original Squad" |
+
+## Data Freshness
+
+| Source | Frequency | Trigger |
+|--------|-----------|---------|
+| Riot API → Redis | Daily (cron) | `GET /api/cron` via Vercel Cron |
+| Riot API → Redis | On-demand | User clicks "Sync Now" → `POST /api/sync` |
+| Riot API → Redis | On add | `POST /api/players` fetches initial data |
+| Redis → Client | On page load | `GET /api/players` in `useEffect` |
+| Redis → Client | After sync/add | Re-fetch via same endpoint |
+
+There is no real-time push or polling. Data is as fresh as the last sync.

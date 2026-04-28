@@ -1,0 +1,77 @@
+"use client";
+
+import React from "react";
+import styled from "styled-components";
+import { motion } from "motion/react";
+
+const Card = styled(motion.div)`
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  border: 1px solid ${({ theme }) => theme.component.glassCard.border};
+  border-radius: ${({ theme }) => theme.component.glassCard.radius};
+  padding: ${({ theme }) => theme.component.glassCard.padding};
+  box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+`;
+
+const Header = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: ${({ theme }) => theme.primitive.spacing.lg};
+`;
+
+const Title = styled.h3`
+  ${({ theme }) => theme.semantic.typography.label};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const IconWrapper = styled.span`
+  color: ${({ theme }) => theme.semantic.color.accent};
+  display: flex;
+  width: 16px;
+  height: 16px;
+`;
+
+interface GlassCardProps {
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+  title?: string;
+  icon?: React.ElementType;
+  headerAction?: React.ReactNode;
+}
+
+export function GlassCard({
+  children,
+  style,
+  title,
+  icon: Icon,
+  headerAction,
+}: GlassCardProps) {
+  return (
+    <Card
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={style}
+    >
+      {(title || Icon || headerAction) && (
+        <Header>
+          {title && (
+            <Title>
+              {Icon && <IconWrapper><Icon size={16} /></IconWrapper>}
+              {title}
+            </Title>
+          )}
+          {headerAction && <div>{headerAction}</div>}
+        </Header>
+      )}
+      {children}
+    </Card>
+  );
+}

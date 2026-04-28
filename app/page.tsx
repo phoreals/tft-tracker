@@ -1,161 +1,239 @@
 "use client";
 
-import React, { useState } from 'react';
-import styles from './Dashboard.module.css'; // Fixed the CSS path here!
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { RefreshCw, UserPlus, UserMinus, Clock } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from "react";
+import styled from "styled-components";
+import { RefreshCw, Clock, Trophy, Gamepad2 } from "lucide-react";
+import { GlassCard } from "@/components/GlassCard";
+import { PlayerTable } from "@/components/PlayerTable";
+import { RankChart } from "@/components/RankChart";
+import { formatPlaytime, getStartOfWeek, percentOf } from "@/lib/utils";
 
-export default function Home() {
-  const [isUpdating, setIsUpdating] = useState(false);
+// ── Styled ───────────────────────────────────────────────────────
 
-  // Combined Excel Data + Placeholder for Live Data
-  const [players, setPlayers] = useState([
-    { id: 1, name: "Dan", riotId: "Banh#boi", wk1Games: 60, wk2Games: 116, wk2Rank: "EM4 86 LP", livePlaytime: 145000 },
-    { id: 2, name: "Steven", riotId: "Richardpression#SAD", wk1Games: 48, wk2Games: 85, wk2Rank: "EM4 53 LP", livePlaytime: 102000 },
-    { id: 3, name: "Leon", riotId: "Lionnel#NA1", wk1Games: 25, wk2Games: 44, wk2Rank: "PL3 93 LP", livePlaytime: 68000 },
-    { id: 4, name: "DV", riotId: "FireLordAppa#1335", wk1Games: 0, wk2Games: 69, wk2Rank: "PL2 16 LP", livePlaytime: 81000 },
-    { id: 5, name: "Leon #2", riotId: "V for Taehyung#NA1", wk1Games: 0, wk2Games: 29, wk2Rank: "PL4 8 LP", livePlaytime: 35000 },
-    { id: 6, name: "Ronel", riotId: "Caramel Papi#PAPI1", wk1Games: 29, wk2Games: 68, wk2Rank: "EM3 83 LP", livePlaytime: 90000 },
-    { id: 7, name: "Andy", riotId: "demure#ggez", wk1Games: 43, wk2Games: 62, wk2Rank: "EM3 87 LP", livePlaytime: 85000 }
-  ]);
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.primitive.spacing.xl};
+  padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+`;
 
-  const stats = {
-    totalPlaytimeSecs: players.reduce((acc, p) => acc + p.livePlaytime, 0),
-    gamesPerRank: [
-      { name: 'Platinum', games: 167 },
-      { name: 'Emerald', games: 331 },
-      { name: 'Diamond', games: 12 }
-    ],
-    gamesPerDay: [
-      { date: 'Mon', games: 15 }, { date: 'Tue', games: 42 }, { date: 'Wed', games: 28 },
-      { date: 'Thu', games: 35 }, { date: 'Fri', games: 65 }, { date: 'Sat', games: 82 }, { date: 'Sun', games: 55 }
-    ]
-  };
+const PageHeader = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
 
-  const formatPlaytime = (seconds: number) => {
-    const hrs = Math.floor(seconds / 3600);
-    const days = (hrs / 24).toFixed(1);
-    const secs = seconds % 60;
-    return `${hrs}h ${secs}s (${days} days)`;
-  };
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+`;
 
-  const handleManualUpdate = async () => {
-    setIsUpdating(true);
+const PageTitle = styled.h1`
+  ${({ theme }) => theme.semantic.typography.heading};
+  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
+  }
+`;
+
+const PageSubtitle = styled.p`
+  font-family: ${({ theme }) => theme.semantic.font.body};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  margin-top: 4px;
+`;
+
+const SyncButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: 10px 20px;
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: 12px;
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const SpinningIcon = styled(RefreshCw)<{ $spinning: boolean }>`
+  color: ${({ theme }) => theme.semantic.color.accent};
+  animation: ${({ $spinning }) => ($spinning ? "spin 1s linear infinite" : "none")};
+`;
+
+const StatsGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: ${({ theme }) => theme.primitive.spacing.sm};
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+`;
+
+const StatRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
+`;
+
+const StatLabel = styled.span`
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: 10px;
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+`;
+
+const StatValue = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+`;
+
+// ── Types ────────────────────────────────────────────────────────
+
+interface PlayerData {
+  puuid: string;
+  gameName: string;
+  tagLine: string;
+  current: {
+    tier: string;
+    rank: string;
+    lp: number;
+    wins: number;
+    losses: number;
+    lastUpdated: string;
+  } | null;
+  matches: {
+    matchId: string;
+    placement: number;
+    duration: number;
+    timestamp: number;
+  }[];
+  history: {
+    date: string;
+    tier: string;
+    rank: string;
+    lp: number;
+    wins: number;
+    losses: number;
+  }[];
+}
+
+// ── Component ────────────────────────────────────────────────────
+
+export default function WeeklyStatsPage() {
+  const [players, setPlayers] = useState<PlayerData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+
+  const fetchPlayers = useCallback(async () => {
     try {
-      await fetch('/api/updateStats', { method: 'POST' });
+      const res = await fetch("/api/players");
+      const data = await res.json();
+      setPlayers(data);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch players:", err);
+    } finally {
+      setLoading(false);
     }
-    setIsUpdating(false);
+  }, []);
+
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      await fetch("/api/sync", { method: "POST" });
+      await fetchPlayers();
+    } catch (err) {
+      console.error("Sync failed:", err);
+    } finally {
+      setSyncing(false);
+    }
   };
+
+  const weekStart = getStartOfWeek().getTime();
+  const allMatches = players.flatMap((p) => p.matches);
+  const weeklyMatches = allMatches.filter((m) => m.timestamp >= weekStart);
+  const weeklyGames = weeklyMatches.length;
+  const weeklyPlaytime = weeklyMatches.reduce((s, m) => s + m.duration, 0);
+  const weeklyTop4 = weeklyMatches.filter((m) => m.placement <= 4).length;
 
   return (
-    <div className={styles.container}>
-      {/* Removed the <Head> block entirely from here */}
-      
-      {/* Header & Controls */}
-      <header className={styles.header}>
-        <h1 className={styles.title}>TFT Squad Tracker</h1>
-        <div className={styles.controls}>
-          <button className={`${styles.btn} ${styles.btnAdd}`}>
-            <UserPlus size={18} /> Add Player
-          </button>
-          <button 
-            className={`${styles.btn} ${styles.btnSync}`} 
-            onClick={handleManualUpdate}
-            disabled={isUpdating}
-          >
-            <RefreshCw size={18} className={isUpdating ? "spinning" : ""} />
-            {isUpdating ? "Syncing..." : "Update Live Data"}
-          </button>
+    <Page>
+      <PageHeader>
+        <div>
+          <PageTitle>Weekly Stats</PageTitle>
+          <PageSubtitle>Squad performance this week</PageSubtitle>
         </div>
-      </header>
+        <SyncButton onClick={handleSync} disabled={syncing}>
+          <SpinningIcon size={16} $spinning={syncing} />
+          <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
+        </SyncButton>
+      </PageHeader>
 
-      {/* Aggregate Stats Bar */}
-      <div className={styles.gridTop}>
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}><Clock size={18}/> Squad Playtime</h3>
-          <p className={styles.cardValue}>{formatPlaytime(stats.totalPlaytimeSecs)}</p>
-        </div>
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>Top Achieved Rank</h3>
-          <p className={styles.cardValue} style={{color: '#c084fc'}}>Emerald 3 (Ronel)</p>
-        </div>
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>Total Squad Games</h3>
-          <p className={styles.cardValue} style={{color: '#34d399'}}>473</p>
-        </div>
-      </div>
+      <StatsGrid>
+        <GlassCard>
+          <StatRow>
+            <StatLabel>GAMES THIS WEEK</StatLabel>
+            <Gamepad2 size={16} color="#e5c587" />
+          </StatRow>
+          <StatValue>{loading ? "..." : weeklyGames}</StatValue>
+        </GlassCard>
 
-      {/* Charts Section */}
-      <div className={styles.gridCharts}>
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>Games Played Per Day</h3>
-          <div style={{ height: '300px', width: '100%' }}>
-            <ResponsiveContainer>
-              <BarChart data={stats.gamesPerDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="date" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
-                <Bar dataKey="games" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <GlassCard>
+          <StatRow>
+            <StatLabel>SQUAD PLAYTIME</StatLabel>
+            <Clock size={16} color="#00fbfb" />
+          </StatRow>
+          <StatValue>{loading ? "..." : formatPlaytime(weeklyPlaytime)}</StatValue>
+        </GlassCard>
 
-        <div className={styles.card}>
-          <h3 className={styles.cardTitle}>Games Played by Rank Tier</h3>
-          <div style={{ height: '300px', width: '100%' }}>
-            <ResponsiveContainer>
-              <BarChart data={stats.gamesPerRank} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
-                <XAxis type="number" stroke="#94a3b8" />
-                <YAxis dataKey="name" type="category" stroke="#94a3b8" width={80} />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
-                <Bar dataKey="games" fill="#10b981" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
+        <GlassCard>
+          <StatRow>
+            <StatLabel>AVG TOP 4 RATE</StatLabel>
+            <Trophy size={16} color="#e5c587" />
+          </StatRow>
+          <StatValue>
+            {loading ? "..." : `${percentOf(weeklyTop4, weeklyGames)}%`}
+          </StatValue>
+        </GlassCard>
+      </StatsGrid>
 
-      {/* Roster & Database Table */}
-      <div className={styles.card}>
-        <h3 className={styles.cardTitle}>Roster & Historical Stats</h3>
-        <div className={styles.tableContainer}>
-          <table className={styles.rosterTable}>
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Riot ID</th>
-                <th>Wk 1 Games</th>
-                <th>Wk 2 Games</th>
-                <th>Wk 2 Rank</th>
-                <th>Total Playtime</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((player) => (
-                <tr key={player.id}>
-                  <td className={styles.playerName}>{player.name}</td>
-                  <td>{player.riotId}</td>
-                  <td>{player.wk1Games || '-'}</td>
-                  <td>{player.wk2Games}</td>
-                  <td className={styles.playerRank}>{player.wk2Rank}</td>
-                  <td>{formatPlaytime(player.livePlaytime)}</td>
-                  <td>
-                    <button className={styles.actionBtn} title="Remove Player">
-                      <UserMinus size={18} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+      <PlayerTable
+        players={players.map((p) => ({
+          gameName: p.gameName,
+          tagLine: p.tagLine,
+          current: p.current,
+          matches: p.matches,
+        }))}
+      />
+
+      <RankChart
+        players={players.map((p) => ({
+          gameName: p.gameName,
+          history: p.history,
+        }))}
+      />
+    </Page>
   );
 }

@@ -1,12 +1,49 @@
-html,
-body {
-  padding: 0;
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-  background-color: #0f172a;
+  padding: 0;
 }
 
-* {
-  box-sizing: border-box;
+html, body {
+  min-height: 100vh;
+}
+
+body {
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  background-color: #0c141e;
+  color: #dbe3f2;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image:
+    radial-gradient(circle at 0% 0%, rgba(229, 197, 135, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(0, 251, 251, 0.03) 0%, transparent 50%);
+}
+
+::selection {
+  background: rgba(229, 197, 135, 0.3);
+  color: #e5c587;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #070f19;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(229, 197, 135, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(229, 197, 135, 0.4);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  50% { opacity: 0.5; }
 }
