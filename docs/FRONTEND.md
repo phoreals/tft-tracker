@@ -78,16 +78,15 @@ Receives an array of `{ gameName, tagLine, current, matches }`. Internally:
 
 ### RankChart
 Receives an array of `{ gameName, matches, history }`. Internally:
-1. Toggle between **Placement** view (avg placement per set-week from match data) and **Rank** view (daily rank snapshots)
-2. Converts each history snapshot to a numeric rank value
-3. Renders a Recharts `LineChart` with one `Line` per player
-4. Legend is conditionally rendered: a `useEffect` + `resize` listener sets `showLegend` true at ≥768px
-
-Rank conversion: `RANK_VALUES[tier] + DIVISION_VALUES[division] + LP`
-- Iron=0, Bronze=400, Silver=800, ..., Challenger=3600
-- IV=0, III=100, II=200, I=300
+1. Tab toggle: **This Week** (default) or **This Set** — rendered as a bleed-scroll `TabBar` inside the card body (same technique as PlayerTable week tabs)
+2. **This Week**: collects all matches within the current set-week, merges them into a single chronological timeline keyed by timestamp, and plots actual placement per game
+3. **This Set**: groups matches by set-week (7-day buckets from `SET_START`), computes avg placement per player per week
+4. Renders a Recharts `LineChart` with one `Line` per player; Y-axis reversed (1st at top), domain [1,8]
+5. Legend conditionally rendered: `useEffect` + `resize` listener sets `showLegend` true at ≥768px
 
 **Note**: Recharts `Legend` doesn't support CSS media queries. Use the JS resize-listener pattern (not CSS) to hide the legend on mobile.
+
+See `docs/DATA_VIZ.md` for full chart spec.
 
 ## State Management
 
@@ -130,7 +129,7 @@ error: string             — validation/API error message
 
 When `KV_REST_API_URL` is not set, `lib/mock.ts` provides fake data so the app is fully interactive without a Redis connection. `isMockMode()` returns `true` in this case. API routes that read player data call `isMockMode()` and return `MOCK_PLAYERS` or `getMockPlayer(puuid)` instead of hitting Redis.
 
-Mock puuids: `mock-puuid-banh`, `mock-puuid-demure`, `mock-puuid-lionnel`.
+Mock data covers all 10 rank tiers (one player per tier). Mock puuids follow the pattern `mock-puuid-{name}`: `mock-puuid-richardpression` (Challenger), `mock-puuid-firelordappa` (Grandmaster), `mock-puuid-caramelpapi` (Master), `mock-puuid-banh` (Diamond), `mock-puuid-vtaehyung` (Emerald), `mock-puuid-demure` (Platinum), `mock-puuid-lionnel` (Gold), `mock-puuid-nisca` (Silver), `mock-puuid-goldeen` (Bronze), `mock-puuid-mrbonchen` (Iron).
 
 ## Adding a New Component
 

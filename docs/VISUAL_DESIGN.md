@@ -86,9 +86,29 @@ box-shadow: inset 0 0 20px rgba(229, 197, 135, 0.05); /* warm inner glow */
 | Data highlights | Cyan #00fbfb | `semantic.color.info` |
 | Errors / delete | Red #f87171 | `semantic.color.danger` |
 | Progress bars | Gold fill on dark track | `accent` on `progressBar.trackBg` |
-| Rank indicators | Gold dot (ranked) or gray dot (unranked) | `accentDark` / `textDisabled` |
+| Rank text (table) | Per-tier color (10 distinct values) | `getRankColor(tier)` from `lib/utils.ts` |
+| Rank border (player cards) | Per-tier color at 30% opacity; 50% on hover | `getRankColor(tier)` |
 | Elite player borders | Gold 20% → 50% on hover | `borderDefault` / `borderHover` |
 | Normal player borders | White 5% → cyan 30% on hover | `borderDim` / `borderInfo` |
+
+## Rank Color Palette
+
+Defined in `RANK_COLORS` in `lib/utils.ts`. Used by `getRankColor(tier?)` which returns the appropriate hex or a muted fallback for unranked. Applied to rank text in the player table, rank badge on the player drilldown page, and diamond border on player cards.
+
+| Tier | Hex | Visual intent |
+|------|-----|---------------|
+| Iron | `#9badb8` | Cool steel gray |
+| Bronze | `#c8865a` | Warm copper |
+| Silver | `#aabacb` | Light silver-blue |
+| Gold | `#e5c587` | App's primary gold accent |
+| Platinum | `#38d5c5` | Teal |
+| Emerald | `#3dd490` | Bright green |
+| Diamond | `#7ab5f5` | Sky blue |
+| Master | `#c084fc` | Purple |
+| Grandmaster | `#f07878` | Coral red |
+| Challenger | `#88e8f0` | Bright cyan |
+
+All colors are tuned for legibility on the `#0c141e` dark navy background, loosely inspired by Riot's official rank imagery.
 
 ## Body Background
 
