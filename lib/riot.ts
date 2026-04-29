@@ -38,18 +38,26 @@ export async function getAccountByRiotId(
 
 // --- Summoner ---
 
-interface Summoner {
-  id: string;
-  accountId: string;
-  puuid: string;
-  profileIconId: number;
-  summonerLevel: number;
+interface SummonerResponse {
+  [key: string]: unknown;
+  id?: string;
+  summonerId?: string;
+  accountId?: string;
+  puuid?: string;
+  profileIconId?: number;
+  summonerLevel?: number;
 }
 
-export async function getSummonerByPuuid(puuid: string): Promise<Summoner> {
-  return riotFetch<Summoner>(
+export async function getSummonerByPuuid(puuid: string): Promise<{ summonerId: string; raw: SummonerResponse }> {
+  const data = await riotFetch<SummonerResponse>(
     `${PLATFORM_HOST}/tft/summoner/v1/summoners/by-puuid/${puuid}`
   );
+  // The summoner ID field may vary — try known field names
+  const summonerId = (data.id ?? data.summonerId ?? "") as string;
+  if (!summonerId) {
+    throw new Error(`Summoner endpoint returned no ID. Response keys: ${Object.keys(data).join(", ")}`);
+  }
+  return { summonerId, raw: data };
 }
 
 // --- League ---
@@ -66,10 +74,10 @@ export interface LeagueEntry {
 }
 
 export async function getLeagueEntries(
-  puuid: string
+  summonerId: string
 ): Promise<LeagueEntry[]> {
   return riotFetch<LeagueEntry[]>(
-    `${PLATFORM_HOST}/tft/league/v1/entries/by-puuid/${puuid}`
+    `${PLATFORM_HOST}/tft/league/v1/entries/by-summoner/${summonerId}`
   );
 }
 

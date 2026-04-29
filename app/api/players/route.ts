@@ -59,14 +59,14 @@ export async function POST(req: NextRequest) {
       puuid: account.puuid,
       gameName: account.gameName,
       tagLine: account.tagLine,
-      summonerId: summoner.id,
+      summonerId: summoner.summonerId,
       region: "na1",
     };
 
     await addPlayer(player);
 
     // Fetch initial data
-    const entries = await getLeagueEntries(account.puuid);
+    const entries = await getLeagueEntries(summoner.summonerId);
     const tftEntry = entries.find(
       (e) => e.queueType === "RANKED_TFT"
     );
