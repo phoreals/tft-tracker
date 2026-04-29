@@ -63,6 +63,7 @@ const PageSubtitle = styled.p`
 const SyncButton = styled.button`
   display: flex;
   align-items: center;
+  align-self: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: 10px 20px;
   background: ${({ theme }) => theme.component.glassCard.bg};

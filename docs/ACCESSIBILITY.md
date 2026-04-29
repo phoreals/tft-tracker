@@ -21,12 +21,16 @@ The app has basic accessibility but is not fully audited. This document tracks w
 - **Spin animation**: the syncing spinner lacks `aria-label` or status announcement.
 - **Chart accessibility**: Recharts SVG charts are not screen-reader friendly. No `aria-label` or data table alternative.
 - **Color-only indicators**: the rank dot (gold vs gray) and elite border (gold vs dim) rely on color alone. No shape or text alternative.
-- **Motion**: animations cannot be disabled via `prefers-reduced-motion`.
+- ~~**Motion**: animations cannot be disabled via `prefers-reduced-motion`.~~ Fixed: `globals.css` now includes a `prefers-reduced-motion: reduce` block.
 - **Bottom nav z-index**: content can scroll behind the fixed bottom nav on mobile; no padding compensation beyond `pb: 80px`.
+
+## Tap Targets
+
+Touch interactions require larger hit areas than mouse interactions. All tab bar buttons and primary action buttons use `min-height: 44px` (iOS minimum recommended tap target). If adding new interactive elements, ensure they meet this minimum.
 
 ## Recommendations
 
-1. Add `prefers-reduced-motion` media query to disable motion animations.
+1. ~~Add `prefers-reduced-motion` media query to disable motion animations.~~ Done.
 2. Add `:focus-visible` styles to delete buttons and nav links.
 3. Add `aria-label` to icon-only buttons (sync, delete, seed).
 4. Add a visually-hidden data table as a Recharts chart alternative.

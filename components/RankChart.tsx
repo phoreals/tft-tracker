@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import styled from "styled-components";
 import {
   LineChart,
@@ -125,7 +125,15 @@ function numericToLabel(value: number): string {
 
 export function RankChart({ players }: RankChartProps) {
   const [mode, setMode] = useState<ChartMode>("placement");
+  const [showLegend, setShowLegend] = useState(false);
   const weeks = useMemo(() => getSetWeeks(), []);
+
+  useEffect(() => {
+    const check = () => setShowLegend(window.innerWidth >= 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Placement chart: average placement per week from match data
   const placementData = useMemo(() => {
@@ -223,7 +231,9 @@ export function RankChart({ players }: RankChartProps) {
                     : [numericToLabel(Number(value)) + ` (${value})`, ""]
                 }
               />
-              <Legend wrapperStyle={{ fontFamily: "Space Grotesk", fontSize: "11px" }} />
+              {showLegend && (
+                <Legend wrapperStyle={{ fontFamily: "Space Grotesk", fontSize: "11px" }} />
+              )}
               {players.map((p, i) => (
                 <Line
                   key={p.gameName}

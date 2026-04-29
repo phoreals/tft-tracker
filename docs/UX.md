@@ -42,12 +42,12 @@ Empty state: centered message "No players tracked yet. Add players to get starte
 
 ### Rank Over Time Chart
 A Recharts `LineChart` inside a `GlassCard` with a toggle:
-- **Weekly** (default) — last 7 days of history snapshots
-- **All Time** — full history
+- **Placement** (default) — average placement per set-week from match data
+- **Rank** — daily rank snapshots
 
-Each tracked player gets a colored line. Colors cycle through a 10-color palette. The Y-axis converts rank tiers to numeric values (Iron=0 through Challenger=3600+LP) and labels them by tier name.
+Each tracked player gets a colored line. Colors cycle through a 10-color palette. The Y-axis converts rank tiers to numeric values (Iron=0 through Challenger=3600+LP) and labels them by tier name. The legend is hidden on mobile (shown at 768px+) to preserve chart area.
 
-Empty state: "No history data yet. Sync to start tracking."
+Empty state: "No match data yet. Sync to start tracking."
 
 ### Sync Button
 Top-right of the page header. Calls `POST /api/sync`, shows a spinning icon while active, then refreshes all data.
@@ -97,8 +97,8 @@ Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
 | Seeding | Button shows "SEEDING...", pulsing icon |
 | Error | Red text appears below form inputs showing the actual server error (e.g. "Riot API 403: ...", "Redis connection failed: ...") |
 | Empty list | Centered empty state message |
-| Hover on player card | Card slides 4px right, delete button fades in, diamond border rotates |
-| Hover on table row | Row gets subtle gold background |
+| Hover on player card (pointer only) | Card slides 4px right, delete button fades in, diamond border rotates. On touch devices, delete button is always visible at 50% opacity. |
+| Hover on table row (pointer only) | Row gets subtle gold background |
 
 ## Player Drilldown (`/player/[puuid]`)
 

@@ -126,7 +126,12 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  /* 3-col keeps 5th card from sitting alone */
+  @media (min-width: 540px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     grid-template-columns: repeat(5, 1fr);
   }
 `;

@@ -276,7 +276,7 @@ const PlayerList = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.sm};
   flex: 1;
   overflow-y: auto;
-  max-height: 600px;
+  max-height: min(600px, 55vh);
   padding-right: 8px;
 `;
 
@@ -291,9 +291,13 @@ const PlayerRow = styled(motion.div)<{ $elite: boolean }>`
   border-radius: ${({ theme }) => theme.primitive.radius.lg};
   transition: all 0.2s;
 
-  &:hover {
-    border-color: ${({ $elite, theme }) =>
-      $elite ? theme.semantic.color.borderHover : theme.semantic.color.borderInfo};
+  /* only translate on pointer devices to avoid touch overflow */
+  @media (hover: hover) {
+    &:hover {
+      border-color: ${({ $elite, theme }) =>
+        $elite ? theme.semantic.color.borderHover : theme.semantic.color.borderInfo};
+      transform: translateX(4px);
+    }
   }
 `;
 
@@ -638,7 +642,7 @@ export default function ManagePlayersPage() {
               players.map((player) => {
                 const isElite = HIGH_TIERS.has(player.current?.tier ?? "");
                 return (
-                  <PlayerRow key={player.puuid} whileHover={{ x: 4 }} $elite={isElite}>
+                  <PlayerRow key={player.puuid} $elite={isElite}>
                     <PlayerInfo>
                       <DiamondIcon $elite={isElite}>
                         <DiamondBorder $elite={isElite} />

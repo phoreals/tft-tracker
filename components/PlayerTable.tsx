@@ -55,8 +55,9 @@ const TabBar = styled.div`
 
 const Tab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 10px;
-  padding: 6px 14px;
+  font-size: 11px;
+  padding: 10px 14px;
+  min-height: 44px;
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : "transparent"};
@@ -87,6 +88,18 @@ const WeekDate = styled.span`
 
 const TableWrap = styled.div`
   overflow-x: auto;
+  /* bleed to card edges, then add symmetric padding inside the scroll area */
+  margin-left: -${({ theme }) => theme.primitive.spacing.md};
+  margin-right: -${({ theme }) => theme.primitive.spacing.md};
+  padding-left: ${({ theme }) => theme.primitive.spacing.md};
+  padding-right: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.lg};
+    margin-right: -${({ theme }) => theme.primitive.spacing.lg};
+    padding-left: ${({ theme }) => theme.primitive.spacing.lg};
+    padding-right: ${({ theme }) => theme.primitive.spacing.lg};
+  }
 `;
 
 const Table = styled.table`
@@ -290,10 +303,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
   });
 
   return (
-    <GlassCard
-      style={{ padding: 0, paddingTop: 24, paddingLeft: 24, paddingRight: 24 }}
-      title="PLAYER PERFORMANCE"
-    >
+    <GlassCard title="PLAYER PERFORMANCE">
       <TabBar>
         {weeks.map((w, i) => {
           const isFuture = w.start > Date.now();

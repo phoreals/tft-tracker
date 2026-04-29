@@ -14,6 +14,7 @@ const Shell = styled.div`
 
 const Main = styled.main`
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   min-height: 100vh;

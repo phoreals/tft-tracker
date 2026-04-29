@@ -9,12 +9,16 @@ const Card = styled(motion.div)`
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.component.glassCard.border};
   border-radius: ${({ theme }) => theme.component.glassCard.radius};
-  padding: ${({ theme }) => theme.component.glassCard.padding};
+  padding: ${({ theme }) => theme.primitive.spacing.md};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   display: flex;
   flex-direction: column;
   position: relative;
   overflow: hidden;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    padding: ${({ theme }) => theme.component.glassCard.padding};
+  }
 `;
 
 const Header = styled.div`
@@ -23,7 +27,11 @@ const Header = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
-  margin-bottom: ${({ theme }) => theme.primitive.spacing.lg};
+  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-bottom: ${({ theme }) => theme.primitive.spacing.lg};
+  }
 `;
 
 const Title = styled.h3`
@@ -32,11 +40,14 @@ const Title = styled.h3`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
+  min-width: 0;
+  flex: 1;
 `;
 
 const IconWrapper = styled.span`
   color: ${({ theme }) => theme.semantic.color.accent};
   display: flex;
+  flex-shrink: 0;
   width: 16px;
   height: 16px;
 `;
@@ -58,8 +69,9 @@ export function GlassCard({
 }: GlassCardProps) {
   return (
     <Card
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
       style={style}
     >
       {(title || Icon || headerAction) && (
@@ -70,7 +82,7 @@ export function GlassCard({
               {title}
             </Title>
           )}
-          {headerAction && <div>{headerAction}</div>}
+          {headerAction && <div style={{ flexShrink: 0 }}>{headerAction}</div>}
         </Header>
       )}
       {children}

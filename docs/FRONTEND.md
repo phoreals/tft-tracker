@@ -39,6 +39,7 @@ styles/
 
 lib/
 ├── utils.ts               Formatters: formatPlaytime, formatRank, getStartOfWeek, percentOf.
+├── mock.ts                Mock data for local dev (activated when KV_REST_API_URL is absent).
 ├── riot.ts                (see BACKEND.md)
 └── kv.ts                  (see BACKEND.md)
 ```
@@ -63,9 +64,11 @@ The primary UI container. Props:
 - `title?` — uppercase label in the header
 - `icon?` — Lucide icon component, rendered gold in the header
 - `headerAction?` — ReactNode for the right side of the header (e.g. sync badge, toggle)
-- `style?` — CSSProperties for overrides (e.g. `padding: 0` for tables)
+- `style?` — CSSProperties for overrides
 
-Wraps content in a `motion.div` with fade-in + slide-up animation on mount.
+Card padding is 16px on mobile, switching to the `glassCard.padding` token (24px) at the `md` breakpoint. The header uses `flex-wrap: wrap` so long titles and `headerAction` elements reflow naturally on narrow screens.
+
+Wraps content in a `motion.div` with fade-in + slide-up (16px) animation on mount.
 
 ### PlayerTable
 Receives an array of `{ gameName, tagLine, current, matches }`. Internally:
@@ -74,15 +77,17 @@ Receives an array of `{ gameName, tagLine, current, matches }`. Internally:
 3. Uses styled components for all cells and states
 
 ### RankChart
-Receives an array of `{ gameName, history }`. Internally:
-1. Collects all unique dates across all players
-2. Filters by view mode (weekly = last 7 days, alltime = no filter)
-3. Converts each history snapshot to a numeric rank value
-4. Renders a Recharts `LineChart` with one `Line` per player
+Receives an array of `{ gameName, matches, history }`. Internally:
+1. Toggle between **Placement** view (avg placement per set-week from match data) and **Rank** view (daily rank snapshots)
+2. Converts each history snapshot to a numeric rank value
+3. Renders a Recharts `LineChart` with one `Line` per player
+4. Legend is conditionally rendered: a `useEffect` + `resize` listener sets `showLegend` true at ≥768px
 
 Rank conversion: `RANK_VALUES[tier] + DIVISION_VALUES[division] + LP`
 - Iron=0, Bronze=400, Silver=800, ..., Challenger=3600
 - IV=0, III=100, II=200, I=300
+
+**Note**: Recharts `Legend` doesn't support CSS media queries. Use the JS resize-listener pattern (not CSS) to hide the legend on mobile.
 
 ## State Management
 
@@ -112,7 +117,20 @@ error: string             — validation/API error message
 2. **Styled components are defined above the React component** in the same file, grouped under a `// ── Styled ──` comment.
 3. **Transient props** use the `$prefix` convention (e.g. `$active`, `$elite`, `$spinning`) to prevent DOM forwarding.
 4. **No CSS classes or className** — everything is styled-components except `globals.css` (resets + keyframes).
-5. **Responsive**: desktop-first is NOT used. Base styles target mobile; `@media (min-width: md)` adds desktop layout.
+5. **Responsive**: mobile-first. Base styles target mobile; `@media (min-width: md)` adds desktop layout. Additional breakpoints used: `640px` (stats grid), `540px` (drilldown stat cards).
+6. **Horizontal scroll containers**: use the negative-margin bleed technique to extend a scrollable area to card edges while preserving trailing scroll padding:
+   ```css
+   margin-left: -${spacing.md}; margin-right: -${spacing.md};
+   padding-left: ${spacing.md}; padding-right: ${spacing.md};
+   ```
+7. **Hover-only interactions**: wrap `transform`, `opacity`, and other hover effects in `@media (hover: hover)` so they don't trigger on touch devices. For elements that are hidden until hover (e.g. delete button), provide a fallback visible state under `@media (hover: none)`.
+8. **Touch tap targets**: interactive elements should be at least 44×44px. Use `min-height: 44px` on tab bars and buttons.
+
+## Local Development / Mock Data
+
+When `KV_REST_API_URL` is not set, `lib/mock.ts` provides fake data so the app is fully interactive without a Redis connection. `isMockMode()` returns `true` in this case. API routes that read player data call `isMockMode()` and return `MOCK_PLAYERS` or `getMockPlayer(puuid)` instead of hitting Redis.
+
+Mock puuids: `mock-puuid-banh`, `mock-puuid-demure`, `mock-puuid-lionnel`.
 
 ## Adding a New Component
 

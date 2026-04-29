@@ -55,7 +55,7 @@ Maps primitives to UI roles. This is what components reference.
 
 ### Component Layer
 Pre-composed values for specific UI patterns:
-- `glassCard`: bg, border, shadow, radius, padding, backdrop blur
+- `glassCard`: bg, border, shadow, radius, padding (24px desktop), backdrop blur. Cards use 16px padding on mobile, switching to the token value at the `md` breakpoint.
 - `sidebar`: width (224px), bg, border color
 - `bottomNav`: height (64px), bg
 - `table`: header bg, row hover bg, border color
@@ -104,11 +104,12 @@ Styled to match the theme: gold thumb (20% opacity, 40% on hover) on a dark trac
 
 ## Animation
 
-- **GlassCard mount**: fade in + slide up 20px (via `motion`)
-- **Player card hover**: slide right 4px, delete button fades in, diamond border rotates 45deg
+- **GlassCard mount**: fade in + slide up 16px (via `motion`), duration 0.25s
+- **Player card hover**: slide right 4px via CSS `transform`, delete button fades in, diamond border rotates 45deg. All hover effects are wrapped in `@media (hover: hover)` so they only apply on pointer devices.
 - **Sync icon**: CSS `spin` animation while syncing
 - **Seed icon**: CSS `pulse` animation while seeding
 - **Page transitions**: none currently (pages are separate routes)
+- **Reduced motion**: `globals.css` includes a `prefers-reduced-motion: reduce` block that sets all `animation-duration` and `transition-duration` to `0.01ms` with `!important`, effectively disabling all animations for users who prefer reduced motion.
 
 ## Typography Scale
 
