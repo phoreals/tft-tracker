@@ -208,6 +208,47 @@ const LoadingText = styled.div`
 
 // ── Component ────────────────────────────────────────────────────
 
+const RANK_VALUES: Record<string, number> = {
+  IRON: 0, BRONZE: 400, SILVER: 800, GOLD: 1200,
+  PLATINUM: 1600, EMERALD: 2000, DIAMOND: 2400,
+  MASTER: 2800, GRANDMASTER: 3200, CHALLENGER: 3600,
+};
+
+const DIVISION_VALUES: Record<string, number> = {
+  IV: 0, III: 100, II: 200, I: 300,
+};
+
+function rankToNumeric(tier: string, rank: string, lp: number): number {
+  return (RANK_VALUES[tier] ?? 0) + (DIVISION_VALUES[rank] ?? 0) + lp;
+}
+
+function numericToRankLabel(value: number): string {
+  const tiers = Object.entries(RANK_VALUES).sort((a, b) => a[1] - b[1]);
+  let tierName = "Iron";
+  for (const [name, threshold] of tiers) {
+    if (value >= threshold) tierName = name.charAt(0) + name.slice(1).toLowerCase();
+  }
+  return tierName;
+}
+
+function numericToTierRank(value: number): [string, string, number] {
+  const tiers = Object.entries(RANK_VALUES).sort((a, b) => b[1] - a[1]);
+  for (const [name, threshold] of tiers) {
+    if (value >= threshold) {
+      const remainder = value - threshold;
+      const divs = Object.entries(DIVISION_VALUES).sort((a, b) => b[1] - a[1]);
+      for (const [div, divThreshold] of divs) {
+        if (remainder >= divThreshold) {
+          const lp = remainder - divThreshold;
+          return [name.charAt(0) + name.slice(1).toLowerCase(), div, lp];
+        }
+      }
+      return [name.charAt(0) + name.slice(1).toLowerCase(), "IV", remainder];
+    }
+  }
+  return ["Iron", "IV", 0];
+}
+
 function formatDate(ts: number): string {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}`;
@@ -231,6 +272,16 @@ export default function PlayerDrilldownPage() {
       })
       .finally(() => setLoading(false));
   }, [puuid]);
+
+  const rankData = useMemo(() => {
+    if (!player) return [];
+    return [...player.history]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((h) => ({
+        date: h.date,
+        rank: rankToNumeric(h.tier, h.rank, h.lp),
+      }));
+  }, [player]);
 
   const sortedMatches = useMemo(() => {
     if (!player) return [];
@@ -316,7 +367,55 @@ export default function PlayerDrilldownPage() {
         </GlassCard>
       </StatsGrid>
 
-      <GlassCard title="PLACEMENT PER GAME" icon={TrendingUp}>
+      <GlassCard title="RANK OVER TIME" icon={TrendingUp}>
+        <ChartContainer>
+          {rankData.length === 0 ? (
+            <EmptyState>Rank history builds daily with each sync.</EmptyState>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={rankData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5c58711" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }}
+                  dy={10}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }}
+                  tickFormatter={numericToRankLabel}
+                  width={70}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#18202b",
+                    border: "1px solid #e5c58733",
+                    borderRadius: "4px",
+                    fontFamily: "Space Grotesk",
+                    fontSize: "12px",
+                  }}
+                  labelStyle={{ color: "#d0c5b5" }}
+                  formatter={(value) => [formatRank(
+                    ...numericToTierRank(Number(value))
+                  ), "Rank"]}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="rank"
+                  stroke="#e5c587"
+                  strokeWidth={2}
+                  dot={{ r: 4, fill: "#e5c587" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </ChartContainer>
+      </GlassCard>
+
+      <GlassCard title="PLACEMENT PER GAME">
         <ChartContainer>
           {avgData.length === 0 ? (
             <EmptyState>No match data.</EmptyState>
