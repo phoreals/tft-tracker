@@ -71,7 +71,7 @@ export async function POST() {
       await delay(100);
 
       // Fetch recent matches
-      const matchIds = await getMatchIds(account.puuid, 20);
+      const matchIds = await getMatchIds(account.puuid, 100);
       const matchRecords: MatchRecord[] = [];
       for (const matchId of matchIds) {
         await delay(100);

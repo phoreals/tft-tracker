@@ -52,7 +52,7 @@ export async function POST() {
 
       // Fetch new matches
       await delay(100);
-      const matchIds = await getMatchIds(player.puuid, 20);
+      const matchIds = await getMatchIds(player.puuid, 100);
       const existing = await getPlayerMatches(player.puuid);
       const existingIds = new Set(existing.map((m) => m.matchId));
       const newMatchIds = matchIds.filter((id) => !existingIds.has(id));

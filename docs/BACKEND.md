@@ -130,7 +130,7 @@ Uses `@upstash/redis` REST client. All data is JSON-serialized.
 | `player:{puuid}` | String (JSON) | `TrackedPlayer` — identity fields |
 | `player:{puuid}:current` | String (JSON) | `PlayerCurrentStats` — latest rank |
 | `player:{puuid}:history` | String (JSON) | `HistorySnapshot[]` — daily rank snapshots (max 365) |
-| `player:{puuid}:matches` | String (JSON) | `MatchRecord[]` — match results (max 100) |
+| `player:{puuid}:matches` | String (JSON) | `MatchRecord[]` — match results (max 200) |
 
 ### Functions
 

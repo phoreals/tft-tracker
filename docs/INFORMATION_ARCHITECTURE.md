@@ -25,7 +25,7 @@ Player (TrackedPlayer)
 ├── Identity:  gameName, tagLine, puuid, summonerId, region
 ├── Current:   tier, rank, lp, wins, losses, lastUpdated
 ├── History:   [{ date, tier, rank, lp, wins, losses }]  (daily snapshots)
-└── Matches:   [{ matchId, placement, duration, timestamp }]  (last 100)
+└── Matches:   [{ matchId, placement, duration, timestamp }]  (last 200, fetches 100 per sync)
 ```
 
 ### Derived Metrics (computed client-side)
