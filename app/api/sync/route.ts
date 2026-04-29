@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   getTrackedPlayers,
+  addPlayer,
   setPlayerCurrent,
   appendPlayerHistory,
   getPlayerMatches,
@@ -10,6 +11,7 @@ import {
 } from "@/lib/kv";
 import {
   getLeagueEntries,
+  getSummonerByPuuid,
   getMatchIds,
   getMatch,
   delay,
@@ -21,6 +23,14 @@ export async function POST() {
 
   for (const player of players) {
     try {
+      // Refresh profileIconId if missing
+      if (!player.profileIconId) {
+        const summoner = await getSummonerByPuuid(player.puuid);
+        await addPlayer({ ...player, profileIconId: summoner.profileIconId });
+        player.profileIconId = summoner.profileIconId;
+        await delay(100);
+      }
+
       // Fetch rank data
       const entries = await getLeagueEntries(player.puuid);
       const tftEntry = entries.find(

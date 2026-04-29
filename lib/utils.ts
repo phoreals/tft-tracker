@@ -65,6 +65,24 @@ export function formatRankShort(tier: string, rank: string, lp: number): string 
   return `${t} ${rank} ${lp} LP`;
 }
 
+const TIER_ABBR: Record<string, string> = {
+  IRON: "I", BRONZE: "B", SILVER: "S", GOLD: "G",
+  PLATINUM: "P", EMERALD: "E", DIAMOND: "D",
+  MASTER: "M", GRANDMASTER: "GM", CHALLENGER: "C",
+};
+
+const DIV_NUM: Record<string, string> = { I: "1", II: "2", III: "3", IV: "4" };
+
+// Compact rank abbreviation for tight spaces, e.g. "I4 30LP", "D2 47LP", "M 185LP".
+export function formatRankAbbr(tier: string, rank: string, lp: number): string {
+  const t = TIER_ABBR[tier.toUpperCase()] ?? tier[0];
+  if (MASTER_PLUS.includes(tier.toUpperCase())) {
+    return `${t} ${lp}LP`;
+  }
+  const d = DIV_NUM[rank.toUpperCase()] ?? rank;
+  return `${t}${d} ${lp}LP`;
+}
+
 // ── Formatters ───────────────────────────────────────────────────
 
 export function formatPlaytime(seconds: number): string {

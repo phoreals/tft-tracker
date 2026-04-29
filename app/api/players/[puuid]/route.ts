@@ -31,6 +31,7 @@ export async function GET(
     tagLine: string;
     summonerId: string;
     region: string;
+    profileIconId?: number;
   }>(`player:${puuid}`);
 
   if (!player) {

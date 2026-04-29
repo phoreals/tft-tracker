@@ -39,6 +39,7 @@ export const primitive = {
 
   fontSize: {
     xs: "9px",
+    "2xs": "10px",
     sm: "11px",
     md: "14px",
     lg: "18px",
@@ -72,6 +73,7 @@ export const primitive = {
     md: "6px",
     lg: "8px",
     xl: "12px",
+    full: "9999px",
   },
 
   breakpoint: {
@@ -116,6 +118,11 @@ export const semantic = {
     borderHover: "rgba(229, 197, 135, 0.4)",
     borderInfo: "rgba(0, 251, 251, 0.3)",
     borderDim: "rgba(255, 255, 255, 0.05)",
+
+    // Chart-specific (used as raw Recharts prop values)
+    chartGrid: "rgba(229, 197, 135, 0.07)",      // subtle grid lines
+    chartHighlight: "rgba(229, 197, 135, 0.08)", // reference area fill
+    chartStroke: "rgba(229, 197, 135, 0.25)",    // reference area stroke
   },
 
   shadow: {

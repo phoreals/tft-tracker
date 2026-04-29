@@ -23,6 +23,8 @@ A scrollable tab bar sits between the page header and the summary cards. It cont
 - Default on load: the current week (not "This Set").
 - Each week tab shows "Week N" on the first line and the date range (e.g. "4/15–4/22") below.
 - The bar overflows horizontally with a 3px gold scrollbar thumb for week 10+ scenarios.
+- On load and on tab change, the active tab is scrolled into view automatically (`scrollIntoView({ block: 'nearest', inline: 'nearest' })`) so the current week is never hidden behind the overflow.
+- A mobile dropdown (`<select>`) mirrors the same tab options; the desktop tab bar is hidden on small screens.
 
 ### Summary Cards
 
@@ -100,19 +102,19 @@ Two-column grid on desktop (4/8 split), stacked on mobile.
 
 On submit: calls `POST /api/players` → validates against Riot API → fetches initial rank + last 20 matches → adds to Redis. Button shows "ADDING..." while in flight.
 
-**Tracking Capacity** — shows `X / 10` with a gold progress bar. Max 10 players.
-
 **Seed Squad** (conditional) — only visible when player list is empty. One-click button that calls `POST /api/seed` to add the 7 original players. Shows "SEEDING... (this takes ~30s)" during the operation.
 
 ### Right Column
 
 **Tracked Players** — a `GlassCard` with a scrollable list of player cards. Each card:
-- Diamond-shaped rotating icon (rotates on hover, gold border if elite tier)
+- Riot profile icon (Community Dragon CDN, 40px rounded square) with a tier-colored border; falls back to a generic avatar silhouette
 - Player name + `#tagLine`
-- Current rank + W/L record
+- Current rank (full text on desktop, abbreviated on mobile) + W/L record
 - Delete button (appears on hover, red on hover)
 
 Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
+
+**Rank abbreviation on mobile**: Rank strings are abbreviated to save horizontal space — e.g. `Gold II 47 LP → G2 47LP`, `Master 185 LP → M 185LP`. The "Peak:" and "Low:" sub-line labels in the player performance table are always written in full regardless of viewport.
 
 **Sync Now** badge in the card header triggers `POST /api/sync`.
 
@@ -134,9 +136,11 @@ Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
 Accessed by clicking a player name in the Weekly Stats performance table.
 
 ### Header
-- Back link ("BACK TO WEEKLY STATS") with arrow icon
-- Player name + #tagline
-- Current rank badge with W/L record
+Horizontal layout: profile picture on the left, player info on the right.
+
+- **Profile picture** — 64px (mobile) / 80px (desktop) rounded square. Source: Community Dragon CDN using `player.profileIconId`. Border color matches current tier. Falls back to a generic avatar silhouette if the icon is unavailable.
+- **Player name + #tagline**
+- **Rank badge** — tier-colored pill showing rank text + W/L record. Includes a 20px rank emblem image (Community Dragon ranked mini crest) before the rank string. The emblem image self-hides via `onError` if unavailable.
 
 ### Stat Cards (2x2 grid, 4 columns on desktop)
 - Total Games, Top 4 Rate %, 1st Place Rate %, Time Played
@@ -144,7 +148,6 @@ Accessed by clicking a player name in the Weekly Stats performance table.
 ### Placement Per Game Chart
 A LineChart plotting every match chronologically:
 - **Gold line**: actual placement per game (Y-axis reversed, 1st at top)
-- **Cyan dashed line**: running average placement
 - **Reference line** at 4.5 (top 4 boundary)
 - Tooltip shows game number + date
 

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import styled from "styled-components";
 import { RefreshCw, Clock, Trophy, Gamepad2 } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
 import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END } from "@/lib/utils";
+import { theme } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -65,14 +66,13 @@ const SyncButton = styled.button`
   align-items: center;
   align-self: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  padding: 10px 20px;
+  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.lg};
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 12px;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   cursor: pointer;
   transition: all 0.2s;
@@ -93,24 +93,63 @@ const SpinningIcon = styled(RefreshCw)<{ $spinning: boolean }>`
 `;
 
 const PageTabBar = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
-  overflow-x: auto;
-  padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+  display: none;
 
-  &::-webkit-scrollbar {
-    height: 3px;
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: flex;
+    gap: ${({ theme }) => theme.primitive.spacing.xs};
+    overflow-x: auto;
+    padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+
+    &::-webkit-scrollbar {
+      height: 3px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: ${({ theme }) => theme.semantic.color.borderDefault};
+      border-radius: ${({ theme }) => theme.primitive.radius.full};
+    }
   }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(229, 197, 135, 0.2);
-    border-radius: 9999px;
+`;
+
+const PageTabSelect = styled.select`
+  display: block;
+  width: 100%;
+  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+  min-height: 44px;
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23e5c587' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right ${({ theme }) => theme.primitive.spacing.md} center;
+  padding-right: ${({ theme }) => theme.primitive.spacing.xl};
+
+  option {
+    background: ${({ theme }) => theme.primitive.color.neutral850};
+    color: ${({ theme }) => theme.semantic.color.textPrimary};
+  }
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: none;
   }
 `;
 
 const PageTab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 11px;
-  padding: 10px 14px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
   min-height: 44px;
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $active, theme }) =>
@@ -127,16 +166,16 @@ const PageTab = styled.button<{ $active: boolean }>`
   &:hover {
     color: ${({ theme }) => theme.semantic.color.textPrimary};
     background: ${({ $active, theme }) =>
-      $active ? theme.semantic.color.accentHover : "rgba(255,255,255,0.05)"};
+      $active ? theme.semantic.color.accentHover : theme.semantic.color.borderDim};
   }
 `;
 
 const WeekDate = styled.span`
   display: block;
-  font-size: 8px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
   letter-spacing: 0.05em;
-  margin-top: 2px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
   opacity: 0.6;
 `;
 
@@ -159,15 +198,19 @@ const StatRow = styled.div`
 
 const StatLabel = styled.span`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 10px;
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   color: ${({ theme }) => theme.semantic.color.textMuted};
 `;
 
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xl};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+
+  @media (min-width: 640px) {
+    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  }
 `;
 
 // ── Types ────────────────────────────────────────────────────────
@@ -226,6 +269,15 @@ export default function WeeklyStatsPage() {
     }
     return idx;
   });
+
+  const tabBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const bar = tabBarRef.current;
+    if (!bar) return;
+    const active = bar.querySelector("[data-active='true']") as HTMLElement | null;
+    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selectedTab]);
 
   const fetchPlayers = useCallback(async () => {
     try {
@@ -295,12 +347,38 @@ export default function WeeklyStatsPage() {
         </SyncButton>
       </PageHeader>
 
-      <PageTabBar>
-        <PageTab $active={selectedTab === "set"} onClick={() => setSelectedTab("set")}>
+      {/* Mobile: dropdown */}
+      <PageTabSelect
+        value={selectedTab === "set" ? "set" : String(selectedTab)}
+        onChange={(e) => {
+          const v = e.target.value;
+          setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
+        }}
+      >
+        <option value="set">This Set</option>
+        {weeks.map((w, i) => (
+          <option key={i} value={String(i)}>
+            {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
+          </option>
+        ))}
+      </PageTabSelect>
+
+      {/* Desktop: tab bar */}
+      <PageTabBar ref={tabBarRef}>
+        <PageTab
+          $active={selectedTab === "set"}
+          data-active={selectedTab === "set" ? "true" : undefined}
+          onClick={() => setSelectedTab("set")}
+        >
           This Set
         </PageTab>
         {weeks.map((w, i) => (
-          <PageTab key={i} $active={selectedTab === i} onClick={() => setSelectedTab(i)}>
+          <PageTab
+            key={i}
+            $active={selectedTab === i}
+            data-active={selectedTab === i ? "true" : undefined}
+            onClick={() => setSelectedTab(i)}
+          >
             {w.label}
             <WeekDate>
               {formatShortDate(w.start)}–{formatShortDate(w.end)}
@@ -313,7 +391,7 @@ export default function WeeklyStatsPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>GAMES {summaryStats.label}</StatLabel>
-            <Gamepad2 size={16} color="#e5c587" />
+            <Gamepad2 size={16} color={theme.semantic.color.accent} />
           </StatRow>
           <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
         </GlassCard>
@@ -321,7 +399,7 @@ export default function WeeklyStatsPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>SQUAD PLAYTIME</StatLabel>
-            <Clock size={16} color="#00fbfb" />
+            <Clock size={16} color={theme.semantic.color.info} />
           </StatRow>
           <StatValue>{loading ? "..." : formatPlaytime(summaryStats.playtime)}</StatValue>
         </GlassCard>
@@ -329,7 +407,7 @@ export default function WeeklyStatsPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>AVG TOP 4 RATE</StatLabel>
-            <Trophy size={16} color="#e5c587" />
+            <Trophy size={16} color={theme.semantic.color.accent} />
           </StatRow>
           <StatValue>
             {loading ? "..." : `${percentOf(summaryStats.top4, summaryStats.total)}%`}
@@ -354,7 +432,6 @@ export default function WeeklyStatsPage() {
       <RankChart
         players={players.map((p) => ({
           gameName: p.gameName,
-          matches: p.matches,
           history: p.history,
         }))}
         selectedTab={selectedTab}

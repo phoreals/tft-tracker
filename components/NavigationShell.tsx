@@ -26,8 +26,8 @@ const Main = styled.main`
 
 const Content = styled.div`
   flex: 1;
-  padding: 0 ${({ theme }) => theme.primitive.spacing.md};
-  padding-bottom: 80px;
+  padding: 0 ${({ theme }) => theme.primitive.spacing.sm};
+  padding-bottom: calc(${({ theme }) => theme.component.bottomNav.height} + ${({ theme }) => theme.primitive.spacing.md});
   max-width: 1440px;
   margin: 0 auto;
   width: 100%;

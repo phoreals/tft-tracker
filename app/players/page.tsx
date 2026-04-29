@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { UserPlus, Users, Trash2, Zap, RefreshCw, DatabaseZap, Lock } from "lucide-react";
+import { UserPlus, Users, Trash2, RefreshCw, DatabaseZap, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { GlassCard } from "@/components/GlassCard";
-import { formatRank, getRankColor } from "@/lib/utils";
+import { formatRank, formatRankAbbr, getRankColor } from "@/lib/utils";
+import { theme } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ const LockInput = styled.input`
 
 const LockError = styled.p`
   color: ${({ theme }) => theme.semantic.color.danger};
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.semantic.typography.label.fontSize};
   font-family: ${({ theme }) => theme.semantic.font.display};
 `;
 
@@ -124,7 +125,7 @@ const FormGroup = styled.div`
 
 const FieldLabel = styled.label`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 10px;
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   display: block;
   margin-bottom: ${({ theme }) => theme.primitive.spacing.xs};
@@ -152,7 +153,7 @@ const Input = styled.input`
 
 const ErrorText = styled.p`
   color: ${({ theme }) => theme.semantic.color.danger};
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.semantic.typography.label.fontSize};
   font-family: ${({ theme }) => theme.semantic.font.display};
 `;
 
@@ -178,39 +179,6 @@ const PrimaryButton = styled.button`
   }
 `;
 
-const CapacityRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
-`;
-
-const CapacityLabel = styled.span`
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: 10px;
-  color: ${({ theme }) => theme.semantic.color.textDisabled};
-`;
-
-const CapacityValue = styled.span`
-  ${({ theme }) => theme.semantic.typography.data};
-  color: ${({ theme }) => theme.semantic.color.accent};
-`;
-
-const ProgressTrack = styled.div`
-  width: 100%;
-  height: ${({ theme }) => theme.component.progressBar.height};
-  background: ${({ theme }) => theme.component.progressBar.trackBg};
-  border-radius: 9999px;
-  overflow: hidden;
-`;
-
-const ProgressFill = styled.div<{ $pct: number }>`
-  height: 100%;
-  width: ${({ $pct }) => $pct}%;
-  background: ${({ theme }) => theme.semantic.color.accent};
-  box-shadow: ${({ theme }) => theme.semantic.shadow.glowGold};
-  transition: width 0.3s;
-`;
 
 const SeedDescription = styled.p`
   font-size: 11px;
@@ -251,11 +219,11 @@ const SyncBadge = styled.button`
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   ${({ theme }) => theme.semantic.typography.data};
-  font-size: 9px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 6px 12px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  background: ${({ theme }) => theme.semantic.color.borderDim};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDim};
   text-transform: uppercase;
   color: ${({ theme }) => theme.semantic.color.info};
   cursor: pointer;
@@ -285,7 +253,7 @@ const PlayerRow = styled(motion.div)<{ $elite: boolean }>`
   align-items: center;
   justify-content: space-between;
   padding: ${({ theme }) => theme.primitive.spacing.md};
-  background: rgba(7, 15, 25, 0.4);
+  background: ${({ theme }) => theme.component.table.headerBg};
   border: 1px solid ${({ $elite, theme }) =>
     $elite ? theme.semantic.color.borderDefault : theme.semantic.color.borderDim};
   border-radius: ${({ theme }) => theme.primitive.radius.lg};
@@ -307,25 +275,21 @@ const PlayerInfo = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.md};
 `;
 
-const DiamondIcon = styled.div<{ $elite: boolean }>`
+const Avatar = styled.div<{ $color: string }>`
   width: 48px;
   height: 48px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const DiamondBorder = styled.div<{ $color: string }>`
-  position: absolute;
-  inset: 0;
-  border: 2px solid ${({ $color }) => $color};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
-  transform: rotate(45deg);
-  transition: transform 0.5s;
+  border: 2px solid ${({ $color }) => $color};
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s;
 
-  ${PlayerRow}:hover & {
-    transform: rotate(90deg);
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
   }
 `;
 
@@ -337,7 +301,7 @@ const PlayerName = styled.span`
 
 const PlayerTag = styled.span`
   ${({ theme }) => theme.semantic.typography.data};
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.semantic.typography.label.fontSize};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
 `;
 
@@ -345,30 +309,43 @@ const PlayerMeta = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const TierLabel = styled.span<{ $color: string }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 9px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ $color }) => $color};
 `;
 
+const RankFull = styled.span`
+  display: none;
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: inline;
+  }
+`;
+
+const RankAbbr = styled.span`
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: none;
+  }
+`;
+
 const Dot = styled.span`
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+  width: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  height: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
   background: ${({ theme }) => theme.primitive.color.neutral700};
 `;
 
 const WinLoss = styled.span`
   ${({ theme }) => theme.semantic.typography.data};
-  font-size: 9px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
 `;
 
 const DeleteButton = styled.button`
-  padding: 12px;
+  padding: ${({ theme }) => theme.primitive.spacing.sm};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   background: none;
   border: none;
@@ -407,6 +384,7 @@ interface PlayerData {
   puuid: string;
   gameName: string;
   tagLine: string;
+  profileIconId?: number;
   current: {
     tier: string;
     rank: string;
@@ -415,8 +393,6 @@ interface PlayerData {
     losses: number;
   } | null;
 }
-
-const MAX_PLAYERS = 10;
 
 const HIGH_TIERS = new Set(["DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"]);
 
@@ -465,7 +441,6 @@ export default function ManagePlayersPage() {
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!gameName.trim() || !tagLine.trim()) return;
-    if (players.length >= MAX_PLAYERS) { setError("Maximum 10 players reached."); return; }
 
     setAdding(true);
     setError("");
@@ -537,7 +512,7 @@ export default function ManagePlayersPage() {
         <GlassCard>
           <LockForm onSubmit={handlePasswordSubmit}>
             <LockTitle>
-              <Lock size={24} color="#e5c587" />
+              <Lock size={24} color={theme.semantic.color.accent} />
               ADMIN ACCESS
             </LockTitle>
             <LockInput
@@ -598,16 +573,6 @@ export default function ManagePlayersPage() {
             </form>
           </GlassCard>
 
-          <GlassCard>
-            <CapacityRow>
-              <CapacityLabel>TRACKING CAPACITY</CapacityLabel>
-              <CapacityValue>{players.length} / {MAX_PLAYERS}</CapacityValue>
-            </CapacityRow>
-            <ProgressTrack>
-              <ProgressFill $pct={(players.length / MAX_PLAYERS) * 100} />
-            </ProgressTrack>
-          </GlassCard>
-
           {players.length === 0 && (
             <GlassCard title="SEED SQUAD" icon={DatabaseZap}>
               <SeedDescription>
@@ -643,20 +608,29 @@ export default function ManagePlayersPage() {
                 return (
                   <PlayerRow key={player.puuid} $elite={isElite}>
                     <PlayerInfo>
-                      <DiamondIcon $elite={isElite}>
-                        <DiamondBorder $color={rankColor} />
-                        <Zap size={20} color={rankColor} />
-                      </DiamondIcon>
+                      <Avatar $color={rankColor}>
+                        {player.profileIconId ? (
+                          <img
+                            src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${player.profileIconId}.jpg`}
+                            alt={player.gameName}
+                          />
+                        ) : (
+                          <div style={{ width: "100%", height: "100%", background: rankColor + "22" }} />
+                        )}
+                      </Avatar>
                       <div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: theme.primitive.spacing.xs }}>
                           <PlayerName>{player.gameName}</PlayerName>
                           <PlayerTag>#{player.tagLine}</PlayerTag>
                         </div>
                         <PlayerMeta>
                           <TierLabel $color={rankColor}>
-                            {player.current
-                              ? formatRank(player.current.tier, player.current.rank, player.current.lp)
-                              : "UNRANKED"}
+                            {player.current ? (
+                              <>
+                                <RankFull>{formatRank(player.current.tier, player.current.rank, player.current.lp)}</RankFull>
+                                <RankAbbr>{formatRankAbbr(player.current.tier, player.current.rank, player.current.lp)}</RankAbbr>
+                              </>
+                            ) : "UNRANKED"}
                           </TierLabel>
                           {player.current && (
                             <>

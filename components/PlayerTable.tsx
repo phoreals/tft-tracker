@@ -9,6 +9,7 @@ import {
   formatPlaytime,
   formatRank,
   formatRankShort,
+  formatRankAbbr,
   percentOf,
   getRankColor,
   rankToLP,
@@ -133,6 +134,19 @@ const RankSub = styled.span`
   margin-top: 2px;
 `;
 
+const RankFull = styled.span`
+  display: none;
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: inline;
+  }
+`;
+
+const RankAbbr = styled.span`
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: none;
+  }
+`;
+
 const CenterCell = styled.td`
   text-align: center;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
@@ -154,9 +168,9 @@ const ProgressTrack = styled.div`
   width: 64px;
   height: ${({ theme }) => theme.component.progressBar.height};
   background: ${({ theme }) => theme.component.progressBar.trackBg};
-  border-radius: 9999px;
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
   overflow: hidden;
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const ProgressFill = styled.div<{ $width: number }>`
@@ -260,6 +274,7 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
       name: `${p.gameName}#${p.tagLine}`,
       profileIconId: p.profileIconId,
       rank: formatRank(p.current?.tier, p.current?.rank, p.current?.lp),
+      rankAbbr: p.current ? formatRankAbbr(p.current.tier, p.current.rank, p.current.lp) : "Unranked",
       tier: p.current?.tier ?? "",
       totalGames,
       totalTime: formatPlaytime(totalDuration),
@@ -325,15 +340,20 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
                   </td>
                   <td>
                     <RankCell>
-                      <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>{row.rank}</span>
+                      <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>
+                        <RankFull>{row.rank}</RankFull>
+                        <RankAbbr>{row.rankAbbr}</RankAbbr>
+                      </span>
                       {row.peakRank && (
                         <RankSub>
-                          Peak: {formatRankShort(row.peakRank.tier, row.peakRank.rank, row.peakRank.lp)}
+                          <RankFull>Peak: {formatRankShort(row.peakRank.tier, row.peakRank.rank, row.peakRank.lp)}</RankFull>
+                          <RankAbbr>Peak: {formatRankAbbr(row.peakRank.tier, row.peakRank.rank, row.peakRank.lp)}</RankAbbr>
                         </RankSub>
                       )}
                       {!isSet && row.lowRank && (
                         <RankSub>
-                          Low: {formatRankShort(row.lowRank.tier, row.lowRank.rank, row.lowRank.lp)}
+                          <RankFull>Low: {formatRankShort(row.lowRank.tier, row.lowRank.rank, row.lowRank.lp)}</RankFull>
+                          <RankAbbr>Low: {formatRankAbbr(row.lowRank.tier, row.lowRank.rank, row.lowRank.lp)}</RankAbbr>
                         </RankSub>
                       )}
                     </RankCell>

@@ -9,7 +9,7 @@ const Card = styled(motion.div)`
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.component.glassCard.border};
   border-radius: ${({ theme }) => theme.component.glassCard.radius};
-  padding: ${({ theme }) => theme.primitive.spacing.md};
+  padding: ${({ theme }) => theme.primitive.spacing.sm};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   display: flex;
   flex-direction: column;

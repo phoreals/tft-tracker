@@ -28,7 +28,9 @@ Raw values with no UI meaning. Never import directly into components.
 
 **Spacing scale**: 4px (`2xs`) through 64px (`3xl`)
 
-**Radius**: 4px (`sm`) through 12px (`xl`)
+**Radius**: 4px (`sm`) through 12px (`xl`), plus `full` = `9999px` for pill shapes and circular scrollbar thumbs
+
+**Font sizes**: `2xs` = 10px (between `xs`=9px and `sm`=11px) for small captions and chart ticks
 
 **Breakpoints**: `md` 768px, `lg` 1024px
 
@@ -47,6 +49,8 @@ Maps primitives to UI roles. This is what components reference.
 
 **Shadows**: `glassInset` (card inner glow), `glowGold`, `glowCyan`, `buttonGold`
 
+**Chart-specific semantic colors**: `chartGrid` (7% gold), `chartHighlight` (8% gold fill for week reference area), `chartStroke` (25% gold stroke)
+
 **Typography presets** (spread into styled-components):
 - `heading`: display font, bold, uppercase, tight tracking
 - `label`: display font, 12px, bold, uppercase, wide tracking (0.15em)
@@ -55,7 +59,7 @@ Maps primitives to UI roles. This is what components reference.
 
 ### Component Layer
 Pre-composed values for specific UI patterns:
-- `glassCard`: bg, border, shadow, radius, padding (24px desktop), backdrop blur. Cards use 16px padding on mobile, switching to the token value at the `md` breakpoint.
+- `glassCard`: bg, border, shadow, radius, padding (24px desktop), backdrop blur. Cards use 12px padding on mobile (`spacing.sm`), switching to the token value at the `md` breakpoint.
 - `sidebar`: width (224px), bg, border color
 - `bottomNav`: height (64px), bg
 - `table`: header bg, row hover bg, border color
@@ -87,9 +91,9 @@ box-shadow: inset 0 0 20px rgba(229, 197, 135, 0.05); /* warm inner glow */
 | Errors / delete | Red #f87171 | `semantic.color.danger` |
 | Progress bars | Gold fill on dark track | `accent` on `progressBar.trackBg` |
 | Rank text (table) | Per-tier color (10 distinct values) | `getRankColor(tier)` from `lib/utils.ts` |
-| Rank border (player cards) | Per-tier color at 30% opacity; 50% on hover | `getRankColor(tier)` |
-| Elite player borders | Gold 20% → 50% on hover | `borderDefault` / `borderHover` |
-| Normal player borders | White 5% → cyan 30% on hover | `borderDim` / `borderInfo` |
+| Profile icon border (player cards) | Per-tier color at 40% opacity | `getRankColor(tier)` |
+| Profile icon border (drilldown header) | Per-tier color at 40% opacity | `getRankColor(tier)` |
+| Player card row borders | Elite: gold 20%→50%; others: dim→cyan | `borderDefault` / `borderHover` |
 
 ## Rank Color Palette
 
@@ -141,6 +145,30 @@ Styled to match the theme: gold thumb (20% opacity, 40% on hover) on a dark trac
 | Stat number | 30-36px | Bold | Display | None |
 | Body text | 14px | Regular | Body | None |
 | Muted caption | 9-11px | Regular | Display | Uppercase |
+
+## CHART Constants Pattern
+
+Recharts JSX props (stroke, fill, tick objects, contentStyle) are plain object values — they cannot consume styled-components' `({ theme }) => …` injection. To keep chart styling consistent with the design system, each chart file imports the `theme` object directly from `styles/theme.ts` and collects all Recharts styling values into a `CHART` constants block at the top of the file:
+
+```ts
+import { theme } from "@/styles/theme";
+
+const CHART = {
+  grid:      theme.semantic.color.chartGrid,
+  refFill:   theme.semantic.color.chartHighlight,
+  refStroke: theme.semantic.color.chartStroke,
+  tick: {
+    fill:       theme.primitive.color.neutral200,
+    fontSize:   parseInt(theme.primitive.fontSize["2xs"]),
+    fontFamily: "Space Grotesk",
+  },
+  tooltip: { bg, border, radius, fontFamily, fontSize, labelColor },
+  gold:    theme.primitive.color.gold300,
+  cyan:    theme.primitive.color.cyan500,
+} as const;
+```
+
+This pattern is used in `components/RankChart.tsx` and `app/player/[puuid]/page.tsx`.
 
 ## Styled-Components Integration
 

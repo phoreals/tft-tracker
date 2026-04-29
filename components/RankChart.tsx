@@ -9,13 +9,42 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
+  ReferenceArea,
   Legend,
 } from "recharts";
 import styled from "styled-components";
 import { GlassCard } from "./GlassCard";
 import { TrendingUp } from "lucide-react";
-import type { MatchRecord, HistorySnapshot } from "@/lib/kv";
+import { rankToLP, formatRank } from "@/lib/utils";
+import type { HistorySnapshot } from "@/lib/kv";
+import { theme } from "@/styles/theme";
+
+// ── Chart constants ───────────────────────────────────────────────
+// Recharts props can't consume theme functions, so we reference the
+// exported theme object directly here.
+const CHART = {
+  grid:      theme.semantic.color.chartGrid,
+  refFill:   theme.semantic.color.chartHighlight,
+  refStroke: theme.semantic.color.chartStroke,
+  tick: {
+    fill:       theme.primitive.color.neutral200,
+    fontSize:   parseInt(theme.primitive.fontSize["2xs"]),
+    fontFamily: "Space Grotesk",
+  },
+  tooltip: {
+    bg:         theme.primitive.color.neutral850,
+    border:     `1px solid ${theme.semantic.color.borderDefault}`,
+    radius:     theme.primitive.radius.sm,
+    padding:    `${theme.primitive.spacing.xs} ${theme.primitive.spacing.sm}`,
+    fontFamily: "Space Grotesk",
+    fontSize:   theme.semantic.typography.label.fontSize,
+    labelColor: theme.primitive.color.neutral200,
+  },
+  legend: {
+    fontFamily: "Space Grotesk",
+    fontSize:   theme.primitive.fontSize.sm,
+  },
+} as const;
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -38,23 +67,81 @@ const EmptyState = styled.div`
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
 `;
 
-// ── Helpers ──────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────
 
 const LINE_COLORS = [
-  "#e5c587", "#00fbfb", "#e4b9ff", "#f87171", "#34d399",
+  theme.primitive.color.gold300,   // accent
+  theme.primitive.color.cyan500,   // info
+  theme.primitive.color.purple300, // highlight
+  theme.primitive.color.red400,    // danger
+  theme.primitive.color.green400,  // success
   "#60a5fa", "#fbbf24", "#a78bfa", "#fb923c", "#2dd4bf",
 ];
 
-function formatMatchDate(ts: number): string {
+// Tier base LP values and short display labels, ordered low→high.
+const TIER_BASES: { lp: number; short: string }[] = [
+  { lp: 0,    short: "Iron"    },
+  { lp: 400,  short: "Bronze"  },
+  { lp: 800,  short: "Silver"  },
+  { lp: 1200, short: "Gold"    },
+  { lp: 1600, short: "Plat"    },
+  { lp: 2000, short: "Em"      },
+  { lp: 2400, short: "Diamond" },
+  { lp: 2800, short: "Master"  },
+  { lp: 3200, short: "GM"      },
+  { lp: 3600, short: "Chal"    },
+];
+
+function formatDateTick(ts: number): string {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+// ── Custom Tooltip ───────────────────────────────────────────────
+
+interface TooltipEntry {
+  color: string;
+  name: string;
+  value: number;
+  payload: Record<string, unknown>;
+}
+
+function RankTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: number;
+}) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div
+      style={{
+        background:   CHART.tooltip.bg,
+        border:       CHART.tooltip.border,
+        borderRadius: CHART.tooltip.radius,
+        padding:      CHART.tooltip.padding,
+        fontFamily:   CHART.tooltip.fontFamily,
+        fontSize:     CHART.tooltip.fontSize,
+      }}
+    >
+      <p style={{ color: CHART.tooltip.labelColor, marginBottom: 4 }}>
+        {label != null ? formatDateTick(label) : ""}
+      </p>
+      {payload.map((item) => {
+        const rankLabel = item.payload[`${item.name}__label`];
+        return (
+          <p key={item.name} style={{ color: item.color, margin: "2px 0" }}>
+            {item.name}: {String(rankLabel ?? item.value)}
+          </p>
+        );
+      })}
+    </div>
+  );
 }
 
 // ── Component ────────────────────────────────────────────────────
 
 interface PlayerData {
   gameName: string;
-  matches: MatchRecord[];
   history: HistorySnapshot[];
 }
 
@@ -68,102 +155,123 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
   const [showLegend, setShowLegend] = useState(false);
 
   useEffect(() => {
-    const check = () => setShowLegend(window.innerWidth >= 768);
+    const check = () => setShowLegend(window.innerWidth >= parseInt(theme.primitive.breakpoint.md));
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const isSet = selectedTab === "set";
-  const currentWeek = isSet ? null : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+  // The highlighted week — always the selected week, or the latest week for "This Set".
+  const highlightWeek =
+    selectedTab === "set"
+      ? (weeks[weeks.length - 1] ?? null)
+      : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
 
-  // "This Week" — individual game placements for the selected week,
-  // merged into a single chronological timeline across all players.
-  const weekData = useMemo(() => {
-    if (!currentWeek) return [];
-
-    const entries: { ts: number; player: string; placement: number }[] = [];
+  // Build a unified daily timeline from all players' history snapshots.
+  const { chartData, yTicks, yDomain } = useMemo(() => {
+    // Collect all unique date timestamps.
+    const tsSet = new Set<number>();
     players.forEach((p) => {
-      p.matches
-        .filter((m) => m.timestamp >= currentWeek.start && m.timestamp < currentWeek.end)
-        .forEach((m) => entries.push({ ts: m.timestamp, player: p.gameName, placement: m.placement }));
+      p.history.forEach((h) => tsSet.add(new Date(h.date).getTime()));
     });
-    entries.sort((a, b) => a.ts - b.ts);
+    const allTs = [...tsSet].sort((a, b) => a - b);
 
-    const pointsMap = new Map<number, Record<string, string | number>>();
-    for (const e of entries) {
-      if (!pointsMap.has(e.ts)) {
-        pointsMap.set(e.ts, { week: formatMatchDate(e.ts) });
-      }
-      pointsMap.get(e.ts)![e.player] = e.placement;
-    }
-    return Array.from(pointsMap.values());
-  }, [currentWeek, players]);
+    if (allTs.length === 0) return { chartData: [], yTicks: [], yDomain: [0, 3700] as [number, number] };
 
-  // "This Set" — average placement per set-week across all weeks.
-  const setData = useMemo(() => {
-    return weeks.map((w) => {
-      const point: Record<string, string | number> = { week: w.label };
+    // Build data points: one per day, one LP value per player.
+    const data = allTs.map((ts) => {
+      const point: Record<string, number | string> = { ts };
       players.forEach((p) => {
-        const wm = p.matches.filter((m) => m.timestamp >= w.start && m.timestamp < w.end);
-        if (wm.length > 0) {
-          point[p.gameName] = parseFloat(
-            (wm.reduce((s, m) => s + m.placement, 0) / wm.length).toFixed(2)
-          );
+        const snap = p.history.find((h) => new Date(h.date).getTime() === ts);
+        if (snap) {
+          point[p.gameName] = rankToLP(snap.tier, snap.rank, snap.lp);
+          point[`${p.gameName}__label`] = formatRank(snap.tier, snap.rank, snap.lp);
         }
       });
-      const hasData = Object.keys(point).some((k) => k !== "week");
-      return hasData ? point : null;
-    }).filter(Boolean) as Record<string, string | number>[];
-  }, [weeks, players]);
+      return point;
+    });
 
-  const chartData = isSet ? setData : weekData;
+    // Compute Y-axis range from actual data, snapped to tier boundaries.
+    const allLPValues: number[] = [];
+    players.forEach((p) => {
+      p.history.forEach((h) => allLPValues.push(rankToLP(h.tier, h.rank, h.lp)));
+    });
+    const rawMin = Math.min(...allLPValues);
+    const rawMax = Math.max(...allLPValues);
+
+    // Snap to tier boundaries with one tier of padding on each side.
+    const minBase = Math.max(0, Math.floor(rawMin / 400) * 400 - 400);
+    const maxBase = Math.ceil(rawMax / 400) * 400 + 400;
+
+    const ticks = TIER_BASES
+      .filter((t) => t.lp >= minBase && t.lp <= maxBase)
+      .map((t) => t.lp);
+
+    return {
+      chartData: data,
+      yTicks: ticks,
+      yDomain: [Math.max(0, minBase), maxBase] as [number, number],
+    };
+  }, [players]);
+
   const hasData = chartData.length > 0;
 
+  const tierTickFormatter = (value: number) => {
+    const tier = TIER_BASES.find((t) => t.lp === value);
+    return tier ? tier.short : "";
+  };
+
   return (
-    <GlassCard title="PLACEMENT OVER TIME" icon={TrendingUp}>
+    <GlassCard title="RANK OVER TIME" icon={TrendingUp}>
       <ChartContainer>
         {!hasData ? (
-          <EmptyState>
-            {isSet
-              ? "No match data yet. Sync to start tracking."
-              : "No games played this week yet."}
-          </EmptyState>
+          <EmptyState>No rank history yet. Sync to start tracking.</EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5c58711" vertical={false} />
+            <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
+
               <XAxis
-                dataKey="week"
+                dataKey="ts"
+                type="number"
+                scale="time"
+                domain={["dataMin", "dataMax"]}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }}
+                tick={CHART.tick}
+                tickFormatter={formatDateTick}
                 dy={10}
+                // Show ~6 ticks max to avoid crowding.
+                tickCount={6}
               />
+
               <YAxis
-                reversed
-                domain={[1, 8]}
-                ticks={[1, 2, 3, 4, 5, 6, 7, 8]}
+                domain={yDomain}
+                ticks={yTicks}
+                tickFormatter={tierTickFormatter}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }}
-                width={24}
+                tick={CHART.tick}
+                width={48}
               />
-              <ReferenceLine y={4.5} stroke="#e5c58733" strokeDasharray="6 4" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#18202b",
-                  border: "1px solid #e5c58733",
-                  borderRadius: "4px",
-                  fontFamily: "Space Grotesk",
-                  fontSize: "12px",
-                }}
-                labelStyle={{ color: "#d0c5b5" }}
-                formatter={(value) => [`${Number(value).toFixed(2)}`, ""]}
-              />
-              {showLegend && (
-                <Legend wrapperStyle={{ fontFamily: "Space Grotesk", fontSize: "11px" }} />
+
+              {/* Shade the selected week */}
+              {highlightWeek && (
+                <ReferenceArea
+                  x1={highlightWeek.start}
+                  x2={highlightWeek.end}
+                  fill={CHART.refFill}
+                  stroke={CHART.refStroke}
+                  strokeWidth={1}
+                />
               )}
+
+              <Tooltip content={<RankTooltip />} />
+
+              {showLegend && (
+                <Legend wrapperStyle={CHART.legend} />
+              )}
+
               {players.map((p, i) => (
                 <Line
                   key={p.gameName}
@@ -173,6 +281,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   connectNulls
+                  isAnimationActive={false}
                 />
               ))}
             </LineChart>
