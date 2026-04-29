@@ -82,6 +82,8 @@ const PageTitle = styled.h1`
   font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   margin-bottom: ${({ theme }) => theme.primitive.spacing.xs};
+  overflow-wrap: break-word;
+  word-break: break-word;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};

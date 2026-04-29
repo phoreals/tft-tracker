@@ -17,8 +17,13 @@ import {
   getMatch,
   delay,
 } from "@/lib/riot";
+import { isMockMode, MOCK_PLAYERS } from "@/lib/mock";
 
 export async function GET() {
+  if (isMockMode()) {
+    return NextResponse.json(MOCK_PLAYERS);
+  }
+
   const players = await getTrackedPlayers();
 
   const enriched = await Promise.all(

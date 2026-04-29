@@ -21,6 +21,8 @@ const Header = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.primitive.spacing.sm};
   margin-bottom: ${({ theme }) => theme.primitive.spacing.lg};
 `;
 

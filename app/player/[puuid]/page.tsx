@@ -87,6 +87,8 @@ const PlayerName = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
   font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+  overflow-wrap: break-word;
+  word-break: break-word;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};

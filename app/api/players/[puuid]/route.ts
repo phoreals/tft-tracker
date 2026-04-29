@@ -6,17 +6,24 @@ import {
   getPlayerHistory,
 } from "@/lib/kv";
 import { Redis } from "@upstash/redis";
-
-const redis = new Redis({
-  url: process.env.KV_REST_API_URL ?? "",
-  token: process.env.KV_REST_API_TOKEN ?? "",
-});
+import { isMockMode, getMockPlayer } from "@/lib/mock";
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ puuid: string }> }
 ) {
   const { puuid } = await params;
+
+  if (isMockMode()) {
+    const mock = getMockPlayer(puuid);
+    if (!mock) return NextResponse.json({ error: "Player not found" }, { status: 404 });
+    return NextResponse.json(mock);
+  }
+
+  const redis = new Redis({
+    url: process.env.KV_REST_API_URL ?? "",
+    token: process.env.KV_REST_API_TOKEN ?? "",
+  });
 
   const player = await redis.get<{
     puuid: string;

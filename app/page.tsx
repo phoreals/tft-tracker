@@ -32,12 +32,18 @@ const PageHeader = styled.div`
     justify-content: space-between;
     align-items: flex-end;
   }
+
+  > div:first-child {
+    min-width: 0;
+  }
 `;
 
 const PageTitle = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
   font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+  overflow-wrap: break-word;
+  word-break: break-word;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
