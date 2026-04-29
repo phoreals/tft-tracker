@@ -21,7 +21,16 @@ const SEED_PLAYERS = [
 ];
 
 export async function POST() {
-  const existing = await getTrackedPlayers();
+  let existing;
+  try {
+    existing = await getTrackedPlayers();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json(
+      { error: `Redis connection failed: ${msg}` },
+      { status: 500 }
+    );
+  }
   const existingPuuids = new Set(existing.map((p) => p.puuid));
 
   const results: { name: string; success: boolean; error?: string; skipped?: boolean }[] = [];
@@ -51,7 +60,7 @@ export async function POST() {
       });
 
       // Fetch rank
-      const entries = await getLeagueEntries(summoner.id);
+      const entries = await getLeagueEntries(account.puuid);
       const tftEntry = entries.find((e) => e.queueType === "RANKED_TFT");
       if (tftEntry) {
         await setPlayerCurrent(account.puuid, {

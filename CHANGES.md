@@ -85,7 +85,7 @@ Next.js 16 on Vercel
 |----------|---------|---------|
 | `/riot/account/v1/accounts/by-riot-id/{name}/{tag}` | americas | puuid |
 | `/tft/summoner/v1/summoners/by-puuid/{puuid}` | na1 | summonerId |
-| `/tft/league/v1/entries/by-summoner/{id}` | na1 | tier, rank, LP, wins, losses |
+| `/tft/league/v1/entries/by-puuid/{puuid}` | na1 | tier, rank, LP, wins, losses |
 | `/tft/match/v1/matches/by-puuid/{puuid}/ids` | americas | match ID list |
 | `/tft/match/v1/matches/{matchId}` | americas | placement, duration, timestamp |
 

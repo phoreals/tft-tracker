@@ -107,7 +107,7 @@ All calls go through `riotFetch<T>(url)` which adds the `X-Riot-Token` header.
 |----------|----------|---------|---------|
 | `getAccountByRiotId(name, tag)` | `/riot/account/v1/accounts/by-riot-id/{name}/{tag}` | americas | `{ puuid, gameName, tagLine }` |
 | `getSummonerByPuuid(puuid)` | `/tft/summoner/v1/summoners/by-puuid/{puuid}` | na1 | `{ id, puuid, profileIconId, ... }` |
-| `getLeagueEntries(summonerId)` | `/tft/league/v1/entries/by-summoner/{id}` | na1 | `LeagueEntry[]` |
+| `getLeagueEntries(puuid)` | `/tft/league/v1/entries/by-puuid/{puuid}` | na1 | `LeagueEntry[]` |
 | `getMatchIds(puuid, count)` | `/tft/match/v1/matches/by-puuid/{puuid}/ids` | americas | `string[]` |
 | `getMatch(matchId)` | `/tft/match/v1/matches/{matchId}` | americas | `MatchDetail` |
 

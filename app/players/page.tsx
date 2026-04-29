@@ -382,7 +382,7 @@ export default function ManagePlayersPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Failed to add player"); }
       else { setGameName(""); setTagLine(""); await fetchPlayers(); }
-    } catch { setError("Network error. Please try again."); }
+    } catch (err) { setError(err instanceof Error ? err.message : "Network error. Please try again."); }
     finally { setAdding(false); }
   };
 
@@ -408,7 +408,7 @@ export default function ManagePlayersPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error ?? "Seed failed"); }
       else { await fetchPlayers(); }
-    } catch { setError("Seed failed. Check your Riot API key."); }
+    } catch (err) { setError(err instanceof Error ? err.message : "Seed failed. Network error."); }
     finally { setSeeding(false); }
   };
 

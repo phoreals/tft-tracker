@@ -66,10 +66,10 @@ export interface LeagueEntry {
 }
 
 export async function getLeagueEntries(
-  summonerId: string
+  puuid: string
 ): Promise<LeagueEntry[]> {
   return riotFetch<LeagueEntry[]>(
-    `${PLATFORM_HOST}/tft/league/v1/entries/by-summoner/${summonerId}`
+    `${PLATFORM_HOST}/tft/league/v1/entries/by-puuid/${puuid}`
   );
 }
 
