@@ -12,6 +12,8 @@ The app has basic accessibility but is not fully audited. This document tracks w
 - **Focus visible**: browser default focus rings are not suppressed (except on inputs which use `outline: none` with a visible border-bottom change).
 - **Link navigation**: sidebar and bottom nav use Next.js `<Link>` with proper `href` attributes.
 - **Button semantics**: all clickable elements use `<button>` or `<a>`, not `<div onClick>`.
+- **Sidebar toggle**: the collapse button at the bottom of the sidebar has `aria-label` set to "Collapse sidebar" or "Expand sidebar" depending on state.
+- **Tab bar button height**: tab bars use `align-items: stretch` on the flex container so all buttons share the same height regardless of sub-label content. Individual buttons center their text with `display: flex; align-items: center; justify-content: center`.
 - **Disabled states**: buttons show `opacity: 0.5` and `cursor: not-allowed` when disabled.
 
 ## Known Issues
@@ -23,6 +25,7 @@ The app has basic accessibility but is not fully audited. This document tracks w
 - **Color-only indicators**: the rank dot (gold vs gray) and elite border (gold vs dim) rely on color alone. No shape or text alternative.
 - ~~**Motion**: animations cannot be disabled via `prefers-reduced-motion`.~~ Fixed: `globals.css` now includes a `prefers-reduced-motion: reduce` block.
 - **Bottom nav z-index**: content can scroll behind the fixed bottom nav on mobile; no padding compensation beyond `pb: 80px`.
+- **Sidebar double-click**: double-clicking the sidebar locks it open. This is a non-standard interaction with no keyboard or ARIA equivalent; keyboard users rely solely on the collapse button at the bottom.
 
 ## Tap Targets
 

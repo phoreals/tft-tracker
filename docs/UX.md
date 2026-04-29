@@ -19,12 +19,16 @@ A scrollable tab bar sits between the page header and the summary cards. It cont
 
 **Tabs**: "This Set" (first) | "Week 1" | "Week 2" | … | "Week N" (current week)
 
-- Calculated from the TFT set start date (April 15, 2026) in 7-day increments. Future weeks are hidden.
+- Calculated from the TFT set start date in 7-day increments. Future weeks are hidden.
 - Default on load: the current week (not "This Set").
 - Each week tab shows "Week N" on the first line and the date range (e.g. "4/15–4/22") below.
-- The bar overflows horizontally with a 3px gold scrollbar thumb for week 10+ scenarios.
-- On load and on tab change, the active tab is scrolled into view automatically (`scrollIntoView({ block: 'nearest', inline: 'nearest' })`) so the current week is never hidden behind the overflow.
+- The bar overflows horizontally; a right-edge `mask-image` gradient (last 48px fades to transparent) signals scrollability without a persistent scrollbar.
+- Horizontal scrollbar is flush against the bottom of the container — no padding gap.
+- All tab buttons stretch to equal height via `align-items: stretch` + `display: flex; justify-content: center` on each button, so tabs with and without sub-dates are visually even.
+- On load and on tab change, the active tab scrolls into view via `data-active="true"` + `scrollIntoView({ block: 'nearest', inline: 'nearest' })`.
+- **Sticky**: the tab wrap sticks to `top: 0` as the user scrolls. It has no background color — uses `backdrop-filter: blur(16px)` and a gold `border-bottom` + subtle glow so content shows through.
 - A mobile dropdown (`<select>`) mirrors the same tab options; the desktop tab bar is hidden on small screens.
+- The same tab system and sticky behavior applies to the **Player Drilldown** page.
 
 ### Summary Cards
 

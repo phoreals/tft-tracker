@@ -96,7 +96,9 @@ const StickyTabWrap = styled.div`
   position: sticky;
   top: 0;
   z-index: 20;
-  background: ${({ theme }) => theme.semantic.color.bgPrimary};
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  box-shadow: 0 4px 16px rgba(229, 197, 135, 0.06);
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   margin-right: -${({ theme }) => theme.primitive.spacing.sm};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
@@ -113,9 +115,11 @@ const PageTabBar = styled.div`
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     display: flex;
+    align-items: stretch;
     gap: ${({ theme }) => theme.primitive.spacing.xs};
     overflow-x: auto;
-    padding-bottom: ${({ theme }) => theme.primitive.spacing.xs};
+    mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
 
     &::-webkit-scrollbar {
       height: 3px;
@@ -178,6 +182,10 @@ const PageTab = styled.button<{ $active: boolean }>`
   transition: all 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.textPrimary};

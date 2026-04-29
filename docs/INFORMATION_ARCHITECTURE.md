@@ -4,15 +4,23 @@
 
 ```
 /                          Weekly Stats (main view)
-  ├── Summary cards        Games, playtime, top 4 rate
-  ├── Player table         Per-player stats with all columns
-  └── Rank chart           Line chart with weekly/all-time toggle
+  ├── Tab bar (sticky)     "This Set" | Week 1 … Week N (controls all below)
+  ├── Summary cards        Games, playtime, top 4 rate (tab-scoped)
+  ├── Player table         Per-player stats (tab-scoped columns)
+  └── Rank chart           Line chart (tab-driven mode)
 
 /players                   Manage Players
   ├── Add summoner form    Riot ID + Tagline input
   ├── Capacity indicator   X/10 progress bar
   ├── Seed squad button    (conditional, only when empty)
   └── Tracked player list  Cards with rank, W/L, delete
+
+/player/[puuid]            Player Drilldown
+  ├── Tab bar (sticky)     "This Set" | Week 1 … Week N
+  ├── Header               Profile icon, name, rank badge with emblem
+  ├── Stat cards (2×2)     Total games, Top 4%, 1st%, Time Played
+  ├── Placement chart      Per-game placement line chart (tab-scoped)
+  └── Match history        Scrollable list, newest first
 ```
 
 ## Data Hierarchy
@@ -63,7 +71,7 @@ Weeks are calculated from the TFT set start date (April 15, 2026) in 7-day incre
 
 Simple flat structure — no nesting, no breadcrumbs needed.
 
-- **Sidebar** (desktop >=768px): fixed left, 224px wide, two nav items
+- **Sidebar** (desktop >=768px): fixed left, collapses between 224px (expanded) and 56px (icon-only). Hovering on a collapsed sidebar expands it as an overlay without reflowing content. Double-clicking locks it open. A collapse button at the bottom toggles the permanent state.
 - **Bottom nav** (mobile <768px): fixed bottom, 64px tall, two icons
 
 Active state indicated by:
@@ -76,8 +84,9 @@ Active state indicated by:
 |-----|------|-------------|
 | `/` | Weekly Stats | `GET /api/players` (all player data) |
 | `/players` | Manage Players | `GET /api/players` (player list only) |
+| `/player/[puuid]` | Player Drilldown | `GET /api/players` (filtered client-side by puuid) |
 
-Both pages fetch the same endpoint. The Weekly Stats page uses the full response (current, matches, history). The Manage Players page only uses identity + current stats.
+The Weekly Stats and Manage Players pages fetch the same endpoint. The Player Drilldown page also fetches all players and filters to the one matching the URL `puuid` parameter — there is no per-player endpoint.
 
 ## Empty States
 

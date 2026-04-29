@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import styled from "styled-components";
 import Link from "next/link";
@@ -182,14 +182,34 @@ const RankBadge = styled.div<{ $color: string }>`
 
 // ── Tab navigation styled components ─────────────────────────────
 
+const StickyTabWrap = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  box-shadow: 0 4px 16px rgba(229, 197, 135, 0.06);
+  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
+  margin-right: -${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.xl};
+    margin-right: -${({ theme }) => theme.primitive.spacing.xl};
+    padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.xl};
+  }
+`;
+
 const TabBar = styled.div`
   display: none;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     display: flex;
+    align-items: stretch;
     gap: ${({ theme }) => theme.primitive.spacing.xs};
     overflow-x: auto;
-    padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+    mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
 
     &::-webkit-scrollbar { height: 3px; }
     &::-webkit-scrollbar-thumb {
@@ -215,6 +235,10 @@ const Tab = styled.button<{ $active: boolean }>`
   transition: all 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.textPrimary};
@@ -404,7 +428,7 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}.png`}
+      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
       alt=""
       width={size}
       height={size}
@@ -461,6 +485,15 @@ export default function PlayerDrilldownPage() {
     }
     return idx;
   });
+
+  const tabBarRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const bar = tabBarRef.current;
+    if (!bar) return;
+    const active = bar.querySelector("[data-active='true']") as HTMLElement | null;
+    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selectedTab]);
 
   useEffect(() => {
     fetch(`/api/players/${puuid}`)
@@ -580,36 +613,47 @@ export default function PlayerDrilldownPage() {
         </PlayerInfo>
       </PlayerHeader>
 
-      {/* Mobile: dropdown */}
-      <TabSelect
-        value={isSet ? "set" : String(selectedTab)}
-        onChange={(e) => {
-          const v = e.target.value;
-          setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
-        }}
-      >
-        <option value="set">This Set</option>
-        {weeks.map((w, i) => (
-          <option key={i} value={String(i)}>
-            {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
-          </option>
-        ))}
-      </TabSelect>
+      <StickyTabWrap>
+        {/* Mobile: dropdown */}
+        <TabSelect
+          value={isSet ? "set" : String(selectedTab)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
+          }}
+        >
+          <option value="set">This Set</option>
+          {weeks.map((w, i) => (
+            <option key={i} value={String(i)}>
+              {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
+            </option>
+          ))}
+        </TabSelect>
 
-      {/* Desktop: tab bar */}
-      <TabBar>
-        <Tab $active={isSet} onClick={() => setSelectedTab("set")}>
-          This Set
-        </Tab>
-        {weeks.map((w, i) => (
-          <Tab key={i} $active={selectedTab === i} onClick={() => setSelectedTab(i)}>
-            {w.label}
-            <TabWeekDate>
-              {formatShortDate(w.start)}–{formatShortDate(w.end)}
-            </TabWeekDate>
+        {/* Desktop: tab bar */}
+        <TabBar ref={tabBarRef}>
+          <Tab
+            $active={isSet}
+            data-active={isSet ? "true" : undefined}
+            onClick={() => setSelectedTab("set")}
+          >
+            This Set
           </Tab>
-        ))}
-      </TabBar>
+          {weeks.map((w, i) => (
+            <Tab
+              key={i}
+              $active={selectedTab === i}
+              data-active={selectedTab === i ? "true" : undefined}
+              onClick={() => setSelectedTab(i)}
+            >
+              {w.label}
+              <TabWeekDate>
+                {formatShortDate(w.start)}–{formatShortDate(w.end)}
+              </TabWeekDate>
+            </Tab>
+          ))}
+        </TabBar>
+      </StickyTabWrap>
 
       <StatsGrid>
         <GlassCard>

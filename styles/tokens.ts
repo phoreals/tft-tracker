@@ -169,7 +169,8 @@ export const semantic = {
 
 export const component = {
   sidebar: {
-    width: "224px", // 14rem
+    width: "224px",
+    collapsedWidth: "56px",
     bg: "rgba(7, 15, 25, 0.95)",
     borderColor: semantic.color.borderSubtle,
   },

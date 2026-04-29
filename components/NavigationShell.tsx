@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { Sidebar } from "./Sidebar";
 import { BottomNav } from "./BottomNav";
@@ -9,18 +9,19 @@ const Shell = styled.div`
   display: flex;
   min-height: 100vh;
   position: relative;
-  overflow-x: hidden;
 `;
 
-const Main = styled.main`
+const Main = styled.main<{ $sidebarOpen: boolean }>`
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    margin-left: ${({ theme }) => theme.component.sidebar.width};
+    margin-left: ${({ $sidebarOpen, theme }) =>
+      $sidebarOpen ? theme.component.sidebar.width : theme.component.sidebar.collapsedWidth};
   }
 `;
 
@@ -39,10 +40,16 @@ const Content = styled.div`
 `;
 
 export function NavigationShell({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
   return (
     <Shell>
-      <Sidebar />
-      <Main>
+      <Sidebar
+        open={sidebarOpen}
+        onToggle={() => setSidebarOpen((o) => !o)}
+        onOpen={() => setSidebarOpen(true)}
+      />
+      <Main $sidebarOpen={sidebarOpen}>
         <Content>{children}</Content>
       </Main>
       <BottomNav />

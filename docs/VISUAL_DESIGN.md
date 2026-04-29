@@ -60,7 +60,7 @@ Maps primitives to UI roles. This is what components reference.
 ### Component Layer
 Pre-composed values for specific UI patterns:
 - `glassCard`: bg, border, shadow, radius, padding (24px desktop), backdrop blur. Cards use 12px padding on mobile (`spacing.sm`), switching to the token value at the `md` breakpoint.
-- `sidebar`: width (224px), bg, border color
+- `sidebar`: width (224px), collapsedWidth (56px), bg, border color
 - `bottomNav`: height (64px), bg
 - `table`: header bg, row hover bg, border color
 - `input`: bg, border color, focus border color
@@ -76,6 +76,8 @@ backdrop-filter: blur(24px);              /* blur content behind */
 border: 1px solid rgba(229, 197, 135, 0.2); /* subtle gold border */
 box-shadow: inset 0 0 20px rgba(229, 197, 135, 0.05); /* warm inner glow */
 ```
+
+The sticky tab bar uses a lighter variant — no background color, `backdrop-filter: blur(16px)`, a gold `border-bottom`, and a `box-shadow: 0 4px 16px rgba(229, 197, 135, 0.06)` glow. This lets page content show through while remaining visually distinct.
 
 ## Color Usage Rules
 
@@ -125,6 +127,16 @@ This creates a faint warm-cool diagonal that adds depth without distraction.
 ## Custom Scrollbar
 
 Styled to match the theme: gold thumb (20% opacity, 40% on hover) on a dark track. Width: 6px.
+
+## Sidebar Brand
+
+The sidebar header displays an inline SVG of the TFT favicon (the 8-point star path defined in `app/icon.tsx`) followed by a brand text block. The SVG path is duplicated in `components/Sidebar.tsx` as `TFT_ICON_PATH`. Brand title is "THE ASYLUM" (uppercase, not italic) in the display font at 14px; subtitle is "TFT Tracker" in 9px muted text.
+
+When the sidebar is expanded (224px wide): icon is 20px, brand text fades in. When collapsed (56px): icon grows to 24px to fill the strip, brand text hides. Navigation icons follow the same pattern — 20px when expanded, 24px when collapsed.
+
+## Scroll Affordance on Tab Bars
+
+Tab bars that overflow horizontally use `mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%)` to fade out the last 48px, signaling that more tabs exist. This does not affect scrollability. The horizontal scrollbar sits flush at the bottom of the container (no `padding-bottom` gap).
 
 ## Animation
 

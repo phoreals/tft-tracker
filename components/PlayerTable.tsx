@@ -152,34 +152,6 @@ const CenterCell = styled.td`
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
 
-const WeeklyCell = styled.td`
-  text-align: center;
-  color: ${({ theme }) => theme.semantic.color.info};
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-`;
-
-const Top4Wrap = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-`;
-
-const ProgressTrack = styled.div`
-  width: 64px;
-  height: ${({ theme }) => theme.component.progressBar.height};
-  background: ${({ theme }) => theme.component.progressBar.trackBg};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-  overflow: hidden;
-  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
-`;
-
-const ProgressFill = styled.div<{ $width: number }>`
-  height: 100%;
-  width: ${({ $width }) => $width}%;
-  background: ${({ theme }) => theme.semantic.color.accent};
-  box-shadow: ${({ theme }) => theme.semantic.shadow.glowGold};
-`;
-
 const FirstCell = styled.td`
   text-align: center;
   color: ${({ theme }) => theme.semantic.color.info};
@@ -189,12 +161,7 @@ const TimeCell = styled.td`
   text-align: right;
   font-size: 12px;
   color: ${({ theme }) => theme.semantic.color.textSecondary};
-`;
-
-const TimeSub = styled.span`
-  display: block;
-  font-size: 9px;
-  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  white-space: nowrap;
 `;
 
 const EmptyRow = styled.td`
@@ -270,7 +237,7 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}.png`}
+      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
       alt=""
       width={size}
       height={size}
@@ -322,8 +289,6 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [players, selectedTab, weeks]);
 
-  const colSpan = isSet ? 6 : 7;
-
   return (
     <GlassCard title="Player Performance">
       <TableWrap>
@@ -332,12 +297,10 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
             <tr>
               <th>Summoner</th>
               <th>Rank</th>
-              <th style={{ textAlign: "center" }}>Total Games</th>
-              {!isSet && (
-                <th style={{ textAlign: "center" }}>
-                  {week ? `${week.label} (${formatShortDate(week.start)}–${formatShortDate(week.end)})` : ""}
-                </th>
-              )}
+              {isSet
+                ? <th style={{ textAlign: "center" }}>Total Games</th>
+                : <th style={{ textAlign: "center" }}>Games This Week</th>
+              }
               <th style={{ textAlign: "center" }}>Top 4%</th>
               <th style={{ textAlign: "center" }}>1st%</th>
               <th style={{ textAlign: "right" }}>Time Played</th>
@@ -346,7 +309,7 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
           <Tbody>
             {rows.length === 0 ? (
               <tr>
-                <EmptyRow colSpan={colSpan}>
+                <EmptyRow colSpan={6}>
                   No players tracked yet. Add players to get started.
                 </EmptyRow>
               </tr>
@@ -397,21 +360,10 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
                       )}
                     </RankCell>
                   </td>
-                  <CenterCell>{row.totalGames}</CenterCell>
-                  {!isSet && <WeeklyCell>{row.scopedGames}</WeeklyCell>}
-                  <CenterCell>
-                    <Top4Wrap>
-                      <span>{row.top4Rate}%</span>
-                      <ProgressTrack>
-                        <ProgressFill $width={parseFloat(row.top4Rate)} />
-                      </ProgressTrack>
-                    </Top4Wrap>
-                  </CenterCell>
+                  <CenterCell>{isSet ? row.totalGames : row.scopedGames}</CenterCell>
+                  <CenterCell>{row.top4Rate}%</CenterCell>
                   <FirstCell>{row.firstRate}%</FirstCell>
-                  <TimeCell>
-                    {isSet ? row.totalTime : row.scopedTime}
-                    {!isSet && <TimeSub>{row.totalTime} total</TimeSub>}
-                  </TimeCell>
+                  <TimeCell>{isSet ? row.totalTime : row.scopedTime}</TimeCell>
                 </tr>
               ))
             )}
