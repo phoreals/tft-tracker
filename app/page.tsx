@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import styled from "styled-components";
 import { RefreshCw, Clock, Trophy, Gamepad2 } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
-import { formatPlaytime, getCurrentSetWeek, percentOf } from "@/lib/utils";
+import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END } from "@/lib/utils";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -92,6 +92,54 @@ const SpinningIcon = styled(RefreshCw)<{ $spinning: boolean }>`
   animation: ${({ $spinning }) => ($spinning ? "spin 1s linear infinite" : "none")};
 `;
 
+const PageTabBar = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  overflow-x: auto;
+  padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+
+  &::-webkit-scrollbar {
+    height: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(229, 197, 135, 0.2);
+    border-radius: 9999px;
+  }
+`;
+
+const PageTab = styled.button<{ $active: boolean }>`
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: 11px;
+  padding: 10px 14px;
+  min-height: 44px;
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border: 1px solid ${({ $active, theme }) =>
+    $active ? theme.semantic.color.borderHover : "transparent"};
+  background: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accentHover : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary};
+    background: ${({ $active, theme }) =>
+      $active ? theme.semantic.color.accentHover : "rgba(255,255,255,0.05)"};
+  }
+`;
+
+const WeekDate = styled.span`
+  display: block;
+  font-size: 8px;
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+  opacity: 0.6;
+`;
+
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
@@ -128,6 +176,7 @@ interface PlayerData {
   puuid: string;
   gameName: string;
   tagLine: string;
+  profileIconId?: number;
   current: {
     tier: string;
     rank: string;
@@ -152,12 +201,31 @@ interface PlayerData {
   }[];
 }
 
+// ── Helpers ──────────────────────────────────────────────────────
+
+function formatShortDate(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 // ── Component ────────────────────────────────────────────────────
 
 export default function WeeklyStatsPage() {
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+
+  const weeks = useMemo(() => getSetWeeks(), []);
+
+  const [selectedTab, setSelectedTab] = useState<"set" | number>(() => {
+    const now = Date.now();
+    const ws = getSetWeeks();
+    let idx = 0;
+    for (let i = 0; i < ws.length; i++) {
+      if (ws[i].start <= now) idx = i;
+    }
+    return idx;
+  });
 
   const fetchPlayers = useCallback(async () => {
     try {
@@ -187,21 +255,39 @@ export default function WeeklyStatsPage() {
     }
   };
 
-  const currentWeek = getCurrentSetWeek();
-  const allMatches = players.flatMap((p) => p.matches);
-  const weeklyMatches = allMatches.filter(
-    (m) => m.timestamp >= currentWeek.start && m.timestamp < currentWeek.end
-  );
-  const weeklyGames = weeklyMatches.length;
-  const weeklyPlaytime = weeklyMatches.reduce((s, m) => s + m.duration, 0);
-  const weeklyTop4 = weeklyMatches.filter((m) => m.placement <= 4).length;
+  const summaryStats = useMemo(() => {
+    const all = players.flatMap((p) => p.matches);
+    let start: number, end: number, label: string;
+    if (selectedTab === "set") {
+      start = SET_START;
+      end = SET_END;
+      label = "THIS SET";
+    } else {
+      const w = weeks[selectedTab] ?? weeks[weeks.length - 1];
+      start = w.start;
+      end = w.end;
+      label = w.label.toUpperCase();
+    }
+    const ms = all.filter((m) => m.timestamp >= start && m.timestamp < end);
+    return {
+      label,
+      games: ms.length,
+      playtime: ms.reduce((s, m) => s + m.duration, 0),
+      top4: ms.filter((m) => m.placement <= 4).length,
+      total: ms.length,
+    };
+  }, [players, selectedTab, weeks]);
+
+  const isSet = selectedTab === "set";
 
   return (
     <Page>
       <PageHeader>
         <div>
           <PageTitle>The Asylum Weekly Stats</PageTitle>
-          <PageSubtitle>Squad performance this week</PageSubtitle>
+          <PageSubtitle>
+            {isSet ? "Squad performance this set" : "Squad performance this week"}
+          </PageSubtitle>
         </div>
         <SyncButton onClick={handleSync} disabled={syncing}>
           <SpinningIcon size={16} $spinning={syncing} />
@@ -209,13 +295,27 @@ export default function WeeklyStatsPage() {
         </SyncButton>
       </PageHeader>
 
+      <PageTabBar>
+        <PageTab $active={selectedTab === "set"} onClick={() => setSelectedTab("set")}>
+          This Set
+        </PageTab>
+        {weeks.map((w, i) => (
+          <PageTab key={i} $active={selectedTab === i} onClick={() => setSelectedTab(i)}>
+            {w.label}
+            <WeekDate>
+              {formatShortDate(w.start)}–{formatShortDate(w.end)}
+            </WeekDate>
+          </PageTab>
+        ))}
+      </PageTabBar>
+
       <StatsGrid>
         <GlassCard>
           <StatRow>
-            <StatLabel>GAMES THIS WEEK</StatLabel>
+            <StatLabel>GAMES {summaryStats.label}</StatLabel>
             <Gamepad2 size={16} color="#e5c587" />
           </StatRow>
-          <StatValue>{loading ? "..." : weeklyGames}</StatValue>
+          <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
         </GlassCard>
 
         <GlassCard>
@@ -223,7 +323,7 @@ export default function WeeklyStatsPage() {
             <StatLabel>SQUAD PLAYTIME</StatLabel>
             <Clock size={16} color="#00fbfb" />
           </StatRow>
-          <StatValue>{loading ? "..." : formatPlaytime(weeklyPlaytime)}</StatValue>
+          <StatValue>{loading ? "..." : formatPlaytime(summaryStats.playtime)}</StatValue>
         </GlassCard>
 
         <GlassCard>
@@ -232,7 +332,7 @@ export default function WeeklyStatsPage() {
             <Trophy size={16} color="#e5c587" />
           </StatRow>
           <StatValue>
-            {loading ? "..." : `${percentOf(weeklyTop4, weeklyGames)}%`}
+            {loading ? "..." : `${percentOf(summaryStats.top4, summaryStats.total)}%`}
           </StatValue>
         </GlassCard>
       </StatsGrid>
@@ -242,10 +342,13 @@ export default function WeeklyStatsPage() {
           puuid: p.puuid,
           gameName: p.gameName,
           tagLine: p.tagLine,
-          profileIconId: (p as { profileIconId?: number }).profileIconId,
+          profileIconId: p.profileIconId,
           current: p.current,
           matches: p.matches,
+          history: p.history,
         }))}
+        selectedTab={selectedTab}
+        weeks={weeks}
       />
 
       <RankChart
@@ -254,6 +357,8 @@ export default function WeeklyStatsPage() {
           matches: p.matches,
           history: p.history,
         }))}
+        selectedTab={selectedTab}
+        weeks={weeks}
       />
     </Page>
   );

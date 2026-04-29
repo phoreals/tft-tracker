@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import styled from "styled-components";
 import {
   LineChart,
   Line,
@@ -13,65 +12,12 @@ import {
   ReferenceLine,
   Legend,
 } from "recharts";
+import styled from "styled-components";
 import { GlassCard } from "./GlassCard";
 import { TrendingUp } from "lucide-react";
-import { SET_START, SET_END } from "@/lib/utils";
 import type { MatchRecord, HistorySnapshot } from "@/lib/kv";
 
 // ── Styled ───────────────────────────────────────────────────────
-
-const TabBar = styled.div`
-  display: flex;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
-  overflow-x: auto;
-  padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
-  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
-
-  /* bleed to card edges — same technique as PlayerTable TabBar and TableWrap */
-  margin-left: -${({ theme }) => theme.primitive.spacing.md};
-  margin-right: -${({ theme }) => theme.primitive.spacing.md};
-  padding-left: ${({ theme }) => theme.primitive.spacing.md};
-  padding-right: ${({ theme }) => theme.primitive.spacing.md};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    margin-left: -${({ theme }) => theme.primitive.spacing.lg};
-    margin-right: -${({ theme }) => theme.primitive.spacing.lg};
-    padding-left: ${({ theme }) => theme.primitive.spacing.lg};
-    padding-right: ${({ theme }) => theme.primitive.spacing.lg};
-  }
-
-  &::-webkit-scrollbar {
-    height: 3px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(229, 197, 135, 0.2);
-    border-radius: 9999px;
-  }
-`;
-
-const Tab = styled.button<{ $active: boolean }>`
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: 11px;
-  padding: 10px 14px;
-  min-height: 44px;
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  border: 1px solid ${({ $active, theme }) =>
-    $active ? theme.semantic.color.borderHover : "transparent"};
-  background: ${({ $active, theme }) =>
-    $active ? theme.semantic.color.accentHover : "transparent"};
-  color: ${({ $active, theme }) =>
-    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &:hover {
-    color: ${({ theme }) => theme.semantic.color.textPrimary};
-    background: ${({ $active, theme }) =>
-      $active ? theme.semantic.color.accentHover : "rgba(255,255,255,0.05)"};
-  }
-`;
 
 const ChartContainer = styled.div`
   height: 220px;
@@ -94,26 +40,10 @@ const EmptyState = styled.div`
 
 // ── Helpers ──────────────────────────────────────────────────────
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-
 const LINE_COLORS = [
   "#e5c587", "#00fbfb", "#e4b9ff", "#f87171", "#34d399",
   "#60a5fa", "#fbbf24", "#a78bfa", "#fb923c", "#2dd4bf",
 ];
-
-function getSetWeeks(): { label: string; start: number; end: number }[] {
-  const weeks: { label: string; start: number; end: number }[] = [];
-  let start = SET_START;
-  let i = 1;
-  const now = Date.now();
-  while (start < SET_END && start <= now) {
-    const end = Math.min(start + WEEK_MS, SET_END);
-    weeks.push({ label: `Wk ${i}`, start, end });
-    start += WEEK_MS;
-    i++;
-  }
-  return weeks;
-}
 
 function formatMatchDate(ts: number): string {
   const d = new Date(ts);
@@ -121,8 +51,6 @@ function formatMatchDate(ts: number): string {
 }
 
 // ── Component ────────────────────────────────────────────────────
-
-type ChartMode = "week" | "set";
 
 interface PlayerData {
   gameName: string;
@@ -132,13 +60,12 @@ interface PlayerData {
 
 interface RankChartProps {
   players: PlayerData[];
+  selectedTab: "set" | number;
+  weeks: { label: string; start: number; end: number }[];
 }
 
-export function RankChart({ players }: RankChartProps) {
-  const [mode, setMode] = useState<ChartMode>("week");
+export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
   const [showLegend, setShowLegend] = useState(false);
-  const weeks = useMemo(() => getSetWeeks(), []);
-  const currentWeek = weeks[weeks.length - 1];
 
   useEffect(() => {
     const check = () => setShowLegend(window.innerWidth >= 768);
@@ -147,7 +74,10 @@ export function RankChart({ players }: RankChartProps) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // "This Week" — individual game placements for the current week,
+  const isSet = selectedTab === "set";
+  const currentWeek = isSet ? null : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+
+  // "This Week" — individual game placements for the selected week,
   // merged into a single chronological timeline across all players.
   const weekData = useMemo(() => {
     if (!currentWeek) return [];
@@ -160,7 +90,6 @@ export function RankChart({ players }: RankChartProps) {
     });
     entries.sort((a, b) => a.ts - b.ts);
 
-    // One chart point per unique timestamp; multiple players can share a slot
     const pointsMap = new Map<number, Record<string, string | number>>();
     for (const e of entries) {
       if (!pointsMap.has(e.ts)) {
@@ -188,26 +117,17 @@ export function RankChart({ players }: RankChartProps) {
     }).filter(Boolean) as Record<string, string | number>[];
   }, [weeks, players]);
 
-  const chartData = mode === "week" ? weekData : setData;
+  const chartData = isSet ? setData : weekData;
   const hasData = chartData.length > 0;
 
   return (
     <GlassCard title="PLACEMENT OVER TIME" icon={TrendingUp}>
-      <TabBar>
-        <Tab $active={mode === "week"} onClick={() => setMode("week")}>
-          This Week
-        </Tab>
-        <Tab $active={mode === "set"} onClick={() => setMode("set")}>
-          This Set
-        </Tab>
-      </TabBar>
-
       <ChartContainer>
         {!hasData ? (
           <EmptyState>
-            {mode === "week"
-              ? "No games played this week yet."
-              : "No match data yet. Sync to start tracking."}
+            {isSet
+              ? "No match data yet. Sync to start tracking."
+              : "No games played this week yet."}
           </EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

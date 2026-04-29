@@ -22,6 +22,49 @@ export function getCurrentSetWeek(): { label: string; start: number; end: number
   };
 }
 
+// Returns all past/current set-weeks (no future weeks).
+export function getSetWeeks(): { label: string; start: number; end: number; weekNumber: number }[] {
+  const weeks: { label: string; start: number; end: number; weekNumber: number }[] = [];
+  let start = SET_START;
+  let i = 1;
+  const now = Date.now();
+  while (start < SET_END && start <= now) {
+    const end = Math.min(start + WEEK_MS, SET_END);
+    weeks.push({ label: `Week ${i}`, start, end, weekNumber: i });
+    start += WEEK_MS;
+    i++;
+  }
+  return weeks;
+}
+
+// ── Rank Utilities ───────────────────────────────────────────────
+
+const RANK_TIER_BASE: Record<string, number> = {
+  IRON: 0, BRONZE: 400, SILVER: 800, GOLD: 1200,
+  PLATINUM: 1600, EMERALD: 2000, DIAMOND: 2400,
+  MASTER: 2800, GRANDMASTER: 3200, CHALLENGER: 3600,
+};
+
+const RANK_DIV_OFFSET: Record<string, number> = {
+  IV: 0, III: 100, II: 200, I: 300,
+};
+
+// Convert a tier+rank+LP combination into a single numeric value for comparisons.
+export function rankToLP(tier: string, rank: string, lp: number): number {
+  return (RANK_TIER_BASE[tier.toUpperCase()] ?? 0) + (RANK_DIV_OFFSET[rank.toUpperCase()] ?? 0) + lp;
+}
+
+const MASTER_PLUS = ["MASTER", "GRANDMASTER", "CHALLENGER"];
+
+// Short display string for rank sub-lines, e.g. "Diamond II 47 LP" or "Master 185 LP".
+export function formatRankShort(tier: string, rank: string, lp: number): string {
+  const t = tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
+  if (MASTER_PLUS.includes(tier.toUpperCase())) {
+    return `${t} ${lp} LP`;
+  }
+  return `${t} ${rank} ${lp} LP`;
+}
+
 // ── Formatters ───────────────────────────────────────────────────
 
 export function formatPlaytime(seconds: number): string {
