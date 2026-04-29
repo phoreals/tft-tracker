@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import styled from "styled-components";
+import Link from "next/link";
 import { Star } from "lucide-react";
 import { GlassCard } from "./GlassCard";
 import { formatPlaytime, formatRank, percentOf } from "@/lib/utils";
@@ -145,12 +146,18 @@ const SummonerIcon = styled.div`
   color: ${({ theme }) => theme.semantic.color.accent};
 `;
 
-const SummonerName = styled.span`
+const SummonerName = styled(Link)`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   letter-spacing: 0.05em;
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.accent};
+  }
 `;
 
 const RankCell = styled.div`
@@ -227,6 +234,7 @@ const EmptyRow = styled.td`
 // ── Component ────────────────────────────────────────────────────
 
 interface PlayerRow {
+  puuid: string;
   gameName: string;
   tagLine: string;
   current: PlayerCurrentStats | null;
@@ -260,6 +268,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
     const totalDuration = p.matches.reduce((s, m) => s + m.duration, 0);
 
     return {
+      puuid: p.puuid,
       name: `${p.gameName}#${p.tagLine}`,
       rank: formatRank(p.current?.tier, p.current?.rank, p.current?.lp),
       tier: p.current?.tier ?? "",
@@ -319,7 +328,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
                       <SummonerIcon>
                         <Star size={16} />
                       </SummonerIcon>
-                      <SummonerName>{row.name}</SummonerName>
+                      <SummonerName href={`/player/${row.puuid}`}>{row.name}</SummonerName>
                     </SummonerCell>
                   </td>
                   <td>

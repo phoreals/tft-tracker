@@ -223,6 +223,7 @@ export default function WeeklyStatsPage() {
 
       <PlayerTable
         players={players.map((p) => ({
+          puuid: p.puuid,
           gameName: p.gameName,
           tagLine: p.tagLine,
           current: p.current,

@@ -100,6 +100,31 @@ Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
 | Hover on player card | Card slides 4px right, delete button fades in, diamond border rotates |
 | Hover on table row | Row gets subtle gold background |
 
+## Player Drilldown (`/player/[puuid]`)
+
+Accessed by clicking a player name in the Weekly Stats performance table.
+
+### Header
+- Back link ("BACK TO WEEKLY STATS") with arrow icon
+- Player name + #tagline
+- Current rank badge with W/L record
+
+### Stat Cards (2x2 grid, 4 columns on desktop)
+- Total Games, Top 4 Rate %, 1st Place Rate %, Time Played
+
+### Placement Per Game Chart
+A LineChart plotting every match chronologically:
+- **Gold line**: actual placement per game (Y-axis reversed, 1st at top)
+- **Cyan dashed line**: running average placement
+- **Reference line** at 4.5 (top 4 boundary)
+- Tooltip shows game number + date
+
+### Match History List
+Scrollable list of all matches (newest first). Each row:
+- Placement number (gold=1st, cyan=top 4, muted=bottom 4)
+- Gold left border for top 4 finishes
+- Duration + date/time
+
 ## Data Refresh Flow
 
 1. **Automatic**: Vercel Cron hits `GET /api/cron` daily at midnight UTC
