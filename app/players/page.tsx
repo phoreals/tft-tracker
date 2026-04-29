@@ -2,12 +2,68 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { UserPlus, Users, Trash2, Zap, RefreshCw, DatabaseZap } from "lucide-react";
+import { UserPlus, Users, Trash2, Zap, RefreshCw, DatabaseZap, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { GlassCard } from "@/components/GlassCard";
 import { formatRank } from "@/lib/utils";
 
 // ── Styled ───────────────────────────────────────────────────────
+
+const LockScreen = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+`;
+
+const LockForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
+  width: 100%;
+  max-width: 320px;
+`;
+
+const LockTitle = styled.h2`
+  ${({ theme }) => theme.semantic.typography.heading};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xl};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.sm};
+`;
+
+const LockInput = styled.input`
+  width: 100%;
+  background: ${({ theme }) => theme.component.input.bg};
+  border: none;
+  border-bottom: 2px solid ${({ theme }) => theme.component.input.borderColor};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  padding: ${({ theme }) => theme.primitive.spacing.sm} 0;
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.lg};
+  text-align: center;
+  letter-spacing: 0.1em;
+  transition: border-color 0.2s;
+  outline: none;
+
+  &:focus {
+    border-bottom-color: ${({ theme }) => theme.component.input.focusBorderColor};
+  }
+
+  &::placeholder {
+    color: ${({ theme }) => theme.semantic.color.textDisabled};
+    font-size: ${({ theme }) => theme.primitive.fontSize.md};
+    letter-spacing: 0;
+  }
+`;
+
+const LockError = styled.p`
+  color: ${({ theme }) => theme.semantic.color.danger};
+  font-size: 12px;
+  font-family: ${({ theme }) => theme.semantic.font.display};
+`;
 
 const Page = styled.div`
   display: flex;
@@ -347,7 +403,12 @@ const HIGH_TIERS = new Set(["DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"]);
 
 // ── Component ────────────────────────────────────────────────────
 
+const ADMIN_PASSWORD = "asylum";
+
 export default function ManagePlayersPage() {
+  const [authed, setAuthed] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [gameName, setGameName] = useState("");
   const [tagLine, setTagLine] = useState("");
@@ -355,6 +416,21 @@ export default function ManagePlayersPage() {
   const [syncing, setSyncing] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (sessionStorage.getItem("tft-admin") === "1") setAuthed(true);
+  }, []);
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === ADMIN_PASSWORD) {
+      setAuthed(true);
+      sessionStorage.setItem("tft-admin", "1");
+      setPasswordError("");
+    } else {
+      setPasswordError("Wrong password.");
+    }
+  };
 
   const fetchPlayers = useCallback(async () => {
     try {
@@ -364,7 +440,7 @@ export default function ManagePlayersPage() {
     } catch { /* silent */ }
   }, []);
 
-  useEffect(() => { fetchPlayers(); }, [fetchPlayers]);
+  useEffect(() => { if (authed) fetchPlayers(); }, [authed, fetchPlayers]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -411,6 +487,30 @@ export default function ManagePlayersPage() {
     } catch (err) { setError(err instanceof Error ? err.message : "Seed failed. Network error."); }
     finally { setSeeding(false); }
   };
+
+  if (!authed) {
+    return (
+      <LockScreen>
+        <GlassCard>
+          <LockForm onSubmit={handlePasswordSubmit}>
+            <LockTitle>
+              <Lock size={24} color="#e5c587" />
+              ADMIN ACCESS
+            </LockTitle>
+            <LockInput
+              type="password"
+              placeholder="Enter password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              autoFocus
+            />
+            {passwordError && <LockError>{passwordError}</LockError>}
+            <PrimaryButton type="submit">UNLOCK</PrimaryButton>
+          </LockForm>
+        </GlassCard>
+      </LockScreen>
+    );
+  }
 
   return (
     <Page>

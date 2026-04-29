@@ -48,6 +48,10 @@ Top-right of the page header. Calls `POST /api/sync`, shows a spinning icon whil
 
 ## Manage Players (`/players`)
 
+### Password Gate
+The entire page is behind a password prompt. Visitors see a centered GlassCard with a password input and "UNLOCK" button. The password is checked client-side against a hardcoded value. On success, `sessionStorage` is set so the user doesn't need to re-enter it during the same browser session.
+
+
 ### Layout
 Two-column grid on desktop (4/8 split), stacked on mobile.
 
