@@ -68,15 +68,24 @@ const LockError = styled.p`
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.primitive.spacing.xl};
-  padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
+  padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    gap: ${({ theme }) => theme.primitive.spacing.xl};
+    padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+  }
 `;
 
 const PageTitle = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   margin-bottom: ${({ theme }) => theme.primitive.spacing.xs};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
@@ -366,6 +375,12 @@ const DeleteButton = styled.button`
 
   ${PlayerRow}:hover & {
     opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Always visible on touch devices */
+  @media (hover: none) {
+    opacity: 0.5;
     transform: scale(1);
   }
 

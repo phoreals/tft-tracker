@@ -44,9 +44,13 @@ const ToggleButton = styled.button<{ $active: boolean }>`
 `;
 
 const ChartContainer = styled.div`
-  height: 288px;
+  height: 220px;
   width: 100%;
   margin-top: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    height: 288px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -199,7 +203,7 @@ export function RankChart({ players }: RankChartProps) {
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }}
-                width={70}
+                width={50}
                 {...(mode === "placement"
                   ? { reversed: true, domain: [1, 8] }
                   : { tickFormatter: numericToLabel })}

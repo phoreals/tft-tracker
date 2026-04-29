@@ -13,8 +13,13 @@ import { formatPlaytime, getCurrentSetWeek, percentOf } from "@/lib/utils";
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.primitive.spacing.xl};
-  padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
+  padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    gap: ${({ theme }) => theme.primitive.spacing.xl};
+    padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -31,8 +36,12 @@ const PageHeader = styled.div`
 
 const PageTitle = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};

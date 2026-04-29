@@ -105,12 +105,16 @@ const Thead = styled.thead`
     background: ${({ theme }) => theme.component.table.headerBg};
   }
   th {
-    padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
+    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
     font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
     font-size: ${({ theme }) => theme.primitive.fontSize.xs};
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: ${({ theme }) => theme.semantic.color.textDisabled};
+
+    @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+      padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
+    }
   }
 `;
 
@@ -123,7 +127,11 @@ const Tbody = styled.tbody`
     }
   }
   td {
-    padding: 20px ${({ theme }) => theme.primitive.spacing.lg};
+    padding: 12px ${({ theme }) => theme.primitive.spacing.md};
+
+    @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+      padding: 20px ${({ theme }) => theme.primitive.spacing.lg};
+    }
   }
 `;
 

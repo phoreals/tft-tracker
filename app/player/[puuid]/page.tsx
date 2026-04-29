@@ -53,8 +53,13 @@ interface PlayerData {
 const Page = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.primitive.spacing.xl};
-  padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
+  padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    gap: ${({ theme }) => theme.primitive.spacing.xl};
+    padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+  }
 `;
 
 const BackLink = styled(Link)`
@@ -80,8 +85,12 @@ const PlayerHeader = styled.div`
 
 const PlayerName = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
@@ -149,9 +158,13 @@ const StatCount = styled.span`
 `;
 
 const ChartContainer = styled.div`
-  height: 320px;
+  height: 220px;
   width: 100%;
   margin-top: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    height: 320px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -176,6 +189,7 @@ const MatchRow = styled.div<{ $top4: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
   background: ${({ theme }) => theme.component.table.headerBg};
   border-left: 3px solid ${({ $top4, theme }) =>
@@ -398,7 +412,7 @@ export default function PlayerDrilldownPage() {
                   tickLine={false}
                   tick={{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }}
                   tickFormatter={numericToRankLabel}
-                  width={70}
+                  width={50}
                 />
                 <Tooltip
                   contentStyle={{
