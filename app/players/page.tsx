@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { UserPlus, Users, Trash2, Zap, RefreshCw, DatabaseZap, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { GlassCard } from "@/components/GlassCard";
-import { formatRank } from "@/lib/utils";
+import { formatRank, getRankColor } from "@/lib/utils";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -316,11 +316,10 @@ const DiamondIcon = styled.div<{ $elite: boolean }>`
   justify-content: center;
 `;
 
-const DiamondBorder = styled.div<{ $elite: boolean }>`
+const DiamondBorder = styled.div<{ $color: string }>`
   position: absolute;
   inset: 0;
-  border: 2px solid ${({ $elite, theme }) =>
-    $elite ? theme.semantic.color.accent : theme.primitive.color.neutral700};
+  border: 2px solid ${({ $color }) => $color};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   transform: rotate(45deg);
   transition: transform 0.5s;
@@ -349,11 +348,10 @@ const PlayerMeta = styled.div`
   margin-top: 4px;
 `;
 
-const TierLabel = styled.span<{ $elite: boolean }>`
+const TierLabel = styled.span<{ $color: string }>`
   ${({ theme }) => theme.semantic.typography.label};
   font-size: 9px;
-  color: ${({ $elite, theme }) =>
-    $elite ? theme.semantic.color.accent : theme.semantic.color.info};
+  color: ${({ $color }) => $color};
 `;
 
 const Dot = styled.span`
@@ -615,7 +613,7 @@ export default function ManagePlayersPage() {
               <SeedDescription>
                 Load the squad: Banh#boi, Richardpression#SAD, Lionnel#NA1,
                 FireLordAppa#1335, V for Taehyung#NA1, Caramel Papi#PAPI1,
-                Demure#GGEZ, Nisca#CREAM, Goldeen#NA1
+                Demure#GGEZ, Nisca#CREAM, Goldeen#NA1, MrBonChen#NA1
               </SeedDescription>
               <SeedButton onClick={handleSeed} disabled={seeding}>
                 <DatabaseZap size={16} style={seeding ? { animation: "pulse 2s infinite" } : undefined} />
@@ -641,12 +639,13 @@ export default function ManagePlayersPage() {
             ) : (
               players.map((player) => {
                 const isElite = HIGH_TIERS.has(player.current?.tier ?? "");
+                const rankColor = getRankColor(player.current?.tier);
                 return (
                   <PlayerRow key={player.puuid} $elite={isElite}>
                     <PlayerInfo>
                       <DiamondIcon $elite={isElite}>
-                        <DiamondBorder $elite={isElite} />
-                        <Zap size={20} color={isElite ? "#e5c587" : "rgba(208,197,181,0.4)"} />
+                        <DiamondBorder $color={rankColor} />
+                        <Zap size={20} color={rankColor} />
                       </DiamondIcon>
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -654,7 +653,7 @@ export default function ManagePlayersPage() {
                           <PlayerTag>#{player.tagLine}</PlayerTag>
                         </div>
                         <PlayerMeta>
-                          <TierLabel $elite={isElite}>
+                          <TierLabel $color={rankColor}>
                             {player.current
                               ? formatRank(player.current.tier, player.current.rank, player.current.lp)
                               : "UNRANKED"}

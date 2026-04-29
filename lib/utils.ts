@@ -43,3 +43,24 @@ export function percentOf(count: number, total: number): string {
   if (total === 0) return "0.0";
   return ((count / total) * 100).toFixed(1);
 }
+
+// ── Rank Colors ──────────────────────────────────────────────────
+// Inspired by Riot's official rank imagery, tuned for readability on #0c141e.
+
+export const RANK_COLORS: Record<string, string> = {
+  IRON: "#9badb8",
+  BRONZE: "#c8865a",
+  SILVER: "#aabacb",
+  GOLD: "#e5c587",
+  PLATINUM: "#38d5c5",
+  EMERALD: "#3dd490",
+  DIAMOND: "#7ab5f5",
+  MASTER: "#c084fc",
+  GRANDMASTER: "#f07878",
+  CHALLENGER: "#88e8f0",
+};
+
+export function getRankColor(tier?: string): string {
+  if (!tier) return "rgba(208, 197, 181, 0.4)";
+  return RANK_COLORS[tier.toUpperCase()] ?? "rgba(208, 197, 181, 0.4)";
+}

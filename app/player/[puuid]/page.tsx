@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { ArrowLeft, Trophy, Gamepad2, Clock, TrendingUp } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
-import { formatPlaytime, formatRank, percentOf, SET_START, SET_END } from "@/lib/utils";
+import { formatPlaytime, formatRank, percentOf, getRankColor } from "@/lib/utils";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -107,17 +107,17 @@ const PlayerTag = styled.span`
   letter-spacing: 0;
 `;
 
-const RankBadge = styled.div`
+const RankBadge = styled.div<{ $color: string }>`
   display: inline-flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   ${({ theme }) => theme.semantic.typography.label};
   font-size: 12px;
-  color: ${({ theme }) => theme.semantic.color.accent};
-  background: ${({ theme }) => theme.semantic.color.accentHover};
+  color: ${({ $color }) => $color};
+  background: ${({ $color }) => $color}1a;
   padding: 6px 14px;
   border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border: 1px solid ${({ $color }) => $color}4d;
   width: fit-content;
 `;
 
@@ -350,7 +350,7 @@ export default function PlayerDrilldownPage() {
           <PlayerTag> #{player.tagLine}</PlayerTag>
         </PlayerName>
         {player.current && (
-          <RankBadge>
+          <RankBadge $color={getRankColor(player.current.tier)}>
             {formatRank(player.current.tier, player.current.rank, player.current.lp)}
             &nbsp;&middot;&nbsp;{player.current.wins}W {player.current.losses}L
           </RankBadge>

@@ -21,6 +21,7 @@ const SEED_PLAYERS = [
   { gameName: "Demure", tagLine: "GGEZ" },
   { gameName: "Nisca", tagLine: "CREAM" },
   { gameName: "Goldeen", tagLine: "NA1" },
+  { gameName: "MrBonChen", tagLine: "NA1" },
 ];
 
 // GET returns the seed player list for the client to iterate

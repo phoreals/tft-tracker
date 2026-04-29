@@ -5,7 +5,7 @@ import styled from "styled-components";
 import Link from "next/link";
 import { Star } from "lucide-react";
 import { GlassCard } from "./GlassCard";
-import { formatPlaytime, formatRank, percentOf } from "@/lib/utils";
+import { formatPlaytime, formatRank, percentOf, getRankColor } from "@/lib/utils";
 import type { PlayerCurrentStats, MatchRecord } from "@/lib/kv";
 
 // ── Set Schedule ─────────────────────────────────────────────────
@@ -187,12 +187,12 @@ const RankCell = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.xs};
 `;
 
-const RankDot = styled.div<{ $ranked: boolean }>`
+const RankDot = styled.div<{ $color: string }>`
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: ${({ $ranked, theme }) =>
-    $ranked ? theme.semantic.color.accentDark : theme.semantic.color.textDisabled};
+  background: ${({ $color }) => $color};
+  flex-shrink: 0;
 `;
 
 const CenterCell = styled.td`
@@ -351,8 +351,8 @@ export function PlayerTable({ players }: PlayerTableProps) {
                   </td>
                   <td>
                     <RankCell>
-                      <RankDot $ranked={row.tier !== "" && row.tier !== "UNRANKED"} />
-                      <span style={{ fontSize: 12 }}>{row.rank}</span>
+                      <RankDot $color={getRankColor(row.tier)} />
+                      <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>{row.rank}</span>
                     </RankCell>
                   </td>
                   <CenterCell>{row.totalGames}</CenterCell>
