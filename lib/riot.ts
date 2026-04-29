@@ -37,27 +37,26 @@ export async function getAccountByRiotId(
 }
 
 // --- Summoner ---
+// The TFT summoner endpoint no longer returns the encrypted summoner ID.
+// We use the LoL summoner endpoint instead — the encrypted ID is shared
+// across games and works with the TFT league endpoint.
 
 interface SummonerResponse {
-  [key: string]: unknown;
-  id?: string;
-  summonerId?: string;
-  accountId?: string;
-  puuid?: string;
-  profileIconId?: number;
-  summonerLevel?: number;
+  id: string;
+  accountId: string;
+  puuid: string;
+  profileIconId: number;
+  summonerLevel: number;
 }
 
-export async function getSummonerByPuuid(puuid: string): Promise<{ summonerId: string; raw: SummonerResponse }> {
+export async function getSummonerByPuuid(puuid: string): Promise<{ summonerId: string }> {
   const data = await riotFetch<SummonerResponse>(
-    `${PLATFORM_HOST}/tft/summoner/v1/summoners/by-puuid/${puuid}`
+    `${PLATFORM_HOST}/lol/summoner/v1/summoners/by-puuid/${puuid}`
   );
-  // The summoner ID field may vary — try known field names
-  const summonerId = (data.id ?? data.summonerId ?? "") as string;
-  if (!summonerId) {
+  if (!data.id) {
     throw new Error(`Summoner endpoint returned no ID. Response keys: ${Object.keys(data).join(", ")}`);
   }
-  return { summonerId, raw: data };
+  return { summonerId: data.id };
 }
 
 // --- League ---
