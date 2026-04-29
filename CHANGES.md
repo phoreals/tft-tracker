@@ -84,12 +84,14 @@ Next.js 16 on Vercel
 | Endpoint | Routing | Returns |
 |----------|---------|---------|
 | `/riot/account/v1/accounts/by-riot-id/{name}/{tag}` | americas | puuid |
-| `/tft/summoner/v1/summoners/by-puuid/{puuid}` | na1 | summonerId |
-| `/tft/league/v1/entries/by-puuid/{puuid}` | na1 | tier, rank, LP, wins, losses |
+| `/lol/summoner/v1/summoners/by-puuid/{puuid}` | na1 | encrypted summoner ID |
+| `/tft/league/v1/entries/by-summoner/{summonerId}` | na1 | tier, rank, LP, wins, losses |
 | `/tft/match/v1/matches/by-puuid/{puuid}/ids` | americas | match ID list |
 | `/tft/match/v1/matches/{matchId}` | americas | placement, duration, timestamp |
 
 Personal API key rate limits: 20 req/s, 100 req/2min.
+
+**Note**: The TFT summoner endpoint (`/tft/summoner/v1/`) no longer returns the encrypted summoner ID. We use the LoL summoner endpoint instead — the ID is shared across games.
 
 ## Data Model (Redis)
 

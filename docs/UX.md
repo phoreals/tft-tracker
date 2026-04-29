@@ -85,7 +85,7 @@ Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
 | Syncing | RefreshCw icon spins, button disabled |
 | Adding player | Button shows "ADDING...", inputs disabled |
 | Seeding | Button shows "SEEDING...", pulsing icon |
-| Error | Red text appears below form inputs |
+| Error | Red text appears below form inputs showing the actual server error (e.g. "Riot API 403: ...", "Redis connection failed: ...") |
 | Empty list | Centered empty state message |
 | Hover on player card | Card slides 4px right, delete button fades in, diamond border rotates |
 | Hover on table row | Row gets subtle gold background |
