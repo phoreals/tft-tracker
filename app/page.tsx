@@ -182,7 +182,7 @@ export default function WeeklyStatsPage() {
     <Page>
       <PageHeader>
         <div>
-          <PageTitle>Weekly Stats</PageTitle>
+          <PageTitle>The Asylum Weekly Stats</PageTitle>
           <PageSubtitle>Squad performance this week</PageSubtitle>
         </div>
         <SyncButton onClick={handleSync} disabled={syncing}>

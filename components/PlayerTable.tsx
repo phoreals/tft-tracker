@@ -189,7 +189,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
   });
 
   return (
-    <GlassCard style={{ padding: 0 }} title="PLAYER PERFORMANCE">
+    <GlassCard style={{ padding: 0, paddingTop: 24, paddingLeft: 24, paddingRight: 24 }} title="PLAYER PERFORMANCE">
       <TableWrap>
         <Table>
           <Thead>
