@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { addPlayer, getTrackedPlayers, setPlayerCurrent, setPlayerMatches } from "@/lib/kv";
 import {
   getAccountByRiotId,
-  getSummonerByPuuid,
   getLeagueEntries,
   getMatchIds,
   getMatch,
@@ -46,21 +45,18 @@ export async function POST() {
         continue;
       }
 
-      // Get summoner ID
-      const summoner = await getSummonerByPuuid(account.puuid);
-      await delay(100);
-
       // Save player
       await addPlayer({
         puuid: account.puuid,
         gameName: account.gameName,
         tagLine: account.tagLine,
-        summonerId: summoner.summonerId,
+        summonerId: "",
         region: "na1",
       });
+      await delay(100);
 
       // Fetch rank
-      const entries = await getLeagueEntries(summoner.summonerId);
+      const entries = await getLeagueEntries(account.puuid);
       const tftEntry = entries.find((e) => e.queueType === "RANKED_TFT");
       if (tftEntry) {
         await setPlayerCurrent(account.puuid, {

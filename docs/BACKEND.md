@@ -106,14 +106,13 @@ All calls go through `riotFetch<T>(url)` which adds the `X-Riot-Token` header.
 | Function | Endpoint | Routing | Returns |
 |----------|----------|---------|---------|
 | `getAccountByRiotId(name, tag)` | `/riot/account/v1/accounts/by-riot-id/{name}/{tag}` | americas | `{ puuid, gameName, tagLine }` |
-| `getSummonerByPuuid(puuid)` | `/lol/summoner/v1/summoners/by-puuid/{puuid}` | na1 | `{ id (encrypted summoner ID), puuid, ... }` |
-| `getLeagueEntries(summonerId)` | `/tft/league/v1/entries/by-summoner/{summonerId}` | na1 | `LeagueEntry[]` |
+| `getLeagueEntries(puuid)` | `/tft/league/v1/by-puuid/{puuid}` | na1 | `LeagueEntry[]` |
 | `getMatchIds(puuid, count)` | `/tft/match/v1/matches/by-puuid/{puuid}/ids` | americas | `string[]` |
 | `getMatch(matchId)` | `/tft/match/v1/matches/{matchId}` | americas | `MatchDetail` |
 
 **Routing**: Account and Match endpoints use regional routing (`americas.api.riotgames.com`). Summoner and League use platform routing (`na1.api.riotgames.com`).
 
-**Note on summoner endpoint**: The TFT-specific summoner endpoint (`/tft/summoner/v1/`) no longer returns the encrypted summoner ID needed for league lookups. We use the LoL summoner endpoint (`/lol/summoner/v1/`) instead — the encrypted ID is shared across games and works with the TFT league endpoint.
+**Note**: The summoner endpoint is no longer needed. The TFT league endpoint now accepts PUUID directly via `/tft/league/v1/by-puuid/{puuid}`, eliminating the need for the encrypted summoner ID.
 
 **Rate limiting**: The `delay(ms)` helper is used between sequential calls. Current delays:
 - 100ms between API calls within a player

@@ -12,7 +12,6 @@ import {
 } from "@/lib/kv";
 import {
   getAccountByRiotId,
-  getSummonerByPuuid,
   getLeagueEntries,
   getMatchIds,
   getMatch,
@@ -53,20 +52,19 @@ export async function POST(req: NextRequest) {
   try {
     // Validate with Riot API
     const account = await getAccountByRiotId(gameName, tagLine);
-    const summoner = await getSummonerByPuuid(account.puuid);
 
     const player: TrackedPlayer = {
       puuid: account.puuid,
       gameName: account.gameName,
       tagLine: account.tagLine,
-      summonerId: summoner.summonerId,
+      summonerId: "",
       region: "na1",
     };
 
     await addPlayer(player);
 
     // Fetch initial data
-    const entries = await getLeagueEntries(summoner.summonerId);
+    const entries = await getLeagueEntries(account.puuid);
     const tftEntry = entries.find(
       (e) => e.queueType === "RANKED_TFT"
     );
