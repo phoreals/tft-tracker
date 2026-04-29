@@ -5,9 +5,10 @@
 ```
 /                          Weekly Stats (main view)
   ├── Tab bar (sticky)     "This Set" | Week 1 … Week N (controls all below)
-  ├── Summary cards        Games, playtime, top 4 rate (tab-scoped)
+  ├── Superlatives         6 cards: leader per stat category (tab-scoped)
   ├── Player table         Per-player stats (tab-scoped columns)
-  └── Rank chart           Line chart (tab-driven mode)
+  ├── Rank chart           Line chart (tab-driven mode)
+  └── Summary cards        Games, playtime, top 4 rate (tab-scoped)
 
 /players                   Manage Players
   ├── Add summoner form    Riot ID + Tagline input
@@ -18,7 +19,9 @@
 /player/[puuid]            Player Drilldown
   ├── Tab bar (sticky)     "This Set" | Week 1 … Week N
   ├── Header               Profile icon, name, rank badge with emblem
-  ├── Stat cards (2×2)     Total games, Top 4%, 1st%, Time Played
+  ├── Stat cards (5)       Games, Avg Placement, Top 4%, 1st%, Time Played
+  ├── Superlative badges   Pill badges for categories this player leads (links to /)
+  ├── Rank over time       Full history line chart, selected week highlighted
   ├── Placement chart      Per-game placement line chart (tab-scoped)
   └── Match history        Scrollable list, newest first
 ```

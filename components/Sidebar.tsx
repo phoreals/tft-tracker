@@ -11,15 +11,15 @@ import { ICON_SIZE } from "@/styles/theme";
 const TFT_ICON_PATH =
   "M63.4067 5.29259C63.6283 4.21052 65.1743 4.21064 65.396 5.29259L74.1997 48.3658L87.9458 39.2858C88.6373 38.8289 89.4573 39.6489 89.0005 40.3404L79.9194 54.0856L122.993 62.8893C124.075 63.1106 124.075 64.6582 122.993 64.8795L79.9194 73.6822L89.0005 87.4283C89.4573 88.1198 88.6373 88.9405 87.9458 88.484L74.1997 79.4029L65.396 122.475C65.1747 123.558 63.628 123.558 63.4067 122.475L54.603 79.4029L40.8579 88.484C40.1664 88.9406 39.3456 88.1198 39.8023 87.4283L48.8823 73.6822L5.81007 64.8795C4.72802 64.6579 4.72803 63.1109 5.81007 62.8893L48.8823 54.0856L39.8023 40.3404C39.3461 39.649 40.1666 38.8292 40.8579 39.2858L54.603 48.3649L60.7398 18.3404L63.3618 5.51231V5.51134L63.4067 5.29259ZM21.0523 78.3561C25.5877 91.9477 36.336 102.696 49.9273 107.232L52.7632 121.105C29.8568 116.471 11.8136 98.4277 7.18018 75.5211L21.0523 78.3561ZM121.623 75.5211C116.989 98.4281 98.9456 116.472 76.0386 121.105L78.8735 107.232C92.4657 102.696 103.214 91.9482 107.75 78.3561L121.623 75.5211ZM76.0386 6.6627C98.9452 11.2961 116.988 29.3393 121.622 52.2457L107.749 49.4098C103.212 35.8186 92.4652 25.0702 78.8735 20.5348L76.0386 6.6627ZM49.9273 20.5357C36.3367 25.0717 25.5891 35.8192 21.0532 49.4098L7.18116 52.2447C11.8153 29.3393 29.8576 11.2965 52.7632 6.6627L49.9273 20.5357Z";
 
-function TFTIcon({ size }: { size: number }) {
+function TFTIcon() {
   return (
     <svg
-      width={size}
-      height={size}
+      width="100%"
+      height="100%"
       viewBox="0 0 128 128"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      style={{ flexShrink: 0 }}
+      style={{ display: "block" }}
     >
       <path d={TFT_ICON_PATH} fill="#e5c587" />
     </svg>
@@ -52,19 +52,18 @@ const Aside = styled.aside<{ $expanded: boolean }>`
 const BrandRow = styled.div`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.primitive.spacing.sm};
+  gap: ${({ theme }) => theme.primitive.spacing.md};
   padding: ${({ theme }) => theme.primitive.spacing.xl} ${({ theme }) => theme.primitive.spacing.md};
   flex-shrink: 0;
 `;
 
-const BrandIcon = styled.div<{ $expanded: boolean }>`
+const BrandIcon = styled.div`
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: ${({ $expanded, theme }) =>
-    $expanded ? theme.primitive.spacing.sm : "0"};
-  transition: padding-left 0.2s ease;
+  width: 24px;
+  height: 24px;
 `;
 
 const BrandText = styled.div<{ $expanded: boolean }>`
@@ -102,17 +101,23 @@ const Nav = styled.nav`
   gap: 4px;
 `;
 
+const NavIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: ${ICON_SIZE.lg}px;
+  height: ${ICON_SIZE.lg}px;
+  flex-shrink: 0;
+`;
+
 const NavLink = styled(Link)<{ $active: boolean; $expanded: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.md};
   padding: ${({ theme }) => theme.primitive.spacing.md};
-  padding-left: ${({ $expanded, theme }) =>
-    $expanded ? theme.primitive.spacing.lg : theme.primitive.spacing.md};
-  justify-content: ${({ $expanded }) => ($expanded ? "flex-start" : "center")};
   width: 100%;
   text-decoration: none;
-  transition: all 0.2s;
+  transition: color 0.2s, background 0.2s;
   color: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accent : theme.semantic.color.textSecondary};
   background: ${({ $active }) => ($active ? "rgba(229, 197, 135, 0.1)" : "transparent")};
@@ -154,31 +159,23 @@ const FooterText = styled.p`
   white-space: nowrap;
 `;
 
-const CollapseRow = styled.div<{ $expanded: boolean }>`
-  display: flex;
-  justify-content: ${({ $expanded }) => ($expanded ? "flex-start" : "center")};
-  padding: ${({ theme }) => theme.primitive.spacing.md};
-  padding-left: ${({ $expanded, theme }) =>
-    $expanded ? theme.primitive.spacing.lg : theme.primitive.spacing.md};
-  border-top: 1px solid ${({ theme }) => theme.semantic.color.borderSubtle};
-  transition: padding-left 0.2s ease, justify-content 0.2s ease;
-`;
-
-const CollapseBtn = styled.button<{ $expanded: boolean }>`
+const CollapseBtn = styled.button`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.md};
+  width: 100%;
+  padding: ${({ theme }) => theme.primitive.spacing.md};
   background: transparent;
   border: none;
+  border-top: 1px solid ${({ theme }) => theme.semantic.color.borderSubtle};
   color: ${({ theme }) => theme.semantic.color.textMuted};
   cursor: pointer;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  transition: color 0.2s;
+  transition: color 0.2s, background 0.2s;
   white-space: nowrap;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.textPrimary};
+    background: rgba(255, 255, 255, 0.05);
   }
 `;
 
@@ -216,8 +213,8 @@ export function Sidebar({ open, onToggle, onOpen }: SidebarProps) {
       onDoubleClick={() => { if (!open) onOpen(); }}
     >
       <BrandRow>
-        <BrandIcon $expanded={isExpanded}>
-          <TFTIcon size={isExpanded ? 20 : 24} />
+        <BrandIcon>
+          <TFTIcon />
         </BrandIcon>
         <BrandText $expanded={isExpanded}>
           <BrandTitle>The Asylum</BrandTitle>
@@ -230,7 +227,7 @@ export function Sidebar({ open, onToggle, onOpen }: SidebarProps) {
           const active = pathname === href;
           return (
             <NavLink key={href} href={href} $active={active} $expanded={isExpanded}>
-              <Icon size={isExpanded ? ICON_SIZE.nav : ICON_SIZE.lg} />
+              <NavIcon><Icon size={ICON_SIZE.lg} /></NavIcon>
               <NavLabel $expanded={isExpanded}>{label}</NavLabel>
             </NavLink>
           );
@@ -241,21 +238,20 @@ export function Sidebar({ open, onToggle, onOpen }: SidebarProps) {
         <FooterText>Data provided by Riot Games.</FooterText>
       </Footer>
 
-      <CollapseRow $expanded={isExpanded}>
-        <CollapseBtn
-          $expanded={isExpanded}
-          onClick={onToggle}
-          aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-        >
+      <CollapseBtn
+        onClick={onToggle}
+        aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+      >
+        <NavIcon>
           {open
-            ? <PanelLeftClose size={isExpanded ? ICON_SIZE.md : ICON_SIZE.nav} />
-            : <PanelLeftOpen size={isExpanded ? ICON_SIZE.md : ICON_SIZE.nav} />
+            ? <PanelLeftClose size={ICON_SIZE.lg} />
+            : <PanelLeftOpen size={ICON_SIZE.lg} />
           }
-          <CollapseBtnLabel $expanded={isExpanded}>
-            {open ? "Collapse" : "Expand"}
-          </CollapseBtnLabel>
-        </CollapseBtn>
-      </CollapseRow>
+        </NavIcon>
+        <CollapseBtnLabel $expanded={isExpanded}>
+          {open ? "Collapse" : "Expand"}
+        </CollapseBtnLabel>
+      </CollapseBtn>
     </Aside>
   );
 }

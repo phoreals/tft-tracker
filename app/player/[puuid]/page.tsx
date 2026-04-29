@@ -200,7 +200,7 @@ const StickyTabWrap = styled.div`
   }
 `;
 
-const TabBar = styled.div`
+const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   display: none;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -208,13 +208,33 @@ const TabBar = styled.div`
     align-items: stretch;
     gap: ${({ theme }) => theme.primitive.spacing.xs};
     overflow-x: auto;
-    mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
+    mask-image: ${({ $fadeLeft, $fadeRight }) => {
+      if ($fadeLeft && $fadeRight)
+        return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+      if ($fadeLeft)
+        return "linear-gradient(to right, transparent, black 48px)";
+      if ($fadeRight)
+        return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+      return "none";
+    }};
+    -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
+      if ($fadeLeft && $fadeRight)
+        return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+      if ($fadeLeft)
+        return "linear-gradient(to right, transparent, black 48px)";
+      if ($fadeRight)
+        return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+      return "none";
+    }};
 
     &::-webkit-scrollbar { height: 3px; }
     &::-webkit-scrollbar-thumb {
-      background: ${({ theme }) => theme.semantic.color.borderDefault};
+      background: transparent;
       border-radius: ${({ theme }) => theme.primitive.radius.full};
+      transition: background 0.2s;
+    }
+    &:hover::-webkit-scrollbar-thumb {
+      background: ${({ theme }) => theme.semantic.color.borderDefault};
     }
   }
 `;
@@ -305,6 +325,42 @@ const StatsGrid = styled.div`
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     grid-template-columns: repeat(5, 1fr);
   }
+`;
+
+const BadgeRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const BadgeLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  background: rgba(229, 197, 135, 0.08);
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(229, 197, 135, 0.15);
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+`;
+
+const BadgeLabel = styled.span`
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.accent};
+`;
+
+const BadgeValue = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
 
 const StatRow = styled.div`
@@ -467,11 +523,33 @@ function formatDateTime(ts: number): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+function useScrollFade(ref: React.RefObject<HTMLDivElement | null>) {
+  const [fadeLeft, setFadeLeft] = useState(false);
+  const [fadeRight, setFadeRight] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      setFadeLeft(el.scrollLeft > 2);
+      setFadeRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, [ref]);
+
+  return { fadeLeft, fadeRight };
+}
+
 // ── Component ────────────────────────────────────────────────────
 
 export default function PlayerDrilldownPage() {
   const { puuid } = useParams<{ puuid: string }>();
   const [player, setPlayer] = useState<PlayerData | null>(null);
+  const [allPlayers, setAllPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
 
   const weeks = useMemo(() => getSetWeeks(), []);
@@ -487,6 +565,7 @@ export default function PlayerDrilldownPage() {
   });
 
   const tabBarRef = useRef<HTMLDivElement>(null);
+  const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
 
   useEffect(() => {
     const bar = tabBarRef.current;
@@ -496,10 +575,12 @@ export default function PlayerDrilldownPage() {
   }, [selectedTab]);
 
   useEffect(() => {
-    fetch(`/api/players/${puuid}`)
+    fetch("/api/players")
       .then((r) => r.json())
-      .then((data) => {
-        if (!data.error) setPlayer(data);
+      .then((data: PlayerData[]) => {
+        setAllPlayers(data);
+        const found = data.find((p) => p.puuid === puuid);
+        if (found) setPlayer(found);
       })
       .finally(() => setLoading(false));
   }, [puuid]);
@@ -568,6 +649,64 @@ export default function PlayerDrilldownPage() {
     ? (scopedMatches.reduce((s, m) => s + m.placement, 0) / totalGames).toFixed(2)
     : "—";
 
+  // Superlatives: which categories does this player lead?
+  const playerSuperlatives = useMemo(() => {
+    if (!player || allPlayers.length === 0) return [];
+
+    const win = isSet
+      ? { start: SET_START, end: SET_END }
+      : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+
+    type PS = { puuid: string; games: number; firsts: number; top4Rate: number; time: number; lpDiff: number | null; lpPerGame: number | null };
+    const stats: PS[] = allPlayers.map((p) => {
+      const scoped = p.matches.filter((m) => m.timestamp >= win.start && m.timestamp < win.end);
+      const g = scoped.length;
+      const f = scoped.filter((m) => m.placement === 1).length;
+      const t4 = scoped.filter((m) => m.placement <= 4).length;
+      const t = scoped.reduce((s, m) => s + m.duration, 0);
+      const rate = g > 0 ? (t4 / g) * 100 : 0;
+      const snaps = p.history
+        .filter((h) => { const ts = new Date(h.date).getTime(); return ts >= win.start && ts < win.end; })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const lpD = snaps.length >= 2
+        ? rankToLP(snaps[snaps.length - 1].tier, snaps[snaps.length - 1].rank, snaps[snaps.length - 1].lp) - rankToLP(snaps[0].tier, snaps[0].rank, snaps[0].lp)
+        : null;
+      const lpG = lpD !== null && g > 0 ? lpD / g : null;
+      return { puuid: p.puuid, games: g, firsts: f, top4Rate: rate, time: t, lpDiff: lpD, lpPerGame: lpG };
+    });
+
+    const isLeader = (val: (s: PS) => number | null, filter?: (s: PS) => boolean) => {
+      const eligible = filter ? stats.filter(filter) : stats;
+      if (eligible.length === 0) return false;
+      const best = eligible.reduce((b, c) => {
+        const bv = val(b), cv = val(c);
+        if (bv === null) return c;
+        if (cv === null) return b;
+        return cv > bv ? c : b;
+      });
+      return best.puuid === player.puuid;
+    };
+
+    const me = stats.find((s) => s.puuid === player.puuid);
+    if (!me) return [];
+
+    const results: { label: string; value: string; icon: React.ElementType; color: string }[] = [];
+    if (me.games > 0 && isLeader(s => s.games, s => s.games > 0))
+      results.push({ label: "Most Games", value: String(me.games), icon: Gamepad2, color: CHART.gold });
+    if (me.games > 0 && isLeader(s => s.top4Rate, s => s.games > 0))
+      results.push({ label: "Best Top 4%", value: `${me.top4Rate.toFixed(1)}%`, icon: Trophy, color: CHART.gold });
+    if (me.firsts > 0 && isLeader(s => s.firsts, s => s.firsts > 0))
+      results.push({ label: "Most Wins", value: String(me.firsts), icon: Trophy, color: CHART.cyan });
+    if (me.time > 0 && isLeader(s => s.time, s => s.time > 0))
+      results.push({ label: "Most Time Played", value: formatPlaytime(me.time), icon: Clock, color: CHART.cyan });
+    if (me.lpDiff !== null && isLeader(s => s.lpDiff, s => s.lpDiff !== null))
+      results.push({ label: "Highest LP Gain", value: `${me.lpDiff >= 0 ? "+" : ""}${me.lpDiff} LP`, icon: TrendingUp, color: theme.primitive.color.green400 });
+    if (me.lpPerGame !== null && isLeader(s => s.lpPerGame, s => s.lpPerGame !== null))
+      results.push({ label: "Best LP/Game", value: `${me.lpPerGame >= 0 ? "+" : ""}${me.lpPerGame.toFixed(1)}`, icon: TrendingUp, color: theme.primitive.color.green400 });
+
+    return results;
+  }, [player, allPlayers, selectedTab, weeks, isSet]);
+
   const tierTickFormatter = (value: number) => {
     const tier = TIER_BASES.find((t) => t.lp === value);
     return tier ? tier.short : "";
@@ -631,7 +770,7 @@ export default function PlayerDrilldownPage() {
         </TabSelect>
 
         {/* Desktop: tab bar */}
-        <TabBar ref={tabBarRef}>
+        <TabBar ref={tabBarRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
           <Tab
             $active={isSet}
             data-active={isSet ? "true" : undefined}
@@ -699,6 +838,18 @@ export default function PlayerDrilldownPage() {
           <StatValue>{totalDuration > 0 ? formatPlaytime(totalDuration) : "—"}</StatValue>
         </GlassCard>
       </StatsGrid>
+
+      {playerSuperlatives.length > 0 && (
+        <BadgeRow>
+          {playerSuperlatives.map((s) => (
+            <BadgeLink key={s.label} href="/">
+              <s.icon size={ICON_SIZE.xs} color={s.color} />
+              <BadgeLabel>{s.label}</BadgeLabel>
+              <BadgeValue>{s.value}</BadgeValue>
+            </BadgeLink>
+          ))}
+        </BadgeRow>
+      )}
 
       {/* Rank over time — always full history, selected week highlighted */}
       <GlassCard title="Rank Over Time" icon={TrendingUp}>

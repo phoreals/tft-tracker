@@ -22,17 +22,34 @@ A scrollable tab bar sits between the page header and the summary cards. It cont
 - Calculated from the TFT set start date in 7-day increments. Future weeks are hidden.
 - Default on load: the current week (not "This Set").
 - Each week tab shows "Week N" on the first line and the date range (e.g. "4/15–4/22") below.
-- The bar overflows horizontally; a right-edge `mask-image` gradient (last 48px fades to transparent) signals scrollability without a persistent scrollbar.
-- Horizontal scrollbar is flush against the bottom of the container — no padding gap.
+- The bar overflows horizontally; `mask-image` gradients fade the left and/or right edges (48px) to signal scrollability. Gradients are conditional on scroll position — no fade on the left when fully scrolled left, no fade on the right when fully scrolled right. Driven by a `useScrollFade` hook that listens to `scroll` events and `ResizeObserver`.
+- Horizontal scrollbar is flush against the bottom of the container — no padding gap. The scrollbar thumb is invisible by default and only appears on hover.
 - All tab buttons stretch to equal height via `align-items: stretch` + `display: flex; justify-content: center` on each button, so tabs with and without sub-dates are visually even.
 - On load and on tab change, the active tab scrolls into view via `data-active="true"` + `scrollIntoView({ block: 'nearest', inline: 'nearest' })`.
 - **Sticky**: the tab wrap sticks to `top: 0` as the user scrolls. It has no background color — uses `backdrop-filter: blur(16px)` and a gold `border-bottom` + subtle glow so content shows through.
 - A mobile dropdown (`<select>`) mirrors the same tab options; the desktop tab bar is hidden on small screens.
 - The same tab system and sticky behavior applies to the **Player Drilldown** page.
 
+### Superlatives
+
+Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting the player who leads each stat category for the selected tab's time window. Each card has the same layout as the summary cards (label + icon header, large stat value) plus a clickable player chip (24px profile icon + name) linking to the player's drilldown page. The chip has a hover affordance (gold tinted background).
+
+| Card | Metric |
+|------|--------|
+| **Most Games** | Highest scoped game count |
+| **Best Top 4%** | Highest top-4 rate (min 1 game) |
+| **Most Wins** | Most 1st-place finishes |
+| **Most Time Played** | Highest scoped playtime |
+| **Highest LP Gain** | Largest LP delta (last − first history snapshot in window) |
+| **Best LP/Game** | Highest LP gain per game played |
+
+If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
+
+On the **Player Drilldown** page, any superlatives the viewed player currently holds appear as pill badges below the stat cards, linking back to the main page.
+
 ### Summary Cards
 
-Three `GlassCard` components show aggregate metrics for the **currently selected tab**:
+Three `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart), not at the top.
 
 | Card | "This Set" | Week tab |
 |------|-----------|---------|

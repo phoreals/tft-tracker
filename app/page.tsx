@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import Link from "next/link";
 import styled from "styled-components";
-import { RefreshCw, Clock, Trophy, Gamepad2 } from "lucide-react";
+import { RefreshCw, Clock, Trophy, Gamepad2, User, TrendingUp } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
-import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END } from "@/lib/utils";
+import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END, rankToLP } from "@/lib/utils";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -110,7 +111,7 @@ const StickyTabWrap = styled.div`
   }
 `;
 
-const PageTabBar = styled.div`
+const PageTabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   display: none;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -118,15 +119,35 @@ const PageTabBar = styled.div`
     align-items: stretch;
     gap: ${({ theme }) => theme.primitive.spacing.xs};
     overflow-x: auto;
-    mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%);
+    mask-image: ${({ $fadeLeft, $fadeRight }) => {
+      if ($fadeLeft && $fadeRight)
+        return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+      if ($fadeLeft)
+        return "linear-gradient(to right, transparent, black 48px)";
+      if ($fadeRight)
+        return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+      return "none";
+    }};
+    -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
+      if ($fadeLeft && $fadeRight)
+        return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+      if ($fadeLeft)
+        return "linear-gradient(to right, transparent, black 48px)";
+      if ($fadeRight)
+        return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+      return "none";
+    }};
 
     &::-webkit-scrollbar {
       height: 3px;
     }
     &::-webkit-scrollbar-thumb {
-      background: ${({ theme }) => theme.semantic.color.borderDefault};
+      background: transparent;
       border-radius: ${({ theme }) => theme.primitive.radius.full};
+      transition: background 0.2s;
+    }
+    &:hover::-webkit-scrollbar-thumb {
+      background: ${({ theme }) => theme.semantic.color.borderDefault};
     }
   }
 `;
@@ -237,6 +258,66 @@ const StatValue = styled.span`
   }
 `;
 
+const SuperlativesGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: ${({ theme }) => theme.primitive.spacing.sm};
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+`;
+
+const PlayerChip = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  margin-top: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const ChipIcon = styled.div`
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  overflow: hidden;
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+`;
+
+const ChipName = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.textSecondary};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const ChipLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  margin-top: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
+  margin-left: -${({ theme }) => theme.primitive.spacing.xs};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(229, 197, 135, 0.08);
+  }
+
+  &:hover ${ChipName} {
+    color: ${({ theme }) => theme.semantic.color.accent};
+  }
+`;
+
 // ── Types ────────────────────────────────────────────────────────
 
 interface PlayerData {
@@ -275,6 +356,27 @@ function formatShortDate(ts: number): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+function useScrollFade(ref: React.RefObject<HTMLDivElement | null>) {
+  const [fadeLeft, setFadeLeft] = useState(false);
+  const [fadeRight, setFadeRight] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      setFadeLeft(el.scrollLeft > 2);
+      setFadeRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, [ref]);
+
+  return { fadeLeft, fadeRight };
+}
+
 // ── Component ────────────────────────────────────────────────────
 
 export default function WeeklyStatsPage() {
@@ -295,6 +397,7 @@ export default function WeeklyStatsPage() {
   });
 
   const tabBarRef = useRef<HTMLDivElement>(null);
+  const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
 
   useEffect(() => {
     const bar = tabBarRef.current;
@@ -354,6 +457,127 @@ export default function WeeklyStatsPage() {
     };
   }, [players, selectedTab, weeks]);
 
+  const superlatives = useMemo(() => {
+    if (players.length === 0) return [];
+
+    let start: number, end: number;
+    if (selectedTab === "set") {
+      start = SET_START;
+      end = SET_END;
+    } else {
+      const w = weeks[selectedTab] ?? weeks[weeks.length - 1];
+      start = w.start;
+      end = w.end;
+    }
+
+    const stats = players.map((p) => {
+      const scoped = p.matches.filter((m) => m.timestamp >= start && m.timestamp < end);
+      const games = scoped.length;
+      const firsts = scoped.filter((m) => m.placement === 1).length;
+      const top4 = scoped.filter((m) => m.placement <= 4).length;
+      const time = scoped.reduce((s, m) => s + m.duration, 0);
+      const top4Rate = games > 0 ? (top4 / games) * 100 : 0;
+
+      const snaps = p.history
+        .filter((h) => {
+          const t = new Date(h.date).getTime();
+          return t >= start && t < end;
+        })
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      const lpDiff =
+        snaps.length >= 2
+          ? rankToLP(snaps[snaps.length - 1].tier, snaps[snaps.length - 1].rank, snaps[snaps.length - 1].lp) -
+            rankToLP(snaps[0].tier, snaps[0].rank, snaps[0].lp)
+          : null;
+      const lpPerGame = lpDiff !== null && games > 0 ? lpDiff / games : null;
+
+      return { player: p, games, firsts, top4Rate, time, lpDiff, lpPerGame };
+    });
+
+    type S = (typeof stats)[0];
+    const leader = (val: (s: S) => number | null, filter?: (s: S) => boolean) => {
+      const eligible = filter ? stats.filter(filter) : stats;
+      if (eligible.length === 0) return null;
+      return eligible.reduce((best, cur) => {
+        const bv = val(best),
+          cv = val(cur);
+        if (bv === null) return cur;
+        if (cv === null) return best;
+        if (cv > bv) return cur;
+        if (cv === bv && cur.player.gameName < best.player.gameName) return cur;
+        return best;
+      });
+    };
+
+    const fmt = (l: S | null, v: string | null) =>
+      l && v ? { value: v, player: l.player } : { value: "—", player: null as PlayerData | null };
+
+    return [
+      {
+        label: "Most Games",
+        icon: Gamepad2,
+        color: theme.semantic.color.accent,
+        ...(() => {
+          const l = leader((s) => s.games, (s) => s.games > 0);
+          return fmt(l, l ? String(l.games) : null);
+        })(),
+      },
+      {
+        label: "Best Top 4%",
+        icon: Trophy,
+        color: theme.semantic.color.accent,
+        ...(() => {
+          const l = leader((s) => s.top4Rate, (s) => s.games > 0);
+          return fmt(l, l ? `${l.top4Rate.toFixed(1)}%` : null);
+        })(),
+      },
+      {
+        label: "Most Wins",
+        icon: Trophy,
+        color: theme.primitive.color.cyan500,
+        ...(() => {
+          const l = leader((s) => s.firsts, (s) => s.firsts > 0);
+          return fmt(l, l ? String(l.firsts) : null);
+        })(),
+      },
+      {
+        label: "Most Time Played",
+        icon: Clock,
+        color: theme.semantic.color.info,
+        ...(() => {
+          const l = leader((s) => s.time, (s) => s.time > 0);
+          return fmt(l, l ? formatPlaytime(l.time) : null);
+        })(),
+      },
+      {
+        label: "Highest LP Gain",
+        icon: TrendingUp,
+        color: theme.primitive.color.green400,
+        ...(() => {
+          const l = leader((s) => s.lpDiff, (s) => s.lpDiff !== null);
+          return fmt(
+            l,
+            l && l.lpDiff !== null ? `${l.lpDiff >= 0 ? "+" : ""}${l.lpDiff} LP` : null,
+          );
+        })(),
+      },
+      {
+        label: "Best LP/Game",
+        icon: TrendingUp,
+        color: theme.primitive.color.green400,
+        ...(() => {
+          const l = leader((s) => s.lpPerGame, (s) => s.lpPerGame !== null);
+          return fmt(
+            l,
+            l && l.lpPerGame !== null
+              ? `${l.lpPerGame >= 0 ? "+" : ""}${l.lpPerGame.toFixed(1)} LP/game`
+              : null,
+          );
+        })(),
+      },
+    ];
+  }, [players, selectedTab, weeks]);
+
   const isSet = selectedTab === "set";
 
   return (
@@ -396,7 +620,7 @@ export default function WeeklyStatsPage() {
         </PageTabSelect>
 
         {/* Desktop: tab bar */}
-        <PageTabBar ref={tabBarRef}>
+        <PageTabBar ref={tabBarRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
           <PageTab
             $active={selectedTab === "set"}
             data-active={selectedTab === "set" ? "true" : undefined}
@@ -419,6 +643,59 @@ export default function WeeklyStatsPage() {
           ))}
         </PageTabBar>
       </StickyTabWrap>
+
+      <SuperlativesGrid>
+        {superlatives.map((s) => (
+          <GlassCard key={s.label}>
+            <StatRow>
+              <StatLabel>{s.label}</StatLabel>
+              <s.icon size={ICON_SIZE.md} color={s.color} />
+            </StatRow>
+            <StatValue>{loading ? "..." : s.value}</StatValue>
+            {s.player && (
+              <ChipLink href={`/player/${s.player.puuid}`}>
+                <ChipIcon>
+                  {s.player.profileIconId ? (
+                    <img
+                      src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${s.player.profileIconId}.jpg`}
+                      alt=""
+                      width={24}
+                      height={24}
+                      style={{ display: "block" }}
+                    />
+                  ) : (
+                    <User size={ICON_SIZE.sm} />
+                  )}
+                </ChipIcon>
+                <ChipName>{s.player.gameName}</ChipName>
+              </ChipLink>
+            )}
+          </GlassCard>
+        ))}
+      </SuperlativesGrid>
+
+      <PlayerTable
+        players={players.map((p) => ({
+          puuid: p.puuid,
+          gameName: p.gameName,
+          tagLine: p.tagLine,
+          profileIconId: p.profileIconId,
+          current: p.current,
+          matches: p.matches,
+          history: p.history,
+        }))}
+        selectedTab={selectedTab}
+        weeks={weeks}
+      />
+
+      <RankChart
+        players={players.map((p) => ({
+          gameName: p.gameName,
+          history: p.history,
+        }))}
+        selectedTab={selectedTab}
+        weeks={weeks}
+      />
 
       <StatsGrid>
         <GlassCard>
@@ -447,29 +724,6 @@ export default function WeeklyStatsPage() {
           </StatValue>
         </GlassCard>
       </StatsGrid>
-
-      <PlayerTable
-        players={players.map((p) => ({
-          puuid: p.puuid,
-          gameName: p.gameName,
-          tagLine: p.tagLine,
-          profileIconId: p.profileIconId,
-          current: p.current,
-          matches: p.matches,
-          history: p.history,
-        }))}
-        selectedTab={selectedTab}
-        weeks={weeks}
-      />
-
-      <RankChart
-        players={players.map((p) => ({
-          gameName: p.gameName,
-          history: p.history,
-        }))}
-        selectedTab={selectedTab}
-        weeks={weeks}
-      />
     </Page>
   );
 }

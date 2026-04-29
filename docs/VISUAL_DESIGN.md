@@ -136,7 +136,7 @@ When the sidebar is expanded (224px wide): icon is 20px, brand text fades in. Wh
 
 ## Scroll Affordance on Tab Bars
 
-Tab bars that overflow horizontally use `mask-image: linear-gradient(to right, black calc(100% - 48px), transparent 100%)` to fade out the last 48px, signaling that more tabs exist. This does not affect scrollability. The horizontal scrollbar sits flush at the bottom of the container (no `padding-bottom` gap).
+Tab bars use conditional `mask-image` gradients on both left and right edges (48px each) to signal scrollability. The gradients respond to scroll position via a `useScrollFade` hook — no left fade when fully scrolled left, no right fade when fully scrolled right. The horizontal scrollbar is invisible by default and only appears on hover (`&:hover::-webkit-scrollbar-thumb`).
 
 ## Animation
 
