@@ -22,7 +22,7 @@ Three `GlassCard` components at the top show aggregate weekly metrics:
 ### Player Performance Table
 A full-width table inside a `GlassCard` with a **week tab bar** at the top.
 
-**Week tabs**: Calculated from the TFT set start date (April 15, 2026) through set end (July 29, 2026) in 7-day increments. Each tab shows "Week N" with the date range (e.g. "4/15-4/22"). Future weeks are hidden. The current week is selected by default. The column header dynamically shows the selected week label.
+**Week tabs**: Calculated from the TFT set start date (April 15, 2026) through set end (July 29, 2026) in 7-day increments. Each tab shows "Week N" with the date range (e.g. "4/15-4/22"). Future weeks are hidden. The current week is selected by default. The column header dynamically shows the selected week label. The tab bar uses a negative-margin bleed + symmetric padding technique so it scrolls horizontally to the card edges — no clipping or dead-scroll at either end regardless of how many week tabs exist.
 
 **Stats scope**: Top 4%, 1st%, and time played are scoped to the selected week's matches. Total Games always shows all-time count.
 
@@ -30,8 +30,8 @@ Each row shows one tracked player:
 
 | Column | Source | Notes |
 |--------|--------|-------|
-| Summoner | `gameName#tagLine` | Gold star icon prefix |
-| Rank | `tier rank LP` | Dot indicator: gold if ranked, gray if unranked |
+| Summoner | `gameName#tagLine` | Riot profile icon (from Community Dragon CDN); falls back to `User` icon if not yet stored |
+| Rank | `tier rank LP` | Text color matches the player's tier (10 distinct per-tier colors) |
 | Total Games | all-time match count | From stored matches |
 | This Week | matches since Monday | Cyan highlight for emphasis |
 | Top 4% | `(placements <= 4) / total * 100` | Includes a mini progress bar underneath |
@@ -40,14 +40,17 @@ Each row shows one tracked player:
 
 Empty state: centered message "No players tracked yet. Add players to get started."
 
-### Rank Over Time Chart
-A Recharts `LineChart` inside a `GlassCard` with a toggle:
-- **Placement** (default) — average placement per set-week from match data
-- **Rank** — daily rank snapshots
+### Placement Over Time Chart
+A Recharts `LineChart` inside a `GlassCard` with a **time-window tab bar** (same bleed-scroll design as the Player Performance tabs):
 
-Each tracked player gets a colored line. Colors cycle through a 10-color palette. The Y-axis converts rank tiers to numeric values (Iron=0 through Challenger=3600+LP) and labels them by tier name. The legend is hidden on mobile (shown at 768px+) to preserve chart area.
+- **This Week** (default) — individual game placements for the current set-week, shown as a merged chronological timeline. Each point on the X-axis is a real game timestamp (formatted M/D). Multiple players can share a timestamp slot.
+- **This Set** — average placement per set-week (Wk 1 through present), one data point per week per player. Empty weeks are omitted.
 
-Empty state: "No match data yet. Sync to start tracking."
+Both modes share the same Y-axis: placement 1–8, reversed so 1st is at the top. A reference line at y=4.5 marks the top-4 boundary. Each tracked player gets a colored line from a 10-color palette. The legend is hidden on mobile (shown at 768px+).
+
+Empty states:
+- This Week: "No games played this week yet."
+- This Set: "No match data yet. Sync to start tracking."
 
 ### Sync Button
 Top-right of the page header. Calls `POST /api/sync`, shows a spinning icon while active, then refreshes all data.
