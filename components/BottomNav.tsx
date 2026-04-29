@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styled from "styled-components";
 import { Calendar, Search } from "lucide-react";
+import { ICON_SIZE } from "@/styles/theme";
 
 const Nav = styled.nav`
   display: flex;
@@ -56,7 +57,7 @@ export function BottomNav() {
         const active = pathname === href;
         return (
           <NavLink key={href} href={href} $active={active}>
-            <Icon size={20} />
+            <Icon size={ICON_SIZE.nav} />
             <NavLabel>{label}</NavLabel>
           </NavLink>
         );

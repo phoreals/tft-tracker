@@ -27,7 +27,7 @@ import {
   SET_START,
   SET_END,
 } from "@/lib/utils";
-import { theme } from "@/styles/theme";
+import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Chart constants ───────────────────────────────────────────────
 const CHART = {
@@ -384,6 +384,36 @@ const LoadingText = styled.div`
 
 // ── Helpers ──────────────────────────────────────────────────────
 
+function RankEmblem({ tier, size, color }: { tier: string; size: number; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (failed) {
+    return (
+      <span
+        style={{
+          display: "inline-block",
+          width: size,
+          height: size,
+          borderRadius: 2,
+          background: color,
+          opacity: 0.85,
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}.png`}
+      alt=""
+      width={size}
+      height={size}
+      style={{ display: "block", flexShrink: 0 }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 // Tier label for Y-axis tick at tier base LP value
 const TIER_BASES: { lp: number; short: string }[] = [
   { lp: 0,    short: "Iron"    },
@@ -513,7 +543,7 @@ export default function PlayerDrilldownPage() {
   return (
     <Page>
       <BackLink href="/">
-        <ArrowLeft size={14} />
+        <ArrowLeft size={ICON_SIZE.sm} />
         BACK TO WEEKLY STATS
       </BackLink>
 
@@ -542,15 +572,7 @@ export default function PlayerDrilldownPage() {
           </PlayerName>
           {player.current && (
             <RankBadge $color={getRankColor(player.current.tier)}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${player.current.tier.toLowerCase()}.png`}
-                alt={player.current.tier}
-                width={20}
-                height={20}
-                style={{ display: "block" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
+              <RankEmblem tier={player.current.tier} size={ICON_SIZE.nav} color={getRankColor(player.current.tier)} />
               {formatRank(player.current.tier, player.current.rank, player.current.lp)}
               &nbsp;&middot;&nbsp;{player.current.wins}W {player.current.losses}L
             </RankBadge>
@@ -593,7 +615,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Games {isSet ? "This Set" : "This Week"}</StatLabel>
-            <Gamepad2 size={14} color={CHART.gold} />
+            <Gamepad2 size={ICON_SIZE.sm} color={CHART.gold} />
           </StatRow>
           <StatValue>
             {totalGames}
@@ -604,7 +626,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Avg Placement</StatLabel>
-            <TrendingUp size={14} color={CHART.cyan} />
+            <TrendingUp size={ICON_SIZE.sm} color={CHART.cyan} />
           </StatRow>
           <StatValue>{avgPlacement}</StatValue>
         </GlassCard>
@@ -612,7 +634,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Top 4 Rate</StatLabel>
-            <Trophy size={14} color={CHART.gold} />
+            <Trophy size={ICON_SIZE.sm} color={CHART.gold} />
           </StatRow>
           <StatValue>{percentOf(top4, totalGames)}%<StatCount>({top4})</StatCount></StatValue>
         </GlassCard>
@@ -620,7 +642,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>1st Place Rate</StatLabel>
-            <Trophy size={14} color={CHART.cyan} />
+            <Trophy size={ICON_SIZE.sm} color={CHART.cyan} />
           </StatRow>
           <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
         </GlassCard>
@@ -628,7 +650,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Time Played</StatLabel>
-            <Clock size={14} color={CHART.cyan} />
+            <Clock size={ICON_SIZE.sm} color={CHART.cyan} />
           </StatRow>
           <StatValue>{totalDuration > 0 ? formatPlaytime(totalDuration) : "—"}</StatValue>
         </GlassCard>

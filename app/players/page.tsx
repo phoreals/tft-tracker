@@ -6,7 +6,7 @@ import { UserPlus, Users, Trash2, RefreshCw, DatabaseZap, Lock } from "lucide-re
 import { motion } from "motion/react";
 import { GlassCard } from "@/components/GlassCard";
 import { formatRank, formatRankAbbr, getRankColor } from "@/lib/utils";
-import { theme } from "@/styles/theme";
+import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -218,23 +218,25 @@ const SyncBadge = styled.button`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  ${({ theme }) => theme.semantic.typography.data};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
+  ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  background: ${({ theme }) => theme.semantic.color.borderDim};
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderDim};
-  text-transform: uppercase;
-  color: ${({ theme }) => theme.semantic.color.info};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: ${({ theme }) => theme.semantic.color.borderInfo};
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
   }
 
   &:disabled {
     opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
@@ -512,7 +514,7 @@ export default function ManagePlayersPage() {
         <GlassCard>
           <LockForm onSubmit={handlePasswordSubmit}>
             <LockTitle>
-              <Lock size={24} color={theme.semantic.color.accent} />
+              <Lock size={ICON_SIZE.lg} color={theme.semantic.color.accent} />
               ADMIN ACCESS
             </LockTitle>
             <LockInput
@@ -581,7 +583,7 @@ export default function ManagePlayersPage() {
                 Demure#GGEZ, Nisca#CREAM, Goldeen#NA1, MrBonChen#NA1
               </SeedDescription>
               <SeedButton onClick={handleSeed} disabled={seeding}>
-                <DatabaseZap size={16} style={seeding ? { animation: "pulse 2s infinite" } : undefined} />
+                <DatabaseZap size={ICON_SIZE.md} style={seeding ? { animation: "pulse 2s infinite" } : undefined} />
                 {seeding ? (seedProgress || "STARTING...") : "LOAD THE ASYLUM"}
               </SeedButton>
             </GlassCard>
@@ -593,8 +595,12 @@ export default function ManagePlayersPage() {
           icon={Users}
           headerAction={
             <SyncBadge onClick={handleSync} disabled={syncing}>
-              <RefreshCw size={12} style={syncing ? { animation: "spin 1s linear infinite" } : undefined} />
-              {syncing ? "Syncing..." : "Sync Now"}
+              <RefreshCw
+                size={ICON_SIZE.sm}
+                color={theme.semantic.color.accent}
+                style={syncing ? { animation: "spin 1s linear infinite" } : undefined}
+              />
+              <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
             </SyncBadge>
           }
         >
@@ -642,7 +648,7 @@ export default function ManagePlayersPage() {
                       </div>
                     </PlayerInfo>
                     <DeleteButton onClick={() => handleRemove(player.puuid)}>
-                      <Trash2 size={20} />
+                      <Trash2 size={ICON_SIZE.nav} />
                     </DeleteButton>
                   </PlayerRow>
                 );

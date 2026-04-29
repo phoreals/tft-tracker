@@ -7,7 +7,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
 import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END } from "@/lib/utils";
-import { theme } from "@/styles/theme";
+import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -352,7 +352,7 @@ export default function WeeklyStatsPage() {
     <Page>
       <PageHeader>
         <div>
-          <PageTitle>The Asylum Weekly Stats</PageTitle>
+          <PageTitle>{isSet ? "The Asylum Set Stats" : "The Asylum Weekly Stats"}</PageTitle>
           <PageSubtitle>
             {isSet
               ? "Squad performance · This Set"
@@ -365,7 +365,7 @@ export default function WeeklyStatsPage() {
           </PageSubtitle>
         </div>
         <SyncButton onClick={handleSync} disabled={syncing}>
-          <SpinningIcon size={16} $spinning={syncing} />
+          <SpinningIcon size={ICON_SIZE.md} $spinning={syncing} />
           <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
         </SyncButton>
       </PageHeader>
@@ -416,7 +416,7 @@ export default function WeeklyStatsPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Games {summaryStats.label}</StatLabel>
-            <Gamepad2 size={16} color={theme.semantic.color.accent} />
+            <Gamepad2 size={ICON_SIZE.md} color={theme.semantic.color.accent} />
           </StatRow>
           <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
         </GlassCard>
@@ -424,7 +424,7 @@ export default function WeeklyStatsPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Squad Playtime</StatLabel>
-            <Clock size={16} color={theme.semantic.color.info} />
+            <Clock size={ICON_SIZE.md} color={theme.semantic.color.info} />
           </StatRow>
           <StatValue>{loading ? "..." : formatPlaytime(summaryStats.playtime)}</StatValue>
         </GlassCard>
@@ -432,7 +432,7 @@ export default function WeeklyStatsPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Avg Top 4 Rate</StatLabel>
-            <Trophy size={16} color={theme.semantic.color.accent} />
+            <Trophy size={ICON_SIZE.md} color={theme.semantic.color.accent} />
           </StatRow>
           <StatValue>
             {loading ? "..." : `${percentOf(summaryStats.top4, summaryStats.total)}%`}

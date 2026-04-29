@@ -3,6 +3,7 @@
 import React from "react";
 import styled from "styled-components";
 import { motion } from "motion/react";
+import { ICON_SIZE } from "@/styles/theme";
 
 const Card = styled(motion.div)`
   background: ${({ theme }) => theme.component.glassCard.bg};
@@ -48,8 +49,8 @@ const IconWrapper = styled.span`
   color: ${({ theme }) => theme.semantic.color.accent};
   display: flex;
   flex-shrink: 0;
-  width: 16px;
-  height: 16px;
+  width: ${ICON_SIZE.md}px;
+  height: ${ICON_SIZE.md}px;
 `;
 
 interface GlassCardProps {
@@ -78,7 +79,7 @@ export function GlassCard({
         <Header>
           {title && (
             <Title>
-              {Icon && <IconWrapper><Icon size={16} /></IconWrapper>}
+              {Icon && <IconWrapper><Icon size={ICON_SIZE.md} /></IconWrapper>}
               {title}
             </Title>
           )}

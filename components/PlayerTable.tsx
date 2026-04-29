@@ -5,6 +5,7 @@ import styled from "styled-components";
 import Link from "next/link";
 import { User } from "lucide-react";
 import { GlassCard } from "./GlassCard";
+import { ICON_SIZE } from "@/styles/theme";
 import {
   formatPlaytime,
   formatRank,
@@ -88,8 +89,8 @@ const SummonerCell = styled.div`
 `;
 
 const SummonerIcon = styled.div`
-  width: 32px;
-  height: 32px;
+  width: ${ICON_SIZE.avatar}px;
+  height: ${ICON_SIZE.avatar}px;
   flex-shrink: 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(12px);
@@ -245,6 +246,40 @@ function getPeakAndLow(
   return { peak, low: rankToLP(peak.tier, peak.rank, peak.lp) === rankToLP(low.tier, low.rank, low.lp) ? null : low };
 }
 
+// ── RankEmblem ───────────────────────────────────────────────────
+// Renders the CDN mini crest image; falls back to a tier-colored square so
+// any missing emblems (e.g. Emerald on older CDN paths) still show tier color.
+
+function RankEmblem({ tier, size, color }: { tier: string; size: number; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (failed) {
+    return (
+      <span
+        style={{
+          display: "inline-block",
+          width: size,
+          height: size,
+          borderRadius: 2,
+          background: color,
+          opacity: 0.85,
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}.png`}
+      alt=""
+      width={size}
+      height={size}
+      style={{ display: "block", flexShrink: 0 }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 // ── Component ────────────────────────────────────────────────────
 
 export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
@@ -331,7 +366,7 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
                             style={{ display: "block" }}
                           />
                         ) : (
-                          <User size={16} />
+                          <User size={ICON_SIZE.md} />
                         )}
                       </SummonerIcon>
                       <SummonerName href={`/player/${row.puuid}`}>{row.name}</SummonerName>
@@ -341,15 +376,7 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
                     <RankCell>
                       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         {row.tier && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${row.tier.toLowerCase()}.png`}
-                            alt=""
-                            width={16}
-                            height={16}
-                            style={{ display: "block", flexShrink: 0 }}
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                          />
+                          <RankEmblem tier={row.tier} size={ICON_SIZE.md} color={getRankColor(row.tier)} />
                         )}
                         <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>
                           <RankFull>{row.rank}</RankFull>
