@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { addPlayer, getTrackedPlayers, setPlayerCurrent, setPlayerMatches } from "@/lib/kv";
 import {
   getAccountByRiotId,
+  getSummonerByPuuid,
   getLeagueEntries,
   getAllMatchIds,
   getMatch,
@@ -74,12 +75,16 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
+      const summoner = await getSummonerByPuuid(account.puuid);
+      await delay(100);
+
       await addPlayer({
         puuid: account.puuid,
         gameName: account.gameName,
         tagLine: account.tagLine,
-        summonerId: "",
+        summonerId: summoner.id,
         region: "na1",
+        profileIconId: summoner.profileIconId,
       });
       await delay(100);
 

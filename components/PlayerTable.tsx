@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import styled from "styled-components";
 import Link from "next/link";
-import { Star } from "lucide-react";
+import { User } from "lucide-react";
 import { GlassCard } from "./GlassCard";
 import { formatPlaytime, formatRank, percentOf, getRankColor } from "@/lib/utils";
 import type { PlayerCurrentStats, MatchRecord } from "@/lib/kv";
@@ -157,10 +157,12 @@ const SummonerCell = styled.div`
 const SummonerIcon = styled.div`
   width: 32px;
   height: 32px;
+  flex-shrink: 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(12px);
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -185,14 +187,6 @@ const RankCell = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-`;
-
-const RankDot = styled.div<{ $color: string }>`
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: ${({ $color }) => $color};
-  flex-shrink: 0;
 `;
 
 const CenterCell = styled.td`
@@ -258,6 +252,7 @@ interface PlayerRow {
   puuid: string;
   gameName: string;
   tagLine: string;
+  profileIconId?: number;
   current: PlayerCurrentStats | null;
   matches: MatchRecord[];
 }
@@ -291,6 +286,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
     return {
       puuid: p.puuid,
       name: `${p.gameName}#${p.tagLine}`,
+      profileIconId: p.profileIconId,
       rank: formatRank(p.current?.tier, p.current?.rank, p.current?.lp),
       tier: p.current?.tier ?? "",
       totalGames,
@@ -344,14 +340,24 @@ export function PlayerTable({ players }: PlayerTableProps) {
                   <td>
                     <SummonerCell>
                       <SummonerIcon>
-                        <Star size={16} />
+                        {row.profileIconId ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${row.profileIconId}.jpg`}
+                            alt=""
+                            width={32}
+                            height={32}
+                            style={{ display: "block" }}
+                          />
+                        ) : (
+                          <User size={16} />
+                        )}
                       </SummonerIcon>
                       <SummonerName href={`/player/${row.puuid}`}>{row.name}</SummonerName>
                     </SummonerCell>
                   </td>
                   <td>
                     <RankCell>
-                      <RankDot $color={getRankColor(row.tier)} />
                       <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>{row.rank}</span>
                     </RankCell>
                   </td>

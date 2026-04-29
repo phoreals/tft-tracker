@@ -44,6 +44,23 @@ export async function getAccountByRiotId(
   );
 }
 
+// --- Summoner ---
+
+interface SummonerDTO {
+  id: string;
+  accountId: string;
+  puuid: string;
+  profileIconId: number;
+  summonerLevel: number;
+  revisionDate: number;
+}
+
+export async function getSummonerByPuuid(puuid: string): Promise<SummonerDTO> {
+  return riotFetch<SummonerDTO>(
+    `${PLATFORM_HOST}/tft/summoner/v1/summoners/by-puuid/${puuid}`
+  );
+}
+
 // --- League ---
 // Uses /tft/league/v1/by-puuid/{puuid} — no summoner ID needed.
 

@@ -19,6 +19,7 @@ export const MOCK_PLAYERS = [
     tagLine: "SAD",
     summonerId: "",
     region: "na1",
+    profileIconId: 4892,
     current: {
       tier: "CHALLENGER",
       rank: "I",
@@ -56,6 +57,7 @@ export const MOCK_PLAYERS = [
     tagLine: "1335",
     summonerId: "",
     region: "na1",
+    profileIconId: 5367,
     current: {
       tier: "GRANDMASTER",
       rank: "I",
@@ -91,6 +93,7 @@ export const MOCK_PLAYERS = [
     tagLine: "PAPI1",
     summonerId: "",
     region: "na1",
+    profileIconId: 3942,
     current: {
       tier: "MASTER",
       rank: "I",
@@ -128,6 +131,7 @@ export const MOCK_PLAYERS = [
     tagLine: "boi",
     summonerId: "",
     region: "na1",
+    profileIconId: 29,
     current: {
       tier: "DIAMOND",
       rank: "II",
@@ -171,6 +175,7 @@ export const MOCK_PLAYERS = [
     tagLine: "NA1",
     summonerId: "",
     region: "na1",
+    profileIconId: 588,
     current: {
       tier: "EMERALD",
       rank: "II",
@@ -207,6 +212,7 @@ export const MOCK_PLAYERS = [
     tagLine: "GGEZ",
     summonerId: "",
     region: "na1",
+    profileIconId: 4474,
     current: {
       tier: "PLATINUM",
       rank: "I",
@@ -246,6 +252,7 @@ export const MOCK_PLAYERS = [
     tagLine: "NA1",
     summonerId: "",
     region: "na1",
+    profileIconId: 1390,
     current: {
       tier: "GOLD",
       rank: "II",
@@ -281,6 +288,7 @@ export const MOCK_PLAYERS = [
     tagLine: "CREAM",
     summonerId: "",
     region: "na1",
+    profileIconId: 2569,
     current: {
       tier: "SILVER",
       rank: "III",
@@ -314,6 +322,7 @@ export const MOCK_PLAYERS = [
     tagLine: "NA1",
     summonerId: "",
     region: "na1",
+    profileIconId: 747,
     current: {
       tier: "BRONZE",
       rank: "I",
@@ -346,6 +355,7 @@ export const MOCK_PLAYERS = [
     tagLine: "NA1",
     summonerId: "",
     region: "na1",
+    profileIconId: 1,
     current: {
       tier: "IRON",
       rank: "II",

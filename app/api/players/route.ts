@@ -12,6 +12,7 @@ import {
 } from "@/lib/kv";
 import {
   getAccountByRiotId,
+  getSummonerByPuuid,
   getLeagueEntries,
   getMatchIds,
   getMatch,
@@ -57,13 +58,15 @@ export async function POST(req: NextRequest) {
   try {
     // Validate with Riot API
     const account = await getAccountByRiotId(gameName, tagLine);
+    const summoner = await getSummonerByPuuid(account.puuid);
 
     const player: TrackedPlayer = {
       puuid: account.puuid,
       gameName: account.gameName,
       tagLine: account.tagLine,
-      summonerId: "",
+      summonerId: summoner.id,
       region: "na1",
+      profileIconId: summoner.profileIconId,
     };
 
     await addPlayer(player);

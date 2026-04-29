@@ -242,6 +242,7 @@ export default function WeeklyStatsPage() {
           puuid: p.puuid,
           gameName: p.gameName,
           tagLine: p.tagLine,
+          profileIconId: (p as { profileIconId?: number }).profileIconId,
           current: p.current,
           matches: p.matches,
         }))}

@@ -13,6 +13,7 @@ export interface TrackedPlayer {
   tagLine: string;
   summonerId: string;
   region: string;
+  profileIconId?: number;
 }
 
 export interface PlayerCurrentStats {
