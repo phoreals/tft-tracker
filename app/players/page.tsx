@@ -415,6 +415,7 @@ export default function ManagePlayersPage() {
   const [adding, setAdding] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [seedProgress, setSeedProgress] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -479,11 +480,34 @@ export default function ManagePlayersPage() {
   const handleSeed = async () => {
     setSeeding(true);
     setError("");
+    setSeedProgress("");
     try {
-      const res = await fetch("/api/seed", { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) { setError(data.error ?? "Seed failed"); }
-      else { await fetchPlayers(); }
+      // Get player list
+      const listRes = await fetch("/api/seed");
+      const listData = await listRes.json();
+      if (!listRes.ok) { setError(listData.error ?? "Seed failed"); setSeeding(false); return; }
+
+      const total = listData.players.length;
+      for (let i = 0; i < total; i++) {
+        const p = listData.players[i];
+        setSeedProgress(`Seeding ${p.gameName}#${p.tagLine} (${i + 1}/${total})...`);
+        const res = await fetch("/api/seed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ index: i }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(`Failed on ${p.gameName}#${p.tagLine}: ${data.error}`);
+          break;
+        }
+        if (data.results?.[0]?.error) {
+          // Non-fatal — player failed but continue with others
+          setSeedProgress(`${p.gameName}#${p.tagLine} failed, continuing...`);
+        }
+      }
+      await fetchPlayers();
+      setSeedProgress("");
     } catch (err) { setError(err instanceof Error ? err.message : "Seed failed. Network error."); }
     finally { setSeeding(false); }
   };
@@ -568,12 +592,13 @@ export default function ManagePlayersPage() {
           {players.length === 0 && (
             <GlassCard title="SEED SQUAD" icon={DatabaseZap}>
               <SeedDescription>
-                Load the original squad: Banh#boi, Richardpression#SAD, Lionnel#NA1,
-                FireLordAppa#1335, V for Taehyung#NA1, Caramel Papi#PAPI1, demure#ggez
+                Load the squad: Banh#boi, Richardpression#SAD, Lionnel#NA1,
+                FireLordAppa#1335, V for Taehyung#NA1, Caramel Papi#PAPI1,
+                Demure#GGEZ, Nisca#CREAM, Goldeen#NA1
               </SeedDescription>
               <SeedButton onClick={handleSeed} disabled={seeding}>
                 <DatabaseZap size={16} style={seeding ? { animation: "pulse 2s infinite" } : undefined} />
-                {seeding ? "SEEDING... (this takes ~30s)" : "LOAD ORIGINAL SQUAD"}
+                {seeding ? (seedProgress || "STARTING...") : "LOAD THE ASYLUM"}
               </SeedButton>
             </GlassCard>
           )}

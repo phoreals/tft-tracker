@@ -3,10 +3,18 @@ const RIOT_API_KEY = process.env.RIOT_API_KEY ?? "";
 const REGIONAL_HOST = "https://americas.api.riotgames.com";
 const PLATFORM_HOST = "https://na1.api.riotgames.com";
 
-async function riotFetch<T>(url: string): Promise<T> {
+async function riotFetch<T>(url: string, retries = 3): Promise<T> {
   const res = await fetch(url, {
     headers: { "X-Riot-Token": RIOT_API_KEY },
   });
+
+  // Handle rate limiting — wait and retry
+  if (res.status === 429 && retries > 0) {
+    const retryAfter = parseInt(res.headers.get("Retry-After") ?? "5", 10);
+    await delay((retryAfter + 1) * 1000);
+    return riotFetch<T>(url, retries - 1);
+  }
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Riot API ${res.status}: ${text}`);
@@ -62,11 +70,29 @@ export async function getLeagueEntries(
 
 export async function getMatchIds(
   puuid: string,
-  count = 20
+  count = 100
 ): Promise<string[]> {
   return riotFetch<string[]>(
-    `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?count=${count}`
+    `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?start=0&count=${count}`
   );
+}
+
+// Fetch all match IDs by paginating through the API
+export async function getAllMatchIds(puuid: string): Promise<string[]> {
+  const all: string[] = [];
+  let start = 0;
+  const pageSize = 100;
+  while (true) {
+    const batch = await riotFetch<string[]>(
+      `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?start=${start}&count=${pageSize}`
+    );
+    if (batch.length === 0) break;
+    all.push(...batch);
+    if (batch.length < pageSize) break;
+    start += pageSize;
+    await delay(150);
+  }
+  return all;
 }
 
 interface MatchParticipant {

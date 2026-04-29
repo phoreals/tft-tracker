@@ -120,7 +120,5 @@ export async function setPlayerMatches(
   puuid: string,
   matches: MatchRecord[]
 ): Promise<void> {
-  // Keep last 200 matches
-  const trimmed = matches.slice(-200);
-  await redis.set(`player:${puuid}:matches`, trimmed);
+  await redis.set(`player:${puuid}:matches`, matches);
 }

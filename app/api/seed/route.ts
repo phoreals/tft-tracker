@@ -1,13 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { addPlayer, getTrackedPlayers, setPlayerCurrent, setPlayerMatches } from "@/lib/kv";
 import {
   getAccountByRiotId,
   getLeagueEntries,
-  getMatchIds,
+  getAllMatchIds,
   getMatch,
   delay,
 } from "@/lib/riot";
 import type { MatchRecord } from "@/lib/kv";
+
+export const maxDuration = 60;
 
 const SEED_PLAYERS = [
   { gameName: "Banh", tagLine: "boi" },
@@ -16,27 +18,53 @@ const SEED_PLAYERS = [
   { gameName: "FireLordAppa", tagLine: "1335" },
   { gameName: "V for Taehyung", tagLine: "NA1" },
   { gameName: "Caramel Papi", tagLine: "PAPI1" },
-  { gameName: "demure", tagLine: "ggez" },
+  { gameName: "Demure", tagLine: "GGEZ" },
+  { gameName: "Nisca", tagLine: "CREAM" },
+  { gameName: "Goldeen", tagLine: "NA1" },
 ];
 
-export async function POST() {
+// GET returns the seed player list for the client to iterate
+export async function GET() {
   let existing;
   try {
     existing = await getTrackedPlayers();
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";
-    return NextResponse.json(
-      { error: `Redis connection failed: ${msg}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Redis connection failed: ${msg}` }, { status: 500 });
   }
   const existingPuuids = new Set(existing.map((p) => p.puuid));
 
-  const results: { name: string; success: boolean; error?: string; skipped?: boolean }[] = [];
+  const players = SEED_PLAYERS.map((p) => ({
+    ...p,
+    // We can't check skip status without calling Riot API, so return all
+  }));
 
-  for (const { gameName, tagLine } of SEED_PLAYERS) {
+  return NextResponse.json({ players, totalExisting: existingPuuids.size });
+}
+
+// POST seeds a single player by index, or all if no index given
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => ({}));
+  const index = body.index as number | undefined;
+
+  let existing;
+  try {
+    existing = await getTrackedPlayers();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: `Redis connection failed: ${msg}` }, { status: 500 });
+  }
+  const existingPuuids = new Set(existing.map((p) => p.puuid));
+
+  const toSeed = index != null ? [SEED_PLAYERS[index]] : SEED_PLAYERS;
+  if (!toSeed[0]) {
+    return NextResponse.json({ error: "Invalid index" }, { status: 400 });
+  }
+
+  const results: { name: string; success: boolean; error?: string; skipped?: boolean; matchCount?: number }[] = [];
+
+  for (const { gameName, tagLine } of toSeed) {
     try {
-      // Look up account
       const account = await getAccountByRiotId(gameName, tagLine);
       await delay(100);
 
@@ -45,7 +73,6 @@ export async function POST() {
         continue;
       }
 
-      // Save player
       await addPlayer({
         puuid: account.puuid,
         gameName: account.gameName,
@@ -70,8 +97,8 @@ export async function POST() {
       }
       await delay(100);
 
-      // Fetch recent matches
-      const matchIds = await getMatchIds(account.puuid, 100);
+      // Fetch all match history (paginated)
+      const matchIds = await getAllMatchIds(account.puuid);
       const matchRecords: MatchRecord[] = [];
       for (const matchId of matchIds) {
         await delay(100);
@@ -96,7 +123,11 @@ export async function POST() {
         await setPlayerMatches(account.puuid, matchRecords);
       }
 
-      results.push({ name: `${account.gameName}#${account.tagLine}`, success: true });
+      results.push({
+        name: `${account.gameName}#${account.tagLine}`,
+        success: true,
+        matchCount: matchRecords.length,
+      });
     } catch (err) {
       results.push({
         name: `${gameName}#${tagLine}`,
@@ -112,5 +143,9 @@ export async function POST() {
   const skipped = results.filter((r) => r.skipped).length;
   const failed = results.filter((r) => !r.success).length;
 
-  return NextResponse.json({ added, skipped, failed, results });
+  return NextResponse.json({
+    added, skipped, failed, results,
+    total: SEED_PLAYERS.length,
+    remaining: index != null ? SEED_PLAYERS.length - index - 1 : 0,
+  });
 }
