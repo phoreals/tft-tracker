@@ -1,13 +1,88 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 import styled from "styled-components";
 import { Star } from "lucide-react";
 import { GlassCard } from "./GlassCard";
-import { formatPlaytime, formatRank, percentOf, getStartOfWeek } from "@/lib/utils";
+import { formatPlaytime, formatRank, percentOf } from "@/lib/utils";
 import type { PlayerCurrentStats, MatchRecord } from "@/lib/kv";
 
+// ── Set Schedule ─────────────────────────────────────────────────
+
+const SET_START = new Date("2026-04-15T00:00:00").getTime();
+const SET_END = new Date("2026-07-29T23:59:59").getTime();
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+function getWeeks(): { label: string; start: number; end: number }[] {
+  const weeks: { label: string; start: number; end: number }[] = [];
+  let start = SET_START;
+  let i = 1;
+  while (start < SET_END) {
+    const end = Math.min(start + WEEK_MS, SET_END);
+    weeks.push({ label: `Week ${i}`, start, end });
+    start += WEEK_MS;
+    i++;
+  }
+  return weeks;
+}
+
+function getCurrentWeekIndex(weeks: { start: number; end: number }[]): number {
+  const now = Date.now();
+  for (let i = weeks.length - 1; i >= 0; i--) {
+    if (now >= weeks[i].start) return i;
+  }
+  return 0;
+}
+
 // ── Styled ───────────────────────────────────────────────────────
+
+const TabBar = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  overflow-x: auto;
+  padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
+
+  &::-webkit-scrollbar {
+    height: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(229, 197, 135, 0.2);
+    border-radius: 9999px;
+  }
+`;
+
+const Tab = styled.button<{ $active: boolean }>`
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: 10px;
+  padding: 6px 14px;
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border: 1px solid ${({ $active, theme }) =>
+    $active ? theme.semantic.color.borderHover : "transparent"};
+  background: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accentHover : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary};
+    background: ${({ $active, theme }) =>
+      $active ? theme.semantic.color.accentHover : "rgba(255,255,255,0.05)"};
+  }
+`;
+
+const WeekDate = styled.span`
+  display: block;
+  font-size: 8px;
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+  opacity: 0.6;
+`;
 
 const TableWrap = styled.div`
   overflow-x: auto;
@@ -42,7 +117,6 @@ const Tbody = styled.tbody`
   tr {
     border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
     transition: background 0.2s;
-
     &:hover {
       background: ${({ theme }) => theme.component.table.rowHoverBg};
     }
@@ -163,33 +237,60 @@ interface PlayerTableProps {
   players: PlayerRow[];
 }
 
+function formatShortDate(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 export function PlayerTable({ players }: PlayerTableProps) {
-  const weekStart = getStartOfWeek().getTime();
+  const weeks = useMemo(() => getWeeks(), []);
+  const [selectedWeek, setSelectedWeek] = useState(() => getCurrentWeekIndex(weeks));
+
+  const week = weeks[selectedWeek];
 
   const rows = players.map((p) => {
     const totalGames = p.matches.length;
-    const weeklyMatches = p.matches.filter((m) => m.timestamp >= weekStart);
-    const weeklyGames = weeklyMatches.length;
-    const top4 = p.matches.filter((m) => m.placement <= 4).length;
-    const firsts = p.matches.filter((m) => m.placement === 1).length;
+    const weekMatches = p.matches.filter(
+      (m) => m.timestamp >= week.start && m.timestamp < week.end
+    );
+    const weekGames = weekMatches.length;
+    const weekTop4 = weekMatches.filter((m) => m.placement <= 4).length;
+    const weekFirsts = weekMatches.filter((m) => m.placement === 1).length;
+    const weekDuration = weekMatches.reduce((s, m) => s + m.duration, 0);
     const totalDuration = p.matches.reduce((s, m) => s + m.duration, 0);
-    const weeklyDuration = weeklyMatches.reduce((s, m) => s + m.duration, 0);
 
     return {
       name: `${p.gameName}#${p.tagLine}`,
       rank: formatRank(p.current?.tier, p.current?.rank, p.current?.lp),
       tier: p.current?.tier ?? "",
       totalGames,
-      weeklyGames,
-      top4Rate: percentOf(top4, totalGames),
-      firstRate: percentOf(firsts, totalGames),
+      weekGames,
+      top4Rate: percentOf(weekTop4, weekGames),
+      firstRate: percentOf(weekFirsts, weekGames),
+      weekTime: formatPlaytime(weekDuration),
       totalTime: formatPlaytime(totalDuration),
-      weeklyTime: formatPlaytime(weeklyDuration),
     };
   });
 
   return (
-    <GlassCard style={{ padding: 0, paddingTop: 24, paddingLeft: 24, paddingRight: 24 }} title="PLAYER PERFORMANCE">
+    <GlassCard
+      style={{ padding: 0, paddingTop: 24, paddingLeft: 24, paddingRight: 24 }}
+      title="PLAYER PERFORMANCE"
+    >
+      <TabBar>
+        {weeks.map((w, i) => {
+          const isFuture = w.start > Date.now();
+          if (isFuture) return null;
+          return (
+            <Tab key={i} $active={i === selectedWeek} onClick={() => setSelectedWeek(i)}>
+              {w.label}
+              <WeekDate>
+                {formatShortDate(w.start)}-{formatShortDate(w.end)}
+              </WeekDate>
+            </Tab>
+          );
+        })}
+      </TabBar>
       <TableWrap>
         <Table>
           <Thead>
@@ -197,7 +298,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
               <th>Summoner</th>
               <th>Rank</th>
               <th style={{ textAlign: "center" }}>Total Games</th>
-              <th style={{ textAlign: "center" }}>This Week</th>
+              <th style={{ textAlign: "center" }}>{week.label}</th>
               <th style={{ textAlign: "center" }}>Top 4%</th>
               <th style={{ textAlign: "center" }}>1st%</th>
               <th style={{ textAlign: "right" }}>Time Played</th>
@@ -228,7 +329,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
                     </RankCell>
                   </td>
                   <CenterCell>{row.totalGames}</CenterCell>
-                  <WeeklyCell>{row.weeklyGames}</WeeklyCell>
+                  <WeeklyCell>{row.weekGames}</WeeklyCell>
                   <CenterCell>
                     <Top4Wrap>
                       <span>{row.top4Rate}%</span>
@@ -239,7 +340,7 @@ export function PlayerTable({ players }: PlayerTableProps) {
                   </CenterCell>
                   <FirstCell>{row.firstRate}%</FirstCell>
                   <TimeCell>
-                    {row.weeklyTime}
+                    {row.weekTime}
                     <TimeSub>{row.totalTime} total</TimeSub>
                   </TimeCell>
                 </tr>

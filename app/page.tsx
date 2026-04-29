@@ -6,7 +6,7 @@ import { RefreshCw, Clock, Trophy, Gamepad2 } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
-import { formatPlaytime, getStartOfWeek, percentOf } from "@/lib/utils";
+import { formatPlaytime, getCurrentSetWeek, percentOf } from "@/lib/utils";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -171,9 +171,11 @@ export default function WeeklyStatsPage() {
     }
   };
 
-  const weekStart = getStartOfWeek().getTime();
+  const currentWeek = getCurrentSetWeek();
   const allMatches = players.flatMap((p) => p.matches);
-  const weeklyMatches = allMatches.filter((m) => m.timestamp >= weekStart);
+  const weeklyMatches = allMatches.filter(
+    (m) => m.timestamp >= currentWeek.start && m.timestamp < currentWeek.end
+  );
   const weeklyGames = weeklyMatches.length;
   const weeklyPlaytime = weeklyMatches.reduce((s, m) => s + m.duration, 0);
   const weeklyTop4 = weeklyMatches.filter((m) => m.placement <= 4).length;

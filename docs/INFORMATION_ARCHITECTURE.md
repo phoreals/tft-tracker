@@ -42,7 +42,7 @@ These are NOT stored — they're calculated from matches on render:
 | Rank numeric value | `RANK_VALUES[tier] + DIVISION_VALUES[rank] + lp` |
 
 ### Week Boundary
-"This week" starts Monday 00:00 local time (via `getStartOfWeek()` in `lib/utils.ts`).
+Weeks are calculated from the TFT set start date (April 15, 2026) in 7-day increments through set end (July 29, 2026). Week 1 = Apr 15-21, Week 2 = Apr 22-28, etc. The current week is determined by `getCurrentSetWeek()` in `lib/utils.ts`. The `SET_START` and `SET_END` constants should be updated when a new TFT set launches.
 
 ## Content Priority
 

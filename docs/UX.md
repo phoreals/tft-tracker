@@ -20,7 +20,13 @@ Three `GlassCard` components at the top show aggregate weekly metrics:
 - **Avg Top 4 Rate** — percentage of placements 1-4 across all weekly matches
 
 ### Player Performance Table
-A full-width table inside a `GlassCard`. Each row shows one tracked player:
+A full-width table inside a `GlassCard` with a **week tab bar** at the top.
+
+**Week tabs**: Calculated from the TFT set start date (April 15, 2026) through set end (July 29, 2026) in 7-day increments. Each tab shows "Week N" with the date range (e.g. "4/15-4/22"). Future weeks are hidden. The current week is selected by default. The column header dynamically shows the selected week label.
+
+**Stats scope**: Top 4%, 1st%, and time played are scoped to the selected week's matches. Total Games always shows all-time count.
+
+Each row shows one tracked player:
 
 | Column | Source | Notes |
 |--------|--------|-------|
