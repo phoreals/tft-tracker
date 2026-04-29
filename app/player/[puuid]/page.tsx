@@ -116,7 +116,7 @@ const StatsGrid = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
   }
 `;
 
@@ -138,6 +138,14 @@ const StatValue = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xl};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+`;
+
+const StatCount = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  margin-left: 6px;
 `;
 
 const ChartContainer = styled.div`
@@ -296,14 +304,6 @@ export default function PlayerDrilldownPage() {
     }));
   }, [sortedMatches]);
 
-  // Running average line data
-  const avgData = useMemo(() => {
-    let sum = 0;
-    return chartData.map((d, i) => {
-      sum += d.placement;
-      return { ...d, avg: parseFloat((sum / (i + 1)).toFixed(2)) };
-    });
-  }, [chartData]);
 
   if (loading) return <LoadingText>Loading...</LoadingText>;
   if (!player) return <LoadingText>Player not found.</LoadingText>;
@@ -312,6 +312,9 @@ export default function PlayerDrilldownPage() {
   const top4 = player.matches.filter((m) => m.placement <= 4).length;
   const firsts = player.matches.filter((m) => m.placement === 1).length;
   const totalDuration = player.matches.reduce((s, m) => s + m.duration, 0);
+  const avgPlacement = totalGames > 0
+    ? (player.matches.reduce((s, m) => s + m.placement, 0) / totalGames).toFixed(2)
+    : "0";
 
   return (
     <Page>
@@ -344,18 +347,26 @@ export default function PlayerDrilldownPage() {
 
         <GlassCard>
           <StatRow>
+            <StatLabel>AVG PLACEMENT</StatLabel>
+            <TrendingUp size={14} color="#00fbfb" />
+          </StatRow>
+          <StatValue>{avgPlacement}</StatValue>
+        </GlassCard>
+
+        <GlassCard>
+          <StatRow>
             <StatLabel>TOP 4 RATE</StatLabel>
             <Trophy size={14} color="#e5c587" />
           </StatRow>
-          <StatValue>{percentOf(top4, totalGames)}%</StatValue>
+          <StatValue>{percentOf(top4, totalGames)}%<StatCount>({top4})</StatCount></StatValue>
         </GlassCard>
 
         <GlassCard>
           <StatRow>
             <StatLabel>1ST PLACE RATE</StatLabel>
-            <TrendingUp size={14} color="#00fbfb" />
+            <Trophy size={14} color="#00fbfb" />
           </StatRow>
-          <StatValue>{percentOf(firsts, totalGames)}%</StatValue>
+          <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
         </GlassCard>
 
         <GlassCard>
@@ -417,11 +428,11 @@ export default function PlayerDrilldownPage() {
 
       <GlassCard title="PLACEMENT PER GAME">
         <ChartContainer>
-          {avgData.length === 0 ? (
+          {chartData.length === 0 ? (
             <EmptyState>No match data.</EmptyState>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={avgData}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5c58711" vertical={false} />
                 <XAxis
                   dataKey="game"
@@ -451,13 +462,10 @@ export default function PlayerDrilldownPage() {
                   }}
                   labelStyle={{ color: "#d0c5b5" }}
                   labelFormatter={(label) => {
-                    const d = avgData[Number(label) - 1];
+                    const d = chartData[Number(label) - 1];
                     return d ? `Game ${label} (${d.date})` : `Game ${label}`;
                   }}
-                  formatter={(value, name) => {
-                    if (name === "avg") return [`${Number(value).toFixed(2)}`, "Running Avg"];
-                    return [value, "Placement"];
-                  }}
+                  formatter={(value) => [value, "Placement"]}
                 />
                 <Line
                   type="monotone"
@@ -465,16 +473,6 @@ export default function PlayerDrilldownPage() {
                   stroke="#e5c587"
                   strokeWidth={1.5}
                   dot={{ r: 2, fill: "#e5c587" }}
-                  name="placement"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="avg"
-                  stroke="#00fbfb"
-                  strokeWidth={2}
-                  strokeDasharray="6 3"
-                  dot={false}
-                  name="avg"
                 />
               </LineChart>
             </ResponsiveContainer>
