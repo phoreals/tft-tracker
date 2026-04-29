@@ -592,7 +592,7 @@ export default function PlayerDrilldownPage() {
       <StatsGrid>
         <GlassCard>
           <StatRow>
-            <StatLabel>GAMES {isSet ? "THIS SET" : "THIS WEEK"}</StatLabel>
+            <StatLabel>Games {isSet ? "This Set" : "This Week"}</StatLabel>
             <Gamepad2 size={14} color={CHART.gold} />
           </StatRow>
           <StatValue>
@@ -603,7 +603,7 @@ export default function PlayerDrilldownPage() {
 
         <GlassCard>
           <StatRow>
-            <StatLabel>AVG PLACEMENT</StatLabel>
+            <StatLabel>Avg Placement</StatLabel>
             <TrendingUp size={14} color={CHART.cyan} />
           </StatRow>
           <StatValue>{avgPlacement}</StatValue>
@@ -611,7 +611,7 @@ export default function PlayerDrilldownPage() {
 
         <GlassCard>
           <StatRow>
-            <StatLabel>TOP 4 RATE</StatLabel>
+            <StatLabel>Top 4 Rate</StatLabel>
             <Trophy size={14} color={CHART.gold} />
           </StatRow>
           <StatValue>{percentOf(top4, totalGames)}%<StatCount>({top4})</StatCount></StatValue>
@@ -619,7 +619,7 @@ export default function PlayerDrilldownPage() {
 
         <GlassCard>
           <StatRow>
-            <StatLabel>1ST PLACE RATE</StatLabel>
+            <StatLabel>1st Place Rate</StatLabel>
             <Trophy size={14} color={CHART.cyan} />
           </StatRow>
           <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
@@ -627,7 +627,7 @@ export default function PlayerDrilldownPage() {
 
         <GlassCard>
           <StatRow>
-            <StatLabel>TIME PLAYED</StatLabel>
+            <StatLabel>Time Played</StatLabel>
             <Clock size={14} color={CHART.cyan} />
           </StatRow>
           <StatValue>{totalDuration > 0 ? formatPlaytime(totalDuration) : "—"}</StatValue>
@@ -635,7 +635,7 @@ export default function PlayerDrilldownPage() {
       </StatsGrid>
 
       {/* Rank over time — always full history, selected week highlighted */}
-      <GlassCard title="RANK OVER TIME" icon={TrendingUp}>
+      <GlassCard title="Rank Over Time" icon={TrendingUp}>
         <ChartContainer>
           {rankChartData.length === 0 ? (
             <EmptyState>Rank history builds daily with each sync.</EmptyState>
@@ -703,7 +703,7 @@ export default function PlayerDrilldownPage() {
       </GlassCard>
 
       {/* Placement per game — scoped to selected tab */}
-      <GlassCard title={`PLACEMENT PER GAME${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`}>
+      <GlassCard title={`Placement Per Game${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`}>
         <ChartContainer>
           {placementChartData.length === 0 ? (
             <EmptyState>No games {isSet ? "this set" : "this week"}.</EmptyState>
@@ -758,7 +758,7 @@ export default function PlayerDrilldownPage() {
       </GlassCard>
 
       {/* Match history — scoped to selected tab */}
-      <GlassCard title={`MATCH HISTORY${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`}>
+      <GlassCard title={`Match History${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`}>
         <MatchList>
           {[...scopedMatches].reverse().map((m) => (
             <MatchRow key={m.matchId} $top4={m.placement <= 4}>

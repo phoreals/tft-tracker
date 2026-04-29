@@ -541,7 +541,7 @@ export default function ManagePlayersPage() {
 
       <Grid>
         <LeftColumn>
-          <GlassCard title="ADD SUMMONER" icon={UserPlus}>
+          <GlassCard title="Add Summoner" icon={UserPlus}>
             <form onSubmit={handleAdd}>
               <FormGroup>
                 <div>
@@ -574,7 +574,7 @@ export default function ManagePlayersPage() {
           </GlassCard>
 
           {players.length === 0 && (
-            <GlassCard title="SEED SQUAD" icon={DatabaseZap}>
+            <GlassCard title="Seed Squad" icon={DatabaseZap}>
               <SeedDescription>
                 Load the squad: Banh#boi, Richardpression#SAD, Lionnel#NA1,
                 FireLordAppa#1335, V for Taehyung#NA1, Caramel Papi#PAPI1,
@@ -589,7 +589,7 @@ export default function ManagePlayersPage() {
         </LeftColumn>
 
         <GlassCard
-          title="TRACKED PLAYERS"
+          title="Tracked Players"
           icon={Users}
           headerAction={
             <SyncBadge onClick={handleSync} disabled={syncing}>

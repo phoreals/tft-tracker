@@ -55,8 +55,7 @@ const Thead = styled.thead`
     padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
     font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
     font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+    letter-spacing: 0.05em;
     color: ${({ theme }) => theme.semantic.color.textDisabled};
 
     @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -291,7 +290,7 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
   const colSpan = isSet ? 6 : 7;
 
   return (
-    <GlassCard title="PLAYER PERFORMANCE">
+    <GlassCard title="Player Performance">
       <TableWrap>
         <Table>
           <Thead>
@@ -340,10 +339,23 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
                   </td>
                   <td>
                     <RankCell>
-                      <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>
-                        <RankFull>{row.rank}</RankFull>
-                        <RankAbbr>{row.rankAbbr}</RankAbbr>
-                      </span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        {row.tier && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${row.tier.toLowerCase()}.png`}
+                            alt=""
+                            width={16}
+                            height={16}
+                            style={{ display: "block", flexShrink: 0 }}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
+                        )}
+                        <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>
+                          <RankFull>{row.rank}</RankFull>
+                          <RankAbbr>{row.rankAbbr}</RankAbbr>
+                        </span>
+                      </div>
                       {row.peakRank && (
                         <RankSub>
                           <RankFull>Peak: {formatRankShort(row.peakRank.tier, row.peakRank.rank, row.peakRank.lp)}</RankFull>

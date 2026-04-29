@@ -222,7 +222,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
   };
 
   return (
-    <GlassCard title="RANK OVER TIME" icon={TrendingUp}>
+    <GlassCard title="Rank Over Time" icon={TrendingUp}>
       <ChartContainer>
         {!hasData ? (
           <EmptyState>No rank history yet. Sync to start tracking.</EmptyState>

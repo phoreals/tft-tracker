@@ -92,6 +92,22 @@ const SpinningIcon = styled(RefreshCw)<{ $spinning: boolean }>`
   animation: ${({ $spinning }) => ($spinning ? "spin 1s linear infinite" : "none")};
 `;
 
+const StickyTabWrap = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: ${({ theme }) => theme.semantic.color.bgPrimary};
+  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
+  margin-right: -${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.xl};
+    margin-right: -${({ theme }) => theme.primitive.spacing.xl};
+    padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.xl};
+  }
+`;
+
 const PageTabBar = styled.div`
   display: none;
 
@@ -99,7 +115,7 @@ const PageTabBar = styled.div`
     display: flex;
     gap: ${({ theme }) => theme.primitive.spacing.xs};
     overflow-x: auto;
-    padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+    padding-bottom: ${({ theme }) => theme.primitive.spacing.xs};
 
     &::-webkit-scrollbar {
       height: 3px;
@@ -313,12 +329,12 @@ export default function WeeklyStatsPage() {
     if (selectedTab === "set") {
       start = SET_START;
       end = SET_END;
-      label = "THIS SET";
+      label = "This Set";
     } else {
       const w = weeks[selectedTab] ?? weeks[weeks.length - 1];
       start = w.start;
       end = w.end;
-      label = w.label.toUpperCase();
+      label = w.label;
     }
     const ms = all.filter((m) => m.timestamp >= start && m.timestamp < end);
     return {
@@ -338,7 +354,14 @@ export default function WeeklyStatsPage() {
         <div>
           <PageTitle>The Asylum Weekly Stats</PageTitle>
           <PageSubtitle>
-            {isSet ? "Squad performance this set" : "Squad performance this week"}
+            {isSet
+              ? "Squad performance · This Set"
+              : (() => {
+                  const w = weeks[selectedTab as number];
+                  return w
+                    ? `Squad performance · ${w.label} (${formatShortDate(w.start)}–${formatShortDate(w.end)})`
+                    : "Squad performance this week";
+                })()}
           </PageSubtitle>
         </div>
         <SyncButton onClick={handleSync} disabled={syncing}>
@@ -347,50 +370,52 @@ export default function WeeklyStatsPage() {
         </SyncButton>
       </PageHeader>
 
-      {/* Mobile: dropdown */}
-      <PageTabSelect
-        value={selectedTab === "set" ? "set" : String(selectedTab)}
-        onChange={(e) => {
-          const v = e.target.value;
-          setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
-        }}
-      >
-        <option value="set">This Set</option>
-        {weeks.map((w, i) => (
-          <option key={i} value={String(i)}>
-            {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
-          </option>
-        ))}
-      </PageTabSelect>
-
-      {/* Desktop: tab bar */}
-      <PageTabBar ref={tabBarRef}>
-        <PageTab
-          $active={selectedTab === "set"}
-          data-active={selectedTab === "set" ? "true" : undefined}
-          onClick={() => setSelectedTab("set")}
+      <StickyTabWrap>
+        {/* Mobile: dropdown */}
+        <PageTabSelect
+          value={selectedTab === "set" ? "set" : String(selectedTab)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
+          }}
         >
-          This Set
-        </PageTab>
-        {weeks.map((w, i) => (
+          <option value="set">This Set</option>
+          {weeks.map((w, i) => (
+            <option key={i} value={String(i)}>
+              {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
+            </option>
+          ))}
+        </PageTabSelect>
+
+        {/* Desktop: tab bar */}
+        <PageTabBar ref={tabBarRef}>
           <PageTab
-            key={i}
-            $active={selectedTab === i}
-            data-active={selectedTab === i ? "true" : undefined}
-            onClick={() => setSelectedTab(i)}
+            $active={selectedTab === "set"}
+            data-active={selectedTab === "set" ? "true" : undefined}
+            onClick={() => setSelectedTab("set")}
           >
-            {w.label}
-            <WeekDate>
-              {formatShortDate(w.start)}–{formatShortDate(w.end)}
-            </WeekDate>
+            This Set
           </PageTab>
-        ))}
-      </PageTabBar>
+          {weeks.map((w, i) => (
+            <PageTab
+              key={i}
+              $active={selectedTab === i}
+              data-active={selectedTab === i ? "true" : undefined}
+              onClick={() => setSelectedTab(i)}
+            >
+              {w.label}
+              <WeekDate>
+                {formatShortDate(w.start)}–{formatShortDate(w.end)}
+              </WeekDate>
+            </PageTab>
+          ))}
+        </PageTabBar>
+      </StickyTabWrap>
 
       <StatsGrid>
         <GlassCard>
           <StatRow>
-            <StatLabel>GAMES {summaryStats.label}</StatLabel>
+            <StatLabel>Games {summaryStats.label}</StatLabel>
             <Gamepad2 size={16} color={theme.semantic.color.accent} />
           </StatRow>
           <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
@@ -398,7 +423,7 @@ export default function WeeklyStatsPage() {
 
         <GlassCard>
           <StatRow>
-            <StatLabel>SQUAD PLAYTIME</StatLabel>
+            <StatLabel>Squad Playtime</StatLabel>
             <Clock size={16} color={theme.semantic.color.info} />
           </StatRow>
           <StatValue>{loading ? "..." : formatPlaytime(summaryStats.playtime)}</StatValue>
@@ -406,7 +431,7 @@ export default function WeeklyStatsPage() {
 
         <GlassCard>
           <StatRow>
-            <StatLabel>AVG TOP 4 RATE</StatLabel>
+            <StatLabel>Avg Top 4 Rate</StatLabel>
             <Trophy size={16} color={theme.semantic.color.accent} />
           </StatRow>
           <StatValue>
