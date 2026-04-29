@@ -5,13 +5,11 @@ import styled from "styled-components";
 import Link from "next/link";
 import { User } from "lucide-react";
 import { GlassCard } from "./GlassCard";
-import { formatPlaytime, formatRank, percentOf, getRankColor } from "@/lib/utils";
+import { formatPlaytime, formatRank, percentOf, getRankColor, SET_START, SET_END } from "@/lib/utils";
 import type { PlayerCurrentStats, MatchRecord } from "@/lib/kv";
 
 // ── Set Schedule ─────────────────────────────────────────────────
 
-const SET_START = new Date("2026-04-15T00:00:00").getTime();
-const SET_END = new Date("2026-07-29T23:59:59").getTime();
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function getWeeks(): { label: string; start: number; end: number }[] {
@@ -43,6 +41,19 @@ const TabBar = styled.div`
   overflow-x: auto;
   padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
   margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
+
+  /* bleed to card edges so the last tab scrolls fully into view */
+  margin-left: -${({ theme }) => theme.primitive.spacing.md};
+  margin-right: -${({ theme }) => theme.primitive.spacing.md};
+  padding-left: ${({ theme }) => theme.primitive.spacing.md};
+  padding-right: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.lg};
+    margin-right: -${({ theme }) => theme.primitive.spacing.lg};
+    padding-left: ${({ theme }) => theme.primitive.spacing.lg};
+    padding-right: ${({ theme }) => theme.primitive.spacing.lg};
+  }
 
   &::-webkit-scrollbar {
     height: 3px;

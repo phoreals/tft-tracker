@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
   Legend,
 } from "recharts";
 import { GlassCard } from "./GlassCard";
@@ -19,34 +20,62 @@ import type { MatchRecord, HistorySnapshot } from "@/lib/kv";
 
 // ── Styled ───────────────────────────────────────────────────────
 
-const ToggleGroup = styled.div`
+const TabBar = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
+  overflow-x: auto;
+  padding-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
+
+  /* bleed to card edges — same technique as PlayerTable TabBar and TableWrap */
+  margin-left: -${({ theme }) => theme.primitive.spacing.md};
+  margin-right: -${({ theme }) => theme.primitive.spacing.md};
+  padding-left: ${({ theme }) => theme.primitive.spacing.md};
+  padding-right: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.lg};
+    margin-right: -${({ theme }) => theme.primitive.spacing.lg};
+    padding-left: ${({ theme }) => theme.primitive.spacing.lg};
+    padding-right: ${({ theme }) => theme.primitive.spacing.lg};
+  }
+
+  &::-webkit-scrollbar {
+    height: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(229, 197, 135, 0.2);
+    border-radius: 9999px;
+  }
 `;
 
-const ToggleButton = styled.button<{ $active: boolean }>`
+const Tab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 10px;
-  padding: 6px 12px;
+  font-size: 11px;
+  padding: 10px 14px;
+  min-height: 44px;
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  border: ${({ $active, theme }) =>
-    $active ? `1px solid ${theme.semantic.color.borderHover}` : "1px solid transparent"};
+  border: 1px solid ${({ $active, theme }) =>
+    $active ? theme.semantic.color.borderHover : "transparent"};
   background: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accentHover : "transparent"};
   color: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.textPrimary};
+    background: ${({ $active, theme }) =>
+      $active ? theme.semantic.color.accentHover : "rgba(255,255,255,0.05)"};
   }
 `;
 
 const ChartContainer = styled.div`
   height: 220px;
   width: 100%;
-  margin-top: ${({ theme }) => theme.primitive.spacing.md};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     height: 288px;
@@ -77,7 +106,7 @@ function getSetWeeks(): { label: string; start: number; end: number }[] {
   let start = SET_START;
   let i = 1;
   const now = Date.now();
-  while (start < SET_END && start < now) {
+  while (start < SET_END && start <= now) {
     const end = Math.min(start + WEEK_MS, SET_END);
     weeks.push({ label: `Wk ${i}`, start, end });
     start += WEEK_MS;
@@ -86,9 +115,14 @@ function getSetWeeks(): { label: string; start: number; end: number }[] {
   return weeks;
 }
 
+function formatMatchDate(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
 // ── Component ────────────────────────────────────────────────────
 
-type ChartMode = "placement" | "rank";
+type ChartMode = "week" | "set";
 
 interface PlayerData {
   gameName: string;
@@ -100,33 +134,11 @@ interface RankChartProps {
   players: PlayerData[];
 }
 
-const RANK_VALUES: Record<string, number> = {
-  IRON: 0, BRONZE: 400, SILVER: 800, GOLD: 1200,
-  PLATINUM: 1600, EMERALD: 2000, DIAMOND: 2400,
-  MASTER: 2800, GRANDMASTER: 3200, CHALLENGER: 3600,
-};
-
-const DIVISION_VALUES: Record<string, number> = {
-  IV: 0, III: 100, II: 200, I: 300,
-};
-
-function rankToNumeric(tier: string, rank: string, lp: number): number {
-  return (RANK_VALUES[tier] ?? 0) + (DIVISION_VALUES[rank] ?? 0) + lp;
-}
-
-function numericToLabel(value: number): string {
-  const tiers = Object.entries(RANK_VALUES).sort((a, b) => a[1] - b[1]);
-  let tierName = "Iron";
-  for (const [name, threshold] of tiers) {
-    if (value >= threshold) tierName = name.charAt(0) + name.slice(1).toLowerCase();
-  }
-  return tierName;
-}
-
 export function RankChart({ players }: RankChartProps) {
-  const [mode, setMode] = useState<ChartMode>("placement");
+  const [mode, setMode] = useState<ChartMode>("week");
   const [showLegend, setShowLegend] = useState(false);
   const weeks = useMemo(() => getSetWeeks(), []);
+  const currentWeek = weeks[weeks.length - 1];
 
   useEffect(() => {
     const check = () => setShowLegend(window.innerWidth >= 768);
@@ -135,66 +147,67 @@ export function RankChart({ players }: RankChartProps) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Placement chart: average placement per week from match data
-  const placementData = useMemo(() => {
+  // "This Week" — individual game placements for the current week,
+  // merged into a single chronological timeline across all players.
+  const weekData = useMemo(() => {
+    if (!currentWeek) return [];
+
+    const entries: { ts: number; player: string; placement: number }[] = [];
+    players.forEach((p) => {
+      p.matches
+        .filter((m) => m.timestamp >= currentWeek.start && m.timestamp < currentWeek.end)
+        .forEach((m) => entries.push({ ts: m.timestamp, player: p.gameName, placement: m.placement }));
+    });
+    entries.sort((a, b) => a.ts - b.ts);
+
+    // One chart point per unique timestamp; multiple players can share a slot
+    const pointsMap = new Map<number, Record<string, string | number>>();
+    for (const e of entries) {
+      if (!pointsMap.has(e.ts)) {
+        pointsMap.set(e.ts, { week: formatMatchDate(e.ts) });
+      }
+      pointsMap.get(e.ts)![e.player] = e.placement;
+    }
+    return Array.from(pointsMap.values());
+  }, [currentWeek, players]);
+
+  // "This Set" — average placement per set-week across all weeks.
+  const setData = useMemo(() => {
     return weeks.map((w) => {
       const point: Record<string, string | number> = { week: w.label };
       players.forEach((p) => {
-        const weekMatches = p.matches.filter(
-          (m) => m.timestamp >= w.start && m.timestamp < w.end
-        );
-        if (weekMatches.length > 0) {
-          const avg = weekMatches.reduce((s, m) => s + m.placement, 0) / weekMatches.length;
-          point[p.gameName] = parseFloat(avg.toFixed(2));
+        const wm = p.matches.filter((m) => m.timestamp >= w.start && m.timestamp < w.end);
+        if (wm.length > 0) {
+          point[p.gameName] = parseFloat(
+            (wm.reduce((s, m) => s + m.placement, 0) / wm.length).toFixed(2)
+          );
         }
       });
-      // Only include weeks with at least one player's data
       const hasData = Object.keys(point).some((k) => k !== "week");
       return hasData ? point : null;
     }).filter(Boolean) as Record<string, string | number>[];
   }, [weeks, players]);
 
-  // Rank chart: daily snapshots from history (existing logic)
-  const rankData = useMemo(() => {
-    const allDates = new Set<string>();
-    players.forEach((p) => p.history.forEach((h) => allDates.add(h.date)));
-    const sorted = Array.from(allDates).sort();
-    return sorted.map((date) => {
-      const point: Record<string, string | number> = { week: date };
-      players.forEach((p) => {
-        const snap = p.history.find((h) => h.date === date);
-        if (snap) {
-          point[p.gameName] = rankToNumeric(snap.tier, snap.rank, snap.lp);
-        }
-      });
-      return point;
-    });
-  }, [players]);
-
-  const chartData = mode === "placement" ? placementData : rankData;
+  const chartData = mode === "week" ? weekData : setData;
   const hasData = chartData.length > 0;
 
   return (
-    <GlassCard
-      title={mode === "placement" ? "AVG PLACEMENT BY WEEK" : "RANK OVER TIME"}
-      icon={TrendingUp}
-      headerAction={
-        <ToggleGroup>
-          <ToggleButton $active={mode === "placement"} onClick={() => setMode("placement")}>
-            Placement
-          </ToggleButton>
-          <ToggleButton $active={mode === "rank"} onClick={() => setMode("rank")}>
-            Rank
-          </ToggleButton>
-        </ToggleGroup>
-      }
-    >
+    <GlassCard title="PLACEMENT OVER TIME" icon={TrendingUp}>
+      <TabBar>
+        <Tab $active={mode === "week"} onClick={() => setMode("week")}>
+          This Week
+        </Tab>
+        <Tab $active={mode === "set"} onClick={() => setMode("set")}>
+          This Set
+        </Tab>
+      </TabBar>
+
       <ChartContainer>
         {!hasData ? (
           <EmptyState>
-            {mode === "placement"
-              ? "No match data yet. Sync to start tracking."
-              : "Rank history builds daily. Keep syncing."}
+            {mode === "week"
+              ? "No games played this week yet."
+              : "No match data yet. Sync to start tracking."}
           </EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -208,14 +221,15 @@ export function RankChart({ players }: RankChartProps) {
                 dy={10}
               />
               <YAxis
+                reversed
+                domain={[1, 8]}
+                ticks={[1, 2, 3, 4, 5, 6, 7, 8]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }}
-                width={50}
-                {...(mode === "placement"
-                  ? { reversed: true, domain: [1, 8] }
-                  : { tickFormatter: numericToLabel })}
+                width={24}
               />
+              <ReferenceLine y={4.5} stroke="#e5c58733" strokeDasharray="6 4" />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#18202b",
@@ -225,11 +239,7 @@ export function RankChart({ players }: RankChartProps) {
                   fontSize: "12px",
                 }}
                 labelStyle={{ color: "#d0c5b5" }}
-                formatter={(value) =>
-                  mode === "placement"
-                    ? [`${Number(value).toFixed(2)} avg`, ""]
-                    : [numericToLabel(Number(value)) + ` (${value})`, ""]
-                }
+                formatter={(value) => [`${Number(value).toFixed(2)}`, ""]}
               />
               {showLegend && (
                 <Legend wrapperStyle={{ fontFamily: "Space Grotesk", fontSize: "11px" }} />
