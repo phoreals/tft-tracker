@@ -233,6 +233,7 @@ export default function WeeklyStatsPage() {
       <RankChart
         players={players.map((p) => ({
           gameName: p.gameName,
+          matches: p.matches,
           history: p.history,
         }))}
       />
