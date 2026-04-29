@@ -13,43 +13,69 @@ Navigation is always visible. The active page is highlighted with a gold accent 
 
 ## Weekly Stats (`/`)
 
+### Page-Level Tab Navigation
+
+A scrollable tab bar sits between the page header and the summary cards. It controls the entire page — summary cards, player table, and placement chart all update together.
+
+**Tabs**: "This Set" (first) | "Week 1" | "Week 2" | … | "Week N" (current week)
+
+- Calculated from the TFT set start date (April 15, 2026) in 7-day increments. Future weeks are hidden.
+- Default on load: the current week (not "This Set").
+- Each week tab shows "Week N" on the first line and the date range (e.g. "4/15–4/22") below.
+- The bar overflows horizontally with a 3px gold scrollbar thumb for week 10+ scenarios.
+
 ### Summary Cards
-Three `GlassCard` components at the top show aggregate weekly metrics:
-- **Games This Week** — count of matches since Monday 00:00
-- **Squad Playtime** — sum of all match durations this week (formatted as `Xd Xh Xm`)
-- **Avg Top 4 Rate** — percentage of placements 1-4 across all weekly matches
+
+Three `GlassCard` components show aggregate metrics for the **currently selected tab**:
+
+| Card | "This Set" | Week tab |
+|------|-----------|---------|
+| **GAMES {label}** | Total games for the full set | Games for the selected week |
+| **SQUAD PLAYTIME** | Total playtime for the full set | Playtime for the selected week |
+| **AVG TOP 4 RATE** | Top-4 rate for the full set | Top-4 rate for the selected week |
 
 ### Player Performance Table
-A full-width table inside a `GlassCard` with a **week tab bar** at the top.
 
-**Week tabs**: Calculated from the TFT set start date (April 15, 2026) through set end (July 29, 2026) in 7-day increments. Each tab shows "Week N" with the date range (e.g. "4/15-4/22"). Future weeks are hidden. The current week is selected by default. The column header dynamically shows the selected week label. The tab bar uses a negative-margin bleed + symmetric padding technique so it scrolls horizontally to the card edges — no clipping or dead-scroll at either end regardless of how many week tabs exist.
+A full-width table inside a `GlassCard`. Columns and stats adapt to the selected tab.
 
-**Stats scope**: Top 4%, 1st%, and time played are scoped to the selected week's matches. Total Games always shows all-time count.
-
-Each row shows one tracked player:
+**"This Set" view — 6 columns:**
 
 | Column | Source | Notes |
 |--------|--------|-------|
-| Summoner | `gameName#tagLine` | Riot profile icon (from Community Dragon CDN); falls back to `User` icon if not yet stored |
-| Rank | `tier rank LP` | Text color matches the player's tier (10 distinct per-tier colors) |
-| Total Games | all-time match count | From stored matches |
-| This Week | matches since Monday | Cyan highlight for emphasis |
-| Top 4% | `(placements <= 4) / total * 100` | Includes a mini progress bar underneath |
-| 1st% | `(placements == 1) / total * 100` | Cyan text |
-| Time Played | weekly duration / total duration | Two lines — weekly primary, total as subtitle |
+| Summoner | `gameName#tagLine` | Riot profile icon (Community Dragon CDN); falls back to `User` icon |
+| Rank | `tier rank LP` | Tier-colored. Sub-line: "Peak: {rank}" — highest rank reached this set from daily snapshots |
+| Total Games | All-time match count | |
+| Top 4% | Set-scoped `(placements ≤ 4) / total * 100` | Includes progress bar |
+| 1st% | Set-scoped `(placements == 1) / total * 100` | Cyan text |
+| Time Played | All-time total playtime | |
+
+**Week tab view — 7 columns:**
+
+| Column | Source | Notes |
+|--------|--------|-------|
+| Summoner | `gameName#tagLine` | Same as above |
+| Rank | `tier rank LP` | Tier-colored. "Peak: {rank}" and "Low: {rank}" sub-lines from daily snapshots within the week (omitted if no history data for that week) |
+| Total Games | All-time match count | |
+| {Week Label} | Games played in the selected week | Cyan highlight |
+| Top 4% | Week-scoped top-4 rate | Includes progress bar |
+| 1st% | Week-scoped 1st-place rate | Cyan text |
+| Time Played | Week time (primary) / total time (sub-line) | |
+
+**Peak and Low rank** are derived from `player.history` (daily rank snapshots stored by the cron job). If no snapshots exist for the selected window, sub-lines are omitted — the cell degrades gracefully to just the current rank string.
 
 Empty state: centered message "No players tracked yet. Add players to get started."
 
 ### Placement Over Time Chart
-A Recharts `LineChart` inside a `GlassCard` with a **time-window tab bar** (same bleed-scroll design as the Player Performance tabs):
 
-- **This Week** (default) — individual game placements for the current set-week, shown as a merged chronological timeline. Each point on the X-axis is a real game timestamp (formatted M/D). Multiple players can share a timestamp slot.
-- **This Set** — average placement per set-week (Wk 1 through present), one data point per week per player. Empty weeks are omitted.
+A Recharts `LineChart` inside a `GlassCard`. Mode is driven entirely by the page-level tab — no internal controls on the chart.
 
-Both modes share the same Y-axis: placement 1–8, reversed so 1st is at the top. A reference line at y=4.5 marks the top-4 boundary. Each tracked player gets a colored line from a 10-color palette. The legend is hidden on mobile (shown at 768px+).
+- **"This Set" tab** — average placement per set-week (Wk 1 through present), one point per week per player. Empty weeks omitted.
+- **Week tabs** — individual game placements for the selected week on a merged chronological timeline. Each X-axis point is a real game timestamp (formatted M/D).
+
+Both modes: Y-axis placement 1–8 reversed (1st at top), reference line at y=4.5 (top-4 boundary), 10-color line palette, legend hidden on mobile (shown at 768px+).
 
 Empty states:
-- This Week: "No games played this week yet."
+- Week tabs: "No games played this week yet."
 - This Set: "No match data yet. Sync to start tracking."
 
 ### Sync Button

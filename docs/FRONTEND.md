@@ -71,18 +71,19 @@ Card padding is 16px on mobile, switching to the `glassCard.padding` token (24px
 Wraps content in a `motion.div` with fade-in + slide-up (16px) animation on mount.
 
 ### PlayerTable
-Receives an array of `{ gameName, tagLine, current, matches }`. Internally:
-1. Computes derived metrics for each player (total games, weekly games, top4%, 1st%, durations)
-2. Renders a `<table>` inside a `GlassCard`
-3. Uses styled components for all cells and states
+Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:
+1. Derives the active time window from `selectedTab` (`SET_START–SET_END` for "set", `weeks[i]` for week tabs)
+2. Calls `getPeakAndLow(history, window)` per player to find peak/low rank snapshots
+3. Renders a `<table>` inside a `GlassCard` with 6 columns ("This Set") or 7 columns (week tabs)
+4. No internal tab state or tab bar
 
 ### RankChart
-Receives an array of `{ gameName, matches, history }`. Internally:
-1. Tab toggle: **This Week** (default) or **This Set** — rendered as a bleed-scroll `TabBar` inside the card body (same technique as PlayerTable week tabs)
-2. **This Week**: collects all matches within the current set-week, merges them into a single chronological timeline keyed by timestamp, and plots actual placement per game
-3. **This Set**: groups matches by set-week (7-day buckets from `SET_START`), computes avg placement per player per week
+Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:
+1. Derives `isSet = selectedTab === "set"` and `currentWeek = weeks[selectedTab]`
+2. **Week tab**: merges all matches for `currentWeek` into a chronological timeline, plots actual placement per game
+3. **"This Set" tab**: groups matches by set-week bucket, computes avg placement per player per week
 4. Renders a Recharts `LineChart` with one `Line` per player; Y-axis reversed (1st at top), domain [1,8]
-5. Legend conditionally rendered: `useEffect` + `resize` listener sets `showLegend` true at ≥768px
+5. No internal tab state or tab bar — mode is fully controlled by the parent
 
 **Note**: Recharts `Legend` doesn't support CSS media queries. Use the JS resize-listener pattern (not CSS) to hide the legend on mobile.
 
@@ -94,9 +95,11 @@ No global state library. Each page manages its own state:
 
 ### Weekly Stats
 ```
-players: PlayerData[]     — fetched from /api/players on mount
-loading: boolean          — true until first fetch completes
-syncing: boolean          — true while /api/sync is in flight
+players: PlayerData[]          — fetched from /api/players on mount
+loading: boolean               — true until first fetch completes
+syncing: boolean               — true while /api/sync is in flight
+selectedTab: "set" | number    — controls summary cards, PlayerTable, and RankChart simultaneously
+weeks: SetWeek[]               — computed once from getSetWeeks(), passed to both child components
 ```
 
 ### Manage Players

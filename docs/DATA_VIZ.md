@@ -10,12 +10,12 @@ Shown on the Weekly Stats page (`/`). Plots placement data for all tracked playe
 
 ### Modes
 
-| Tab | X-axis | Y-axis | Data source |
-|-----|--------|--------|-------------|
-| **This Week** (default) | Individual game timestamps, formatted `M/D` | Actual placement (1–8) | `player.matches` filtered to the current set-week |
-| **This Set** | Set-week labels (`Wk 1`, `Wk 2`, …) | Avg placement per week (1–8) | `player.matches` grouped by 7-day buckets from `SET_START` |
+Mode is controlled by the **page-level tab** (`selectedTab` prop from `app/page.tsx`) — RankChart has no internal tab bar.
 
-**Tab bar**: same bleed-scroll `TabBar` / `Tab` styled components as PlayerTable — 44px min-height, negative-margin bleed to card edges, horizontal overflow scroll.
+| Page tab | Chart behavior | X-axis | Y-axis |
+|----------|---------------|--------|--------|
+| **Week tabs** | Individual game placements for the selected week | Game timestamps formatted `M/D` | Actual placement (1–8) |
+| **"This Set"** | Avg placement per set-week | Set-week labels (`Wk 1`, `Wk 2`, …) | Avg placement per week (1–8) |
 
 ### Chart Configuration
 
