@@ -568,19 +568,17 @@ function formatDateTime(ts: number): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
-function useFullBleedSticky(
-  stickyRef: React.RefObject<HTMLDivElement | null>,
-  sentinelRef: React.RefObject<HTMLDivElement | null>
-) {
+function useFullBleedSticky(stickyRef: React.RefObject<HTMLDivElement | null>) {
   const [isSticky, setIsSticky] = useState(false);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const obs = new IntersectionObserver(([entry]) => setIsSticky(!entry.isIntersecting), { threshold: 0 });
-    obs.observe(sentinel);
-    return () => obs.disconnect();
-  }, [sentinelRef]);
+    const el = stickyRef.current;
+    if (!el) return;
+    const check = () => setIsSticky(el.getBoundingClientRect().top <= 1);
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    return () => window.removeEventListener("scroll", check);
+  }, [stickyRef]);
 
   useEffect(() => {
     const el = stickyRef.current;
@@ -645,9 +643,8 @@ export default function PlayerDrilldownPage() {
 
   const tabBarRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
   const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
-  const { isSticky } = useFullBleedSticky(stickyRef, sentinelRef);
+  const { isSticky } = useFullBleedSticky(stickyRef);
 
   useEffect(() => {
     const bar = tabBarRef.current;
@@ -861,7 +858,6 @@ export default function PlayerDrilldownPage() {
         </SyncWrap>
       </PlayerHeader>
 
-      <div ref={sentinelRef} style={{ height: 0 }} />
       <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
         {/* Mobile: dropdown */}
         <TabSelect
