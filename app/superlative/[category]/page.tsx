@@ -353,7 +353,7 @@ export default function SuperlativeDrilldownPage() {
   }, [selectedTab]);
 
   useEffect(() => {
-    fetch("/api/players")
+    fetch("/api/players", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => setPlayers(data))
       .finally(() => setLoading(false));

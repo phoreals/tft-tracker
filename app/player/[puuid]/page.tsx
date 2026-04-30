@@ -635,7 +635,7 @@ export default function PlayerDrilldownPage() {
   }, [selectedTab]);
 
   const fetchPlayer = useCallback(async () => {
-    const data: PlayerData[] = await fetch("/api/players").then((r) => r.json());
+    const data: PlayerData[] = await fetch("/api/players", { cache: "no-store" }).then((r) => r.json());
     setAllPlayers(data);
     const found = data.find((p) => p.puuid === puuid);
     if (found) setPlayer(found);
