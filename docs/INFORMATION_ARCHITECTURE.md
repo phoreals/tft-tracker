@@ -4,7 +4,7 @@
 
 ```
 /                          Weekly Stats (main view)
-  ├── Tab bar (sticky)     "This Set" | Week 1 … Week N (controls all below)
+  ├── Tab bar (sticky)     "Set 17" | Week 1 … Week N (controls all below)
   ├── Superlatives         6 cards: leader per stat category (tab-scoped)
   ├── Player table         Per-player stats (tab-scoped columns)
   ├── Rank chart           Line chart (tab-driven mode)
@@ -16,8 +16,13 @@
   ├── Seed squad button    (conditional, only when empty)
   └── Tracked player list  Cards with rank, W/L, delete
 
+/superlative/[category]    Superlative Drilldown
+  ├── Tab bar (sticky)     Set 17 | Week 1 … Week N
+  ├── Bar chart            Horizontal bars, all players ranked by stat
+  └── Rankings table       #, Summoner, Value + progress bar
+
 /player/[puuid]            Player Drilldown
-  ├── Tab bar (sticky)     "This Set" | Week 1 … Week N
+  ├── Tab bar (sticky)     "Set 17" | Week 1 … Week N
   ├── Header               Profile icon, name, rank badge with emblem
   ├── Stat cards (5)       Games, Avg Placement, Top 4%, 1st%, Time Played
   ├── Superlative badges   Pill badges for categories this player leads (links to /)
@@ -87,6 +92,7 @@ Active state indicated by:
 |-----|------|-------------|
 | `/` | Weekly Stats | `GET /api/players` (all player data) |
 | `/players` | Manage Players | `GET /api/players` (player list only) |
+| `/superlative/[category]` | Superlative Drilldown | `GET /api/players` (all players, ranked by stat) |
 | `/player/[puuid]` | Player Drilldown | `GET /api/players` (filtered client-side by puuid) |
 
 The Weekly Stats and Manage Players pages fetch the same endpoint. The Player Drilldown page also fetches all players and filters to the one matching the URL `puuid` parameter — there is no per-player endpoint.

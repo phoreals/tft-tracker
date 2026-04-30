@@ -26,6 +26,10 @@ import {
   getSetWeeks,
   SET_START,
   SET_END,
+  SET_LABEL,
+  computePlayerStats,
+  SUPERLATIVE_CATEGORIES,
+  findLeader,
 } from "@/lib/utils";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
@@ -591,7 +595,7 @@ export default function PlayerDrilldownPage() {
     ? { start: SET_START, end: SET_END }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
 
-  // The highlighted week on the rank chart — selected week, or latest for "This Set"
+  // The highlighted week on the rank chart — selected week, or latest for "Set 17"
   const highlightWeek = isSet
     ? (weeks[weeks.length - 1] ?? null)
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
@@ -636,12 +640,9 @@ export default function PlayerDrilldownPage() {
     }));
   }, [scopedMatches]);
 
-  if (loading) return <LoadingText>Loading...</LoadingText>;
-  if (!player) return <LoadingText>Player not found.</LoadingText>;
-
   // Stats scoped to active window
   const totalGames = scopedMatches.length;
-  const allGames = player.matches.length;
+  const allGames = player?.matches.length ?? 0;
   const top4 = scopedMatches.filter((m) => m.placement <= 4).length;
   const firsts = scopedMatches.filter((m) => m.placement === 1).length;
   const totalDuration = scopedMatches.reduce((s, m) => s + m.duration, 0);
@@ -656,56 +657,24 @@ export default function PlayerDrilldownPage() {
     const win = isSet
       ? { start: SET_START, end: SET_END }
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+    const stats = computePlayerStats(allPlayers, win);
 
-    type PS = { puuid: string; games: number; firsts: number; top4Rate: number; time: number; lpDiff: number | null; lpPerGame: number | null };
-    const stats: PS[] = allPlayers.map((p) => {
-      const scoped = p.matches.filter((m) => m.timestamp >= win.start && m.timestamp < win.end);
-      const g = scoped.length;
-      const f = scoped.filter((m) => m.placement === 1).length;
-      const t4 = scoped.filter((m) => m.placement <= 4).length;
-      const t = scoped.reduce((s, m) => s + m.duration, 0);
-      const rate = g > 0 ? (t4 / g) * 100 : 0;
-      const snaps = p.history
-        .filter((h) => { const ts = new Date(h.date).getTime(); return ts >= win.start && ts < win.end; })
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const lpD = snaps.length >= 2
-        ? rankToLP(snaps[snaps.length - 1].tier, snaps[snaps.length - 1].rank, snaps[snaps.length - 1].lp) - rankToLP(snaps[0].tier, snaps[0].rank, snaps[0].lp)
-        : null;
-      const lpG = lpD !== null && g > 0 ? lpD / g : null;
-      return { puuid: p.puuid, games: g, firsts: f, top4Rate: rate, time: t, lpDiff: lpD, lpPerGame: lpG };
+    return SUPERLATIVE_CATEGORIES.filter((cat) => {
+      const leader = findLeader(stats, cat);
+      return leader?.player.puuid === player.puuid;
+    }).map((cat) => {
+      const me = stats.find((s) => s.player.puuid === player.puuid);
+      const val = me ? me[cat.key] : null;
+      return {
+        slug: cat.slug,
+        label: cat.label,
+        value: val !== null ? cat.format(val as number) : "—",
+      };
     });
-
-    const isLeader = (val: (s: PS) => number | null, filter?: (s: PS) => boolean) => {
-      const eligible = filter ? stats.filter(filter) : stats;
-      if (eligible.length === 0) return false;
-      const best = eligible.reduce((b, c) => {
-        const bv = val(b), cv = val(c);
-        if (bv === null) return c;
-        if (cv === null) return b;
-        return cv > bv ? c : b;
-      });
-      return best.puuid === player.puuid;
-    };
-
-    const me = stats.find((s) => s.puuid === player.puuid);
-    if (!me) return [];
-
-    const results: { label: string; value: string; icon: React.ElementType; color: string }[] = [];
-    if (me.games > 0 && isLeader(s => s.games, s => s.games > 0))
-      results.push({ label: "Most Games", value: String(me.games), icon: Gamepad2, color: CHART.gold });
-    if (me.games > 0 && isLeader(s => s.top4Rate, s => s.games > 0))
-      results.push({ label: "Best Top 4%", value: `${me.top4Rate.toFixed(1)}%`, icon: Trophy, color: CHART.gold });
-    if (me.firsts > 0 && isLeader(s => s.firsts, s => s.firsts > 0))
-      results.push({ label: "Most Wins", value: String(me.firsts), icon: Trophy, color: CHART.cyan });
-    if (me.time > 0 && isLeader(s => s.time, s => s.time > 0))
-      results.push({ label: "Most Time Played", value: formatPlaytime(me.time), icon: Clock, color: CHART.cyan });
-    if (me.lpDiff !== null && isLeader(s => s.lpDiff, s => s.lpDiff !== null))
-      results.push({ label: "Highest LP Gain", value: `${me.lpDiff >= 0 ? "+" : ""}${me.lpDiff} LP`, icon: TrendingUp, color: theme.primitive.color.green400 });
-    if (me.lpPerGame !== null && isLeader(s => s.lpPerGame, s => s.lpPerGame !== null))
-      results.push({ label: "Best LP/Game", value: `${me.lpPerGame >= 0 ? "+" : ""}${me.lpPerGame.toFixed(1)}`, icon: TrendingUp, color: theme.primitive.color.green400 });
-
-    return results;
   }, [player, allPlayers, selectedTab, weeks, isSet]);
+
+  if (loading) return <LoadingText>Loading...</LoadingText>;
+  if (!player) return <LoadingText>Player not found.</LoadingText>;
 
   const tierTickFormatter = (value: number) => {
     const tier = TIER_BASES.find((t) => t.lp === value);
@@ -761,7 +730,7 @@ export default function PlayerDrilldownPage() {
             setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
           }}
         >
-          <option value="set">This Set</option>
+          <option value="set">Set 17</option>
           {weeks.map((w, i) => (
             <option key={i} value={String(i)}>
               {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
@@ -776,7 +745,7 @@ export default function PlayerDrilldownPage() {
             data-active={isSet ? "true" : undefined}
             onClick={() => setSelectedTab("set")}
           >
-            This Set
+            Set 17
           </Tab>
           {weeks.map((w, i) => (
             <Tab
@@ -797,7 +766,7 @@ export default function PlayerDrilldownPage() {
       <StatsGrid>
         <GlassCard>
           <StatRow>
-            <StatLabel>Games {isSet ? "This Set" : "This Week"}</StatLabel>
+            <StatLabel>Games {isSet ? "Set 17" : "This Week"}</StatLabel>
             <Gamepad2 size={ICON_SIZE.sm} color={CHART.gold} />
           </StatRow>
           <StatValue>
@@ -842,8 +811,7 @@ export default function PlayerDrilldownPage() {
       {playerSuperlatives.length > 0 && (
         <BadgeRow>
           {playerSuperlatives.map((s) => (
-            <BadgeLink key={s.label} href="/">
-              <s.icon size={ICON_SIZE.xs} color={s.color} />
+            <BadgeLink key={s.slug} href={`/superlative/${s.slug}`}>
               <BadgeLabel>{s.label}</BadgeLabel>
               <BadgeValue>{s.value}</BadgeValue>
             </BadgeLink>

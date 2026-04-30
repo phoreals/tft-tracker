@@ -1,0 +1,590 @@
+"use client";
+
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import styled from "styled-components";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { ArrowLeft, User } from "lucide-react";
+import { GlassCard } from "@/components/GlassCard";
+import {
+  getSetWeeks,
+  SET_START,
+  SET_END,
+  SET_LABEL,
+  computePlayerStats,
+  SUPERLATIVE_CATEGORIES,
+  findLeader,
+  type PlayerStat,
+  type PlayerStatInput,
+} from "@/lib/utils";
+import { theme, ICON_SIZE } from "@/styles/theme";
+
+// ── Chart constants ──────────────────────────────────────────────
+
+const CHART = {
+  grid:    theme.semantic.color.chartGrid,
+  tick: {
+    fill:       theme.primitive.color.neutral200,
+    fontSize:   parseInt(theme.primitive.fontSize["2xs"]),
+    fontFamily: "Space Grotesk",
+  },
+  tooltip: {
+    bg:     theme.primitive.color.neutral850,
+    border: `1px solid ${theme.semantic.color.borderDefault}`,
+    radius: parseInt(theme.primitive.radius.md),
+    font:   "Space Grotesk",
+    size:   12,
+    label:  theme.semantic.color.textMuted,
+  },
+  gold:  theme.primitive.color.gold300,
+  cyan:  theme.primitive.color.cyan500,
+  muted: theme.semantic.color.textDisabled,
+} as const;
+
+// ── Styled ───────────────────────────────────────────────────────
+
+const Page = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
+  padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    gap: ${({ theme }) => theme.primitive.spacing.xl};
+    padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+  }
+`;
+
+const BackLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
+`;
+
+const PageTitle = styled.h1`
+  ${({ theme }) => theme.semantic.typography.heading};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+  }
+`;
+
+const PageSubtitle = styled.p`
+  font-family: ${({ theme }) => theme.semantic.font.body};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  margin-top: 4px;
+`;
+
+const StickyTabWrap = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  box-shadow: 0 4px 16px rgba(229, 197, 135, 0.06);
+  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
+  margin-right: -${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.xl};
+    margin-right: -${({ theme }) => theme.primitive.spacing.xl};
+    padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.xl};
+  }
+`;
+
+const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
+  display: none;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: flex;
+    align-items: stretch;
+    gap: ${({ theme }) => theme.primitive.spacing.xs};
+    overflow-x: auto;
+    mask-image: ${({ $fadeLeft, $fadeRight }) => {
+      if ($fadeLeft && $fadeRight) return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+      if ($fadeLeft) return "linear-gradient(to right, transparent, black 48px)";
+      if ($fadeRight) return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+      return "none";
+    }};
+    -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
+      if ($fadeLeft && $fadeRight) return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+      if ($fadeLeft) return "linear-gradient(to right, transparent, black 48px)";
+      if ($fadeRight) return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+      return "none";
+    }};
+
+    &::-webkit-scrollbar { height: 3px; }
+    &::-webkit-scrollbar-thumb {
+      background: transparent;
+      border-radius: ${({ theme }) => theme.primitive.radius.full};
+      transition: background 0.2s;
+    }
+    &:hover::-webkit-scrollbar-thumb {
+      background: ${({ theme }) => theme.semantic.color.borderDefault};
+    }
+  }
+`;
+
+const TabSelect = styled.select`
+  display: block;
+  width: 100%;
+  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+  min-height: 44px;
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23e5c587' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right ${({ theme }) => theme.primitive.spacing.md} center;
+  padding-right: ${({ theme }) => theme.primitive.spacing.xl};
+
+  option {
+    background: ${({ theme }) => theme.primitive.color.neutral850};
+    color: ${({ theme }) => theme.semantic.color.textPrimary};
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: none;
+  }
+`;
+
+const Tab = styled.button<{ $active: boolean }>`
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+  min-height: 44px;
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border: 1px solid ${({ $active, theme }) => $active ? theme.semantic.color.borderHover : "transparent"};
+  background: ${({ $active, theme }) => $active ? theme.semantic.color.accentHover : "transparent"};
+  color: ${({ $active, theme }) => $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary};
+    background: ${({ $active, theme }) => $active ? theme.semantic.color.accentHover : theme.semantic.color.borderDim};
+  }
+`;
+
+const WeekDate = styled.span`
+  display: block;
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
+  letter-spacing: 0.05em;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  opacity: 0.6;
+`;
+
+const ChartContainer = styled.div`
+  height: 300px;
+  width: 100%;
+  margin-top: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    height: 400px;
+  }
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: ${({ theme }) => theme.primitive.spacing.md};
+`;
+
+const Thead = styled.thead`
+  th {
+    ${({ theme }) => theme.semantic.typography.label};
+    font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+    color: ${({ theme }) => theme.semantic.color.textMuted};
+    text-align: left;
+    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+    border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
+  }
+`;
+
+const Tbody = styled.tbody`
+  tr {
+    border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
+    transition: background 0.15s;
+  }
+
+  @media (hover: hover) {
+    tr:hover {
+      background: ${({ theme }) => theme.component.table.rowHoverBg};
+    }
+  }
+
+  td {
+    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+    font-family: ${({ theme }) => theme.semantic.font.display};
+    font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+    color: ${({ theme }) => theme.semantic.color.textPrimary};
+  }
+`;
+
+const RankBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  background: rgba(229, 197, 135, 0.12);
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ theme }) => theme.semantic.color.accent};
+`;
+
+const SummonerCell = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.sm};
+`;
+
+const SummonerIcon = styled.div`
+  width: ${ICON_SIZE.avatar}px;
+  height: ${ICON_SIZE.avatar}px;
+  flex-shrink: 0;
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.semantic.color.accent};
+`;
+
+const SummonerLink = styled(Link)`
+  text-decoration: none;
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  transition: color 0.15s;
+
+  &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
+`;
+
+const BarFill = styled.div<{ $pct: number }>`
+  height: 4px;
+  width: ${({ $pct }) => $pct}%;
+  background: ${({ theme }) => theme.semantic.color.accent};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  margin-top: 4px;
+`;
+
+const LeaderRow = styled.tr`
+  background: rgba(229, 197, 135, 0.06) !important;
+`;
+
+const LoadingText = styled.p`
+  ${({ theme }) => theme.semantic.typography.label};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  text-align: center;
+  padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+`;
+
+// ── Helpers ──────────────────────────────────────────────────────
+
+function formatShortDate(ts: number): string {
+  const d = new Date(ts);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function useScrollFade(ref: React.RefObject<HTMLDivElement | null>) {
+  const [fadeLeft, setFadeLeft] = useState(false);
+  const [fadeRight, setFadeRight] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      setFadeLeft(el.scrollLeft > 2);
+      setFadeRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, [ref]);
+
+  return { fadeLeft, fadeRight };
+}
+
+// ── Component ────────────────────────────────────────────────────
+
+interface PlayerData extends PlayerStatInput {
+  current: {
+    tier: string;
+    rank: string;
+    lp: number;
+    wins: number;
+    losses: number;
+    lastUpdated: string;
+  } | null;
+}
+
+export default function SuperlativeDrilldownPage() {
+  const { category: slug } = useParams<{ category: string }>();
+  const [players, setPlayers] = useState<PlayerData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const cat = SUPERLATIVE_CATEGORIES.find((c) => c.slug === slug);
+
+  const weeks = useMemo(() => getSetWeeks(), []);
+
+  const [selectedTab, setSelectedTab] = useState<"set" | number>(() => {
+    const now = Date.now();
+    const ws = getSetWeeks();
+    let idx = 0;
+    for (let i = 0; i < ws.length; i++) {
+      if (ws[i].start <= now) idx = i;
+    }
+    return idx;
+  });
+
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
+
+  useEffect(() => {
+    const bar = tabBarRef.current;
+    if (!bar) return;
+    const active = bar.querySelector("[data-active='true']") as HTMLElement | null;
+    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [selectedTab]);
+
+  useEffect(() => {
+    fetch("/api/players")
+      .then((r) => r.json())
+      .then((data) => setPlayers(data))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const isSet = selectedTab === "set";
+  const win = isSet
+    ? { start: SET_START, end: SET_END }
+    : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+
+  const stats = useMemo(() => {
+    if (players.length === 0) return [];
+    return computePlayerStats(players, win);
+  }, [players, win]);
+
+  const ranked = useMemo(() => {
+    if (!cat) return [];
+    return [...stats]
+      .filter(cat.filter)
+      .sort((a, b) => {
+        const av = a[cat.key] as number | null;
+        const bv = b[cat.key] as number | null;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return bv - av;
+      });
+  }, [stats, cat]);
+
+  const leader = cat ? findLeader(stats, cat) : null;
+  const maxVal = ranked.length > 0 ? Math.max(...ranked.map((r) => Math.abs((r[cat!.key] as number) ?? 0))) : 1;
+
+  const chartData = useMemo(() => {
+    return ranked.map((r) => ({
+      name: r.player.gameName,
+      value: (r[cat!.key] as number) ?? 0,
+      puuid: r.player.puuid,
+    }));
+  }, [ranked, cat]);
+
+  if (!cat) return <LoadingText>Category not found.</LoadingText>;
+
+  return (
+    <Page>
+      <BackLink href="/">
+        <ArrowLeft size={ICON_SIZE.sm} />
+        BACK TO WEEKLY STATS
+      </BackLink>
+
+      <div>
+        <PageTitle>{cat.label}</PageTitle>
+        <PageSubtitle>
+          {isSet ? `Leaderboard · ${SET_LABEL}` : (() => {
+            const w = weeks[selectedTab as number];
+            return w ? `Leaderboard · ${w.label} (${formatShortDate(w.start)}–${formatShortDate(w.end)})` : "Leaderboard";
+          })()}
+        </PageSubtitle>
+      </div>
+
+      <StickyTabWrap>
+        <TabSelect
+          value={selectedTab === "set" ? "set" : String(selectedTab)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
+          }}
+        >
+          <option value="set">{SET_LABEL}</option>
+          {weeks.map((w, i) => (
+            <option key={i} value={String(i)}>
+              {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
+            </option>
+          ))}
+        </TabSelect>
+
+        <TabBar ref={tabBarRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
+          <Tab
+            $active={selectedTab === "set"}
+            data-active={selectedTab === "set" ? "true" : undefined}
+            onClick={() => setSelectedTab("set")}
+          >
+            {SET_LABEL}
+          </Tab>
+          {weeks.map((w, i) => (
+            <Tab
+              key={i}
+              $active={selectedTab === i}
+              data-active={selectedTab === i ? "true" : undefined}
+              onClick={() => setSelectedTab(i)}
+            >
+              {w.label}
+              <WeekDate>{formatShortDate(w.start)}–{formatShortDate(w.end)}</WeekDate>
+            </Tab>
+          ))}
+        </TabBar>
+      </StickyTabWrap>
+
+      {loading ? (
+        <LoadingText>Loading...</LoadingText>
+      ) : ranked.length === 0 ? (
+        <LoadingText>No data for this time period.</LoadingText>
+      ) : (
+        <>
+          <GlassCard>
+            <ChartContainer>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} horizontal={false} />
+                  <XAxis
+                    type="number"
+                    tick={CHART.tick}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tick={CHART.tick}
+                    axisLine={false}
+                    tickLine={false}
+                    width={100}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: CHART.tooltip.bg,
+                      border: CHART.tooltip.border,
+                      borderRadius: CHART.tooltip.radius,
+                      fontFamily: CHART.tooltip.font,
+                      fontSize: CHART.tooltip.size,
+                    }}
+                    labelStyle={{ color: CHART.tooltip.label }}
+                    formatter={(value) => [cat.format(value as number), cat.label]}
+                    cursor={{ fill: "rgba(229, 197, 135, 0.05)" }}
+                  />
+                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                    {chartData.map((entry, i) => (
+                      <Cell
+                        key={entry.puuid}
+                        fill={i === 0 ? CHART.gold : CHART.muted}
+                        fillOpacity={i === 0 ? 1 : 0.5}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </GlassCard>
+
+          <GlassCard title="Rankings">
+            <Table>
+              <Thead>
+                <tr>
+                  <th style={{ width: 40 }}>#</th>
+                  <th>Summoner</th>
+                  <th style={{ textAlign: "right" }}>{cat.label}</th>
+                </tr>
+              </Thead>
+              <Tbody>
+                {ranked.map((r, i) => {
+                  const val = (r[cat.key] as number) ?? 0;
+                  const isLead = leader?.player.puuid === r.player.puuid;
+                  const Row = isLead ? LeaderRow : "tr";
+                  return (
+                    <Row key={r.player.puuid}>
+                      <td>
+                        {isLead ? <RankBadge>{i + 1}</RankBadge> : i + 1}
+                      </td>
+                      <td>
+                        <SummonerCell>
+                          <SummonerIcon>
+                            {r.player.profileIconId ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${r.player.profileIconId}.jpg`}
+                                alt=""
+                                width={32}
+                                height={32}
+                                style={{ display: "block" }}
+                              />
+                            ) : (
+                              <User size={ICON_SIZE.md} />
+                            )}
+                          </SummonerIcon>
+                          <SummonerLink href={`/player/${r.player.puuid}`}>
+                            {r.player.gameName}#{r.player.tagLine}
+                          </SummonerLink>
+                        </SummonerCell>
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <div>{cat.format(val)}</div>
+                        <BarFill $pct={maxVal > 0 ? (Math.abs(val) / maxVal) * 100 : 0} />
+                      </td>
+                    </Row>
+                  );
+                })}
+              </Tbody>
+            </Table>
+          </GlassCard>
+        </>
+      )}
+    </Page>
+  );
+}

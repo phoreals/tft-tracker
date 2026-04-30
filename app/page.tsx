@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import styled from "styled-components";
-import { RefreshCw, Clock, Trophy, Gamepad2, User, TrendingUp } from "lucide-react";
+import { RefreshCw, Clock, Trophy, Gamepad2, User } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
-import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END, rankToLP } from "@/lib/utils";
+import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -290,27 +290,22 @@ const ChipIcon = styled.div`
 
 const ChipName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textSecondary};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
-const ChipLink = styled(Link)`
+const SuperlativeCardLink = styled(Link)`
   text-decoration: none;
   color: inherit;
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
-  margin-top: ${({ theme }) => theme.primitive.spacing.xs};
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
-  margin-left: -${({ theme }) => theme.primitive.spacing.xs};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  transition: background 0.2s;
+  display: block;
+  border-radius: ${({ theme }) => theme.component.glassCard.radius};
+  transition: transform 0.15s;
 
   &:hover {
-    background: rgba(229, 197, 135, 0.08);
+    transform: translateY(-2px);
   }
 
   &:hover ${ChipName} {
@@ -440,7 +435,7 @@ export default function WeeklyStatsPage() {
     if (selectedTab === "set") {
       start = SET_START;
       end = SET_END;
-      label = "This Set";
+      label = "Set 17";
     } else {
       const w = weeks[selectedTab] ?? weeks[weeks.length - 1];
       start = w.start;
@@ -460,122 +455,21 @@ export default function WeeklyStatsPage() {
   const superlatives = useMemo(() => {
     if (players.length === 0) return [];
 
-    let start: number, end: number;
-    if (selectedTab === "set") {
-      start = SET_START;
-      end = SET_END;
-    } else {
-      const w = weeks[selectedTab] ?? weeks[weeks.length - 1];
-      start = w.start;
-      end = w.end;
-    }
+    const win = selectedTab === "set"
+      ? { start: SET_START, end: SET_END }
+      : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+    const stats = computePlayerStats(players, win);
 
-    const stats = players.map((p) => {
-      const scoped = p.matches.filter((m) => m.timestamp >= start && m.timestamp < end);
-      const games = scoped.length;
-      const firsts = scoped.filter((m) => m.placement === 1).length;
-      const top4 = scoped.filter((m) => m.placement <= 4).length;
-      const time = scoped.reduce((s, m) => s + m.duration, 0);
-      const top4Rate = games > 0 ? (top4 / games) * 100 : 0;
-
-      const snaps = p.history
-        .filter((h) => {
-          const t = new Date(h.date).getTime();
-          return t >= start && t < end;
-        })
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      const lpDiff =
-        snaps.length >= 2
-          ? rankToLP(snaps[snaps.length - 1].tier, snaps[snaps.length - 1].rank, snaps[snaps.length - 1].lp) -
-            rankToLP(snaps[0].tier, snaps[0].rank, snaps[0].lp)
-          : null;
-      const lpPerGame = lpDiff !== null && games > 0 ? lpDiff / games : null;
-
-      return { player: p, games, firsts, top4Rate, time, lpDiff, lpPerGame };
+    return SUPERLATIVE_CATEGORIES.map((cat) => {
+      const leader = findLeader(stats, cat);
+      const val = leader ? leader[cat.key] : null;
+      return {
+        slug: cat.slug,
+        label: cat.label,
+        value: val !== null ? cat.format(val as number) : "—",
+        player: leader?.player ?? null,
+      };
     });
-
-    type S = (typeof stats)[0];
-    const leader = (val: (s: S) => number | null, filter?: (s: S) => boolean) => {
-      const eligible = filter ? stats.filter(filter) : stats;
-      if (eligible.length === 0) return null;
-      return eligible.reduce((best, cur) => {
-        const bv = val(best),
-          cv = val(cur);
-        if (bv === null) return cur;
-        if (cv === null) return best;
-        if (cv > bv) return cur;
-        if (cv === bv && cur.player.gameName < best.player.gameName) return cur;
-        return best;
-      });
-    };
-
-    const fmt = (l: S | null, v: string | null) =>
-      l && v ? { value: v, player: l.player } : { value: "—", player: null as PlayerData | null };
-
-    return [
-      {
-        label: "Most Games",
-        icon: Gamepad2,
-        color: theme.semantic.color.accent,
-        ...(() => {
-          const l = leader((s) => s.games, (s) => s.games > 0);
-          return fmt(l, l ? String(l.games) : null);
-        })(),
-      },
-      {
-        label: "Best Top 4%",
-        icon: Trophy,
-        color: theme.semantic.color.accent,
-        ...(() => {
-          const l = leader((s) => s.top4Rate, (s) => s.games > 0);
-          return fmt(l, l ? `${l.top4Rate.toFixed(1)}%` : null);
-        })(),
-      },
-      {
-        label: "Most Wins",
-        icon: Trophy,
-        color: theme.primitive.color.cyan500,
-        ...(() => {
-          const l = leader((s) => s.firsts, (s) => s.firsts > 0);
-          return fmt(l, l ? String(l.firsts) : null);
-        })(),
-      },
-      {
-        label: "Most Time Played",
-        icon: Clock,
-        color: theme.semantic.color.info,
-        ...(() => {
-          const l = leader((s) => s.time, (s) => s.time > 0);
-          return fmt(l, l ? formatPlaytime(l.time) : null);
-        })(),
-      },
-      {
-        label: "Highest LP Gain",
-        icon: TrendingUp,
-        color: theme.primitive.color.green400,
-        ...(() => {
-          const l = leader((s) => s.lpDiff, (s) => s.lpDiff !== null);
-          return fmt(
-            l,
-            l && l.lpDiff !== null ? `${l.lpDiff >= 0 ? "+" : ""}${l.lpDiff} LP` : null,
-          );
-        })(),
-      },
-      {
-        label: "Best LP/Game",
-        icon: TrendingUp,
-        color: theme.primitive.color.green400,
-        ...(() => {
-          const l = leader((s) => s.lpPerGame, (s) => s.lpPerGame !== null);
-          return fmt(
-            l,
-            l && l.lpPerGame !== null
-              ? `${l.lpPerGame >= 0 ? "+" : ""}${l.lpPerGame.toFixed(1)} LP/game`
-              : null,
-          );
-        })(),
-      },
-    ];
   }, [players, selectedTab, weeks]);
 
   const isSet = selectedTab === "set";
@@ -584,10 +478,10 @@ export default function WeeklyStatsPage() {
     <Page>
       <PageHeader>
         <div>
-          <PageTitle>{isSet ? "The Asylum Set Stats" : "The Asylum Weekly Stats"}</PageTitle>
+          <PageTitle>{isSet ? "The Asylum Set 17 Stats" : "The Asylum Weekly Stats"}</PageTitle>
           <PageSubtitle>
             {isSet
-              ? "Squad performance · This Set"
+              ? "Squad performance · Set 17"
               : (() => {
                   const w = weeks[selectedTab as number];
                   return w
@@ -611,7 +505,7 @@ export default function WeeklyStatsPage() {
             setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
           }}
         >
-          <option value="set">This Set</option>
+          <option value="set">Set 17</option>
           {weeks.map((w, i) => (
             <option key={i} value={String(i)}>
               {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
@@ -626,7 +520,7 @@ export default function WeeklyStatsPage() {
             data-active={selectedTab === "set" ? "true" : undefined}
             onClick={() => setSelectedTab("set")}
           >
-            This Set
+            Set 17
           </PageTab>
           {weeks.map((w, i) => (
             <PageTab
@@ -646,31 +540,32 @@ export default function WeeklyStatsPage() {
 
       <SuperlativesGrid>
         {superlatives.map((s) => (
-          <GlassCard key={s.label}>
-            <StatRow>
-              <StatLabel>{s.label}</StatLabel>
-              <s.icon size={ICON_SIZE.md} color={s.color} />
-            </StatRow>
-            <StatValue>{loading ? "..." : s.value}</StatValue>
-            {s.player && (
-              <ChipLink href={`/player/${s.player.puuid}`}>
-                <ChipIcon>
-                  {s.player.profileIconId ? (
-                    <img
-                      src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${s.player.profileIconId}.jpg`}
-                      alt=""
-                      width={24}
-                      height={24}
-                      style={{ display: "block" }}
-                    />
-                  ) : (
-                    <User size={ICON_SIZE.sm} />
-                  )}
-                </ChipIcon>
-                <ChipName>{s.player.gameName}</ChipName>
-              </ChipLink>
-            )}
-          </GlassCard>
+          <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}`}>
+            <GlassCard>
+              <StatRow>
+                <StatLabel>{s.label}</StatLabel>
+              </StatRow>
+              <StatValue>{loading ? "..." : s.value}</StatValue>
+              {s.player && (
+                <PlayerChip>
+                  <ChipIcon>
+                    {s.player.profileIconId ? (
+                      <img
+                        src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${s.player.profileIconId}.jpg`}
+                        alt=""
+                        width={24}
+                        height={24}
+                        style={{ display: "block" }}
+                      />
+                    ) : (
+                      <User size={ICON_SIZE.sm} />
+                    )}
+                  </ChipIcon>
+                  <ChipName>{s.player.gameName}#{s.player.tagLine}</ChipName>
+                </PlayerChip>
+              )}
+            </GlassCard>
+          </SuperlativeCardLink>
         ))}
       </SuperlativesGrid>
 

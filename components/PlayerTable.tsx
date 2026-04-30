@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import styled from "styled-components";
 import Link from "next/link";
 import { User } from "lucide-react";
@@ -63,6 +63,24 @@ const Thead = styled.thead`
       padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
     }
   }
+`;
+
+const SortTh = styled.th<{ $active: boolean }>`
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textDisabled} !important;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary} !important;
+  }
+`;
+
+const SortArrow = styled.span<{ $visible: boolean }>`
+  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+  margin-left: 4px;
+  font-size: 10px;
 `;
 
 const Tbody = styled.tbody`
@@ -249,7 +267,21 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
 
 // ── Component ────────────────────────────────────────────────────
 
+type SortKey = "name" | "rankLP" | "games" | "top4Rate" | "firstRate" | "time";
+
 export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  };
+
   const isSet = selectedTab === "set";
   const win = isSet
     ? { start: SET_START, end: SET_END }
@@ -285,9 +317,35 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
       scopedTime: formatPlaytime(scopedDuration),
       peakRank: peak,
       lowRank: low,
+      // Raw numeric values for sorting
+      rankLP: p.current ? rankToLP(p.current.tier, p.current.rank, p.current.lp) : -1,
+      gamesNum: isSet ? totalGames : scopedGames,
+      top4RateNum: scopedGames > 0 ? (scopedTop4 / scopedGames) * 100 : 0,
+      firstRateNum: scopedGames > 0 ? (scopedFirsts / scopedGames) * 100 : 0,
+      timeNum: isSet ? totalDuration : scopedDuration,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [players, selectedTab, weeks]);
+
+  const sortedRows = useMemo(() => {
+    if (!sortKey) return rows;
+    const sorted = [...rows].sort((a, b) => {
+      let av: number | string, bv: number | string;
+      switch (sortKey) {
+        case "name": av = a.name.toLowerCase(); bv = b.name.toLowerCase(); break;
+        case "rankLP": av = a.rankLP; bv = b.rankLP; break;
+        case "games": av = a.gamesNum; bv = b.gamesNum; break;
+        case "top4Rate": av = a.top4RateNum; bv = b.top4RateNum; break;
+        case "firstRate": av = a.firstRateNum; bv = b.firstRateNum; break;
+        case "time": av = a.timeNum; bv = b.timeNum; break;
+        default: return 0;
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return sorted;
+  }, [rows, sortKey, sortDir]);
 
   return (
     <GlassCard title="Player Performance">
@@ -295,26 +353,35 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
         <Table>
           <Thead>
             <tr>
-              <th>Summoner</th>
-              <th>Rank</th>
-              {isSet
-                ? <th style={{ textAlign: "center" }}>Total Games</th>
-                : <th style={{ textAlign: "center" }}>Games This Week</th>
-              }
-              <th style={{ textAlign: "center" }}>Top 4%</th>
-              <th style={{ textAlign: "center" }}>1st%</th>
-              <th style={{ textAlign: "right" }}>Time Played</th>
+              <SortTh $active={sortKey === "name"} onClick={() => toggleSort("name")}>
+                Summoner<SortArrow $visible={sortKey === "name"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+              </SortTh>
+              <SortTh $active={sortKey === "rankLP"} onClick={() => toggleSort("rankLP")}>
+                Rank<SortArrow $visible={sortKey === "rankLP"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+              </SortTh>
+              <SortTh $active={sortKey === "games"} style={{ textAlign: "center" }} onClick={() => toggleSort("games")}>
+                {isSet ? "Total Games" : "Games This Week"}<SortArrow $visible={sortKey === "games"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+              </SortTh>
+              <SortTh $active={sortKey === "top4Rate"} style={{ textAlign: "center" }} onClick={() => toggleSort("top4Rate")}>
+                Top 4%<SortArrow $visible={sortKey === "top4Rate"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+              </SortTh>
+              <SortTh $active={sortKey === "firstRate"} style={{ textAlign: "center" }} onClick={() => toggleSort("firstRate")}>
+                1st%<SortArrow $visible={sortKey === "firstRate"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+              </SortTh>
+              <SortTh $active={sortKey === "time"} style={{ textAlign: "right" }} onClick={() => toggleSort("time")}>
+                Time Played<SortArrow $visible={sortKey === "time"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+              </SortTh>
             </tr>
           </Thead>
           <Tbody>
-            {rows.length === 0 ? (
+            {sortedRows.length === 0 ? (
               <tr>
                 <EmptyRow colSpan={6}>
                   No players tracked yet. Add players to get started.
                 </EmptyRow>
               </tr>
             ) : (
-              rows.map((row) => (
+              sortedRows.map((row) => (
                 <tr key={row.name}>
                   <td>
                     <SummonerCell>

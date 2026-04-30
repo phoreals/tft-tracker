@@ -17,10 +17,10 @@ Navigation is always visible. The active page is highlighted with a gold accent 
 
 A scrollable tab bar sits between the page header and the summary cards. It controls the entire page — summary cards, player table, and placement chart all update together.
 
-**Tabs**: "This Set" (first) | "Week 1" | "Week 2" | … | "Week N" (current week)
+**Tabs**: "Set 17" (first) | "Week 1" | "Week 2" | … | "Week N" (current week)
 
 - Calculated from the TFT set start date in 7-day increments. Future weeks are hidden.
-- Default on load: the current week (not "This Set").
+- Default on load: the current week (not "Set 17").
 - Each week tab shows "Week N" on the first line and the date range (e.g. "4/15–4/22") below.
 - The bar overflows horizontally; `mask-image` gradients fade the left and/or right edges (48px) to signal scrollability. Gradients are conditional on scroll position — no fade on the left when fully scrolled left, no fade on the right when fully scrolled right. Driven by a `useScrollFade` hook that listens to `scroll` events and `ResizeObserver`.
 - Horizontal scrollbar is flush against the bottom of the container — no padding gap. The scrollbar thumb is invisible by default and only appears on hover.
@@ -45,13 +45,15 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
 
-On the **Player Drilldown** page, any superlatives the viewed player currently holds appear as pill badges below the stat cards, linking back to the main page.
+Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a horizontal bar chart and ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`).
+
+On the **Player Drilldown** page, any superlatives the viewed player currently holds appear as pill badges below the stat cards, linking to the corresponding superlative drilldown page.
 
 ### Summary Cards
 
 Three `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart), not at the top.
 
-| Card | "This Set" | Week tab |
+| Card | "Set 17" | Week tab |
 |------|-----------|---------|
 | **GAMES {label}** | Total games for the full set | Games for the selected week |
 | **SQUAD PLAYTIME** | Total playtime for the full set | Playtime for the selected week |
@@ -61,7 +63,9 @@ Three `GlassCard` components show aggregate metrics for the **currently selected
 
 A full-width table inside a `GlassCard`. Columns and stats adapt to the selected tab.
 
-**"This Set" view — 6 columns:**
+**Column sorting**: All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold with a ▲/▼ arrow indicator. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration).
+
+**"Set 17" view — 6 columns:**
 
 | Column | Source | Notes |
 |--------|--------|-------|
@@ -92,14 +96,14 @@ Empty state: centered message "No players tracked yet. Add players to get starte
 
 A Recharts `LineChart` inside a `GlassCard`. Mode is driven entirely by the page-level tab — no internal controls on the chart.
 
-- **"This Set" tab** — average placement per set-week (Wk 1 through present), one point per week per player. Empty weeks omitted.
+- **"Set 17" tab** — average placement per set-week (Wk 1 through present), one point per week per player. Empty weeks omitted.
 - **Week tabs** — individual game placements for the selected week on a merged chronological timeline. Each X-axis point is a real game timestamp (formatted M/D).
 
 Both modes: Y-axis placement 1–8 reversed (1st at top), reference line at y=4.5 (top-4 boundary), 10-color line palette, legend hidden on mobile (shown at 768px+).
 
 Empty states:
 - Week tabs: "No games played this week yet."
-- This Set: "No match data yet. Sync to start tracking."
+- Set 17: "No match data yet. Sync to start tracking."
 
 ### Sync Button
 Top-right of the page header. Calls `POST /api/sync`, shows a spinning icon while active, then refreshes all data.
@@ -138,6 +142,21 @@ Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
 **Rank abbreviation on mobile**: Rank strings are abbreviated to save horizontal space — e.g. `Gold II 47 LP → G2 47LP`, `Master 185 LP → M 185LP`. The "Peak:" and "Low:" sub-line labels in the player performance table are always written in full regardless of viewport.
 
 **Sync Now** badge in the card header triggers `POST /api/sync`.
+
+## Superlative Drilldown (`/superlative/[category]`)
+
+Accessed by clicking a superlative card on the Weekly Stats page. Category slugs: `most-games`, `best-top4`, `most-wins`, `most-time`, `highest-lp`, `best-lp-per-game`.
+
+### Layout
+- Back link to Weekly Stats
+- Page title = category label (e.g. "Most Games")
+- Same sticky tab bar as other pages (Set 17 / Week 1–N)
+
+### Bar Chart
+Horizontal bar chart (Recharts `BarChart` with `layout="vertical"`) showing all players sorted by the stat value descending. The leader's bar is gold; other bars use the muted text color at 50% opacity.
+
+### Rankings Table
+Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline progress bar relative to leader). The leader's row has a subtle gold background highlight.
 
 ## Interaction States
 

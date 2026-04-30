@@ -4,6 +4,8 @@
 // Change back to 2026-04-15 when the actual set launches.
 export const SET_START = new Date("2026-02-18T00:00:00").getTime();
 export const SET_END = new Date("2026-07-29T23:59:59").getTime();
+export const SET_NUMBER = 17;
+export const SET_LABEL = `Set ${SET_NUMBER}`;
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function getCurrentSetWeek(): { label: string; start: number; end: number; weekNumber: number } {
@@ -126,4 +128,84 @@ export const RANK_COLORS: Record<string, string> = {
 export function getRankColor(tier?: string): string {
   if (!tier) return "rgba(208, 197, 181, 0.4)";
   return RANK_COLORS[tier.toUpperCase()] ?? "rgba(208, 197, 181, 0.4)";
+}
+
+// ── Superlative Stats ───────────────────────────────────────────
+
+export interface PlayerStatInput {
+  puuid: string;
+  gameName: string;
+  tagLine: string;
+  profileIconId?: number;
+  matches: { placement: number; duration: number; timestamp: number }[];
+  history: { date: string; tier: string; rank: string; lp: number }[];
+}
+
+export interface PlayerStat {
+  player: PlayerStatInput;
+  games: number;
+  firsts: number;
+  top4Rate: number;
+  time: number;
+  lpDiff: number | null;
+  lpPerGame: number | null;
+}
+
+export function computePlayerStats(
+  players: PlayerStatInput[],
+  window: { start: number; end: number },
+): PlayerStat[] {
+  return players.map((p) => {
+    const scoped = p.matches.filter((m) => m.timestamp >= window.start && m.timestamp < window.end);
+    const games = scoped.length;
+    const firsts = scoped.filter((m) => m.placement === 1).length;
+    const top4 = scoped.filter((m) => m.placement <= 4).length;
+    const time = scoped.reduce((s, m) => s + m.duration, 0);
+    const top4Rate = games > 0 ? (top4 / games) * 100 : 0;
+
+    const snaps = p.history
+      .filter((h) => {
+        const t = new Date(h.date).getTime();
+        return t >= window.start && t < window.end;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const lpDiff =
+      snaps.length >= 2
+        ? rankToLP(snaps[snaps.length - 1].tier, snaps[snaps.length - 1].rank, snaps[snaps.length - 1].lp) -
+          rankToLP(snaps[0].tier, snaps[0].rank, snaps[0].lp)
+        : null;
+    const lpPerGame = lpDiff !== null && games > 0 ? lpDiff / games : null;
+
+    return { player: p, games, firsts, top4Rate, time, lpDiff, lpPerGame };
+  });
+}
+
+export type SuperlativeCategory = {
+  slug: string;
+  label: string;
+  key: keyof Pick<PlayerStat, "games" | "firsts" | "top4Rate" | "time" | "lpDiff" | "lpPerGame">;
+  format: (v: number) => string;
+  filter: (s: PlayerStat) => boolean;
+};
+
+export const SUPERLATIVE_CATEGORIES: SuperlativeCategory[] = [
+  { slug: "most-games",       label: "Most Games",       key: "games",     format: (v) => String(v),                                      filter: (s) => s.games > 0 },
+  { slug: "best-top4",        label: "Best Top 4%",      key: "top4Rate",  format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
+  { slug: "most-wins",        label: "Most Wins",        key: "firsts",    format: (v) => String(v),                                      filter: (s) => s.firsts > 0 },
+  { slug: "most-time",        label: "Most Time Played", key: "time",      format: (v) => formatPlaytime(v),                              filter: (s) => s.time > 0 },
+  { slug: "highest-lp",       label: "Highest LP Gain",  key: "lpDiff",    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,                  filter: (s) => s.lpDiff !== null },
+  { slug: "best-lp-per-game", label: "Best LP/Game",     key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },
+];
+
+export function findLeader(stats: PlayerStat[], cat: SuperlativeCategory): PlayerStat | null {
+  const eligible = stats.filter(cat.filter);
+  if (eligible.length === 0) return null;
+  return eligible.reduce((best, cur) => {
+    const bv = best[cat.key], cv = cur[cat.key];
+    if (bv === null) return cur;
+    if (cv === null) return best;
+    if ((cv as number) > (bv as number)) return cur;
+    if ((cv as number) === (bv as number) && cur.player.gameName < best.player.gameName) return cur;
+    return best;
+  });
 }
