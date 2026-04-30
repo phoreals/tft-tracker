@@ -234,7 +234,7 @@ const PageTab = styled.button<{ $active: boolean }>`
 
 const StatsGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
   @media (min-width: 640px) {
