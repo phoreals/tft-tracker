@@ -148,7 +148,7 @@ Uses `@upstash/redis` REST client. All data is JSON-serialized.
 | `getPlayerHistory(puuid)` | GET `player:{puuid}:history` |
 | `appendPlayerHistory(puuid, snap)` | Read-modify-write: dedup by date, trim to 365 |
 | `getPlayerMatches(puuid)` | GET `player:{puuid}:matches` |
-| `setPlayerMatches(puuid, matches)` | SET, trimmed to last 100 |
+| `setPlayerMatches(puuid, matches)` | SET (no trim — stores full array) |
 
 ### Data Types
 

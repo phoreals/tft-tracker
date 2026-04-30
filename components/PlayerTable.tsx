@@ -317,8 +317,11 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
   const week = isSet ? null : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
 
   const rows = useMemo(() => players.map((p) => {
-    const totalGames = p.matches.length;
-    const totalDuration = p.matches.reduce((s, m) => s + m.duration, 0);
+    const setMatches = p.matches.filter(
+      (m) => m.timestamp >= SET_START && m.timestamp < SET_END
+    );
+    const totalGames = setMatches.length;
+    const totalDuration = setMatches.reduce((s, m) => s + m.duration, 0);
 
     const scopedMatches = p.matches.filter(
       (m) => m.timestamp >= win.start && m.timestamp < win.end

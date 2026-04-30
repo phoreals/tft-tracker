@@ -62,7 +62,7 @@ npx next build     # production build — run before committing
 - **Vercel hobby plan**: serverless functions default to 10s timeout. `api/sync` and `api/cron` set `export const maxDuration = 60` to allow longer runs.
 - **Match backfill**: sync fetches all Set 17 match IDs (paginated via `getAllMatchIds`) but processes only 30 new matches per player per run to stay within the timeout. Players with large history gaps need multiple sync runs.
 - **Cron**: runs once daily at midnight UTC (`"0 0 * * *"`). Vercel hobby allows only 1 cron job.
-- **Match storage cap**: `setPlayerMatches` in `lib/kv.ts` trims to the last 100 matches. This will need to increase as the set progresses.
+- **Match storage**: `setPlayerMatches` in `lib/kv.ts` stores the full array with no trim. Match counts grow unbounded — monitor Redis storage usage as the set progresses.
 
 ## Docs Update Policy
 
