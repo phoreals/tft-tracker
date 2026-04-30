@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
@@ -275,34 +275,35 @@ function formatShortDate(ts: number): string {
   });
 }
 
-function useFullBleedSticky(stickyRef: React.RefObject<HTMLDivElement | null>) {
+function useFullBleedSticky() {
+  const [stickyEl, setStickyEl] = useState<HTMLDivElement | null>(null);
   const [isSticky, setIsSticky] = useState(false);
 
+  const stickyRef = useCallback((node: HTMLDivElement | null) => setStickyEl(node), []);
+
   useEffect(() => {
-    const el = stickyRef.current;
-    if (!el) return;
-    const check = () => setIsSticky(el.getBoundingClientRect().top <= 1);
+    if (!stickyEl) return;
+    const check = () => setIsSticky(stickyEl.getBoundingClientRect().top <= 1);
     check();
     window.addEventListener("scroll", check, { passive: true });
     return () => window.removeEventListener("scroll", check);
-  }, [stickyRef]);
+  }, [stickyEl]);
 
   useEffect(() => {
-    const el = stickyRef.current;
-    if (!el) return;
-    const main = el.closest("main");
+    if (!stickyEl) return;
+    const main = stickyEl.closest("main");
     if (!main) return;
     const update = () => {
       const extra = Math.max(0, (main.getBoundingClientRect().width - 1440) / 2);
-      el.style.setProperty("--bleed-extra", `${extra}px`);
+      stickyEl.style.setProperty("--bleed-extra", `${extra}px`);
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(main);
     return () => ro.disconnect();
-  }, [stickyRef]);
+  }, [stickyEl]);
 
-  return { isSticky };
+  return { stickyRef, isSticky };
 }
 
 function useScrollFade(ref: React.RefObject<HTMLDivElement | null>) {
@@ -365,9 +366,8 @@ export default function SuperlativeDrilldownPage() {
   });
 
   const tabBarRef = useRef<HTMLDivElement>(null);
-  const stickyRef = useRef<HTMLDivElement>(null);
+  const { stickyRef, isSticky } = useFullBleedSticky();
   const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
-  const { isSticky } = useFullBleedSticky(stickyRef);
 
   useEffect(() => {
     const bar = tabBarRef.current;
