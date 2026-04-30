@@ -137,6 +137,7 @@ export interface PlayerStatInput {
   profileIconId?: number;
   matches: { placement: number; duration: number; timestamp: number }[];
   history: { date: string; tier: string; rank: string; lp: number }[];
+  current?: { tier: string; rank: string; lp: number } | null;
 }
 
 export interface PlayerStat {
@@ -167,10 +168,17 @@ export function computePlayerStats(
         return t >= window.start && t < window.end;
       })
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Use current rank as the "end" point when available, so LP gain works
+    // even with only 1 history snapshot (e.g. early in the set / app launch).
+    const endLP = p.current
+      ? rankToLP(p.current.tier, p.current.rank, p.current.lp)
+      : snaps.length >= 2
+        ? rankToLP(snaps[snaps.length - 1].tier, snaps[snaps.length - 1].rank, snaps[snaps.length - 1].lp)
+        : null;
     const lpDiff =
-      snaps.length >= 2
-        ? rankToLP(snaps[snaps.length - 1].tier, snaps[snaps.length - 1].rank, snaps[snaps.length - 1].lp) -
-          rankToLP(snaps[0].tier, snaps[0].rank, snaps[0].lp)
+      snaps.length >= 1 && endLP !== null
+        ? endLP - rankToLP(snaps[0].tier, snaps[0].rank, snaps[0].lp)
         : null;
     const lpPerGame = lpDiff !== null && games > 0 ? lpDiff / games : null;
 

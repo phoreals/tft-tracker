@@ -270,6 +270,7 @@ const SuperlativesGrid = styled.div`
 
 const PlayerChip = styled(Link)`
   display: flex;
+  align-self: flex-start;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   margin-top: ${({ theme }) => theme.primitive.spacing.xs};
@@ -281,6 +282,7 @@ const PlayerChip = styled(Link)`
   position: relative;
   z-index: 1;
   transition: background 0.2s;
+  max-width: calc(100% + ${({ theme }) => theme.primitive.spacing.xs});
 
   &:hover {
     background: rgba(229, 197, 135, 0.08);

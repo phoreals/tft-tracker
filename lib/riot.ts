@@ -87,21 +87,27 @@ export async function getLeagueEntries(
 
 export async function getMatchIds(
   puuid: string,
-  count = 100
+  count = 100,
+  startTime?: number,
 ): Promise<string[]> {
+  const params = new URLSearchParams({ start: "0", count: String(count) });
+  if (startTime != null) params.set("start_time", String(startTime));
   return riotFetch<string[]>(
-    `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?start=0&count=${count}`
+    `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?${params}`
   );
 }
 
-// Fetch all match IDs by paginating through the API
-export async function getAllMatchIds(puuid: string): Promise<string[]> {
+// Fetch all match IDs by paginating through the API.
+// Pass startTime (Unix seconds) to scope to a specific time window.
+export async function getAllMatchIds(puuid: string, startTime?: number): Promise<string[]> {
   const all: string[] = [];
   let start = 0;
   const pageSize = 100;
   while (true) {
+    const params = new URLSearchParams({ start: String(start), count: String(pageSize) });
+    if (startTime != null) params.set("start_time", String(startTime));
     const batch = await riotFetch<string[]>(
-      `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?start=${start}&count=${pageSize}`
+      `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?${params}`
     );
     if (batch.length === 0) break;
     all.push(...batch);

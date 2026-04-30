@@ -12,10 +12,11 @@ import {
 import {
   getLeagueEntries,
   getSummonerByPuuid,
-  getMatchIds,
+  getAllMatchIds,
   getMatch,
   delay,
 } from "@/lib/riot";
+import { SET_START } from "@/lib/utils";
 
 export async function POST() {
   const players = await getTrackedPlayers();
@@ -60,12 +61,15 @@ export async function POST() {
         });
       }
 
-      // Fetch new matches
+      // Fetch new matches — paginate all Set 17 IDs, process up to 30 per run
+      // to stay within Vercel's function timeout. Run Sync Now multiple times
+      // to fully backfill players with large match history gaps.
       await delay(100);
-      const matchIds = await getMatchIds(player.puuid, 100);
+      const setStartSec = Math.floor(SET_START / 1000);
+      const matchIds = await getAllMatchIds(player.puuid, setStartSec);
       const existing = await getPlayerMatches(player.puuid);
       const existingIds = new Set(existing.map((m) => m.matchId));
-      const newMatchIds = matchIds.filter((id) => !existingIds.has(id));
+      const newMatchIds = matchIds.filter((id) => !existingIds.has(id)).slice(0, 30);
 
       const newRecords: MatchRecord[] = [];
       for (const matchId of newMatchIds) {

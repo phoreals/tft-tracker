@@ -3,9 +3,9 @@
 import React, { useMemo, useState } from "react";
 import styled from "styled-components";
 import Link from "next/link";
-import { User } from "lucide-react";
+import { User, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { GlassCard } from "./GlassCard";
-import { theme, ICON_SIZE } from "@/styles/theme";
+import { ICON_SIZE } from "@/styles/theme";
 import {
   formatPlaytime,
   formatRank,
@@ -82,24 +82,26 @@ const SortTh = styled.th<{ $active: boolean }>`
   }
 `;
 
-const SortChevron = styled.svg<{ $visible: boolean }>`
-  opacity: ${({ $visible }) => ($visible ? 1 : 0)};
+const SortIcon = styled.span<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
   margin-left: 3px;
   flex-shrink: 0;
-  vertical-align: middle;
-  transition: opacity 0.15s;
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : "currentColor"};
+  opacity: ${({ $active }) => ($active ? 1 : 0)};
+  transition: opacity 0.15s, color 0.15s;
 `;
 
-// Show chevron on hover even when not active
 const SortThInner = styled.span`
   display: inline-flex;
   align-items: center;
 
-  &:hover ${SortChevron} {
+  &:hover ${SortIcon} {
     opacity: 0.4;
   }
 
-  &:hover ${SortChevron}[data-active="true"] {
+  &:hover ${SortIcon}[data-active="true"] {
     opacity: 1;
   }
 `;
@@ -376,21 +378,13 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
   const renderSortLabel = (key: SortKey, label: string) => {
     const isActive = sortKey === key;
     const isAsc = isActive && sortDir === "asc";
+    const Icon = isActive ? (isAsc ? ArrowUp : ArrowDown) : ArrowUpDown;
     return (
       <SortThInner>
         {label}
-        <SortChevron
-          $visible={isActive}
-          data-active={isActive ? "true" : undefined}
-          width="8"
-          height="6"
-          viewBox="0 0 8 6"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          style={{ transform: isAsc ? "rotate(180deg)" : undefined }}
-        >
-          <path d="M1 1l3 3.5L7 1" stroke={theme.semantic.color.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </SortChevron>
+        <SortIcon $active={isActive} data-active={isActive ? "true" : undefined}>
+          <Icon size={10} />
+        </SortIcon>
       </SortThInner>
     );
   };

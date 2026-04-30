@@ -215,16 +215,18 @@ const Tbody = styled.tbody`
   }
 `;
 
-const RankBadge = styled.span`
+const RankBadge = styled.span<{ $isLead?: boolean }>`
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 28px;
   padding: 2px 8px;
   border-radius: ${({ theme }) => theme.primitive.radius.full};
-  background: rgba(229, 197, 135, 0.12);
+  background: ${({ $isLead }) => $isLead ? "rgba(229, 197, 135, 0.12)" : "rgba(208, 197, 181, 0.06)"};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  color: ${({ theme }) => theme.semantic.color.accent};
+  color: ${({ $isLead, theme }) => $isLead ? theme.semantic.color.accent : theme.semantic.color.textMuted};
 `;
 
 const SummonerCell = styled.div`
@@ -457,7 +459,7 @@ export default function SuperlativeDrilldownPage() {
                   return (
                     <Row key={r.player.puuid}>
                       <td>
-                        {isLead ? <RankBadge>{i + 1}</RankBadge> : i + 1}
+                        <RankBadge $isLead={isLead}>{i + 1}</RankBadge>
                       </td>
                       <td>
                         <SummonerCell>

@@ -14,10 +14,11 @@ import {
   getAccountByRiotId,
   getSummonerByPuuid,
   getLeagueEntries,
-  getMatchIds,
+  getAllMatchIds,
   getMatch,
   delay,
 } from "@/lib/riot";
+import { SET_START } from "@/lib/utils";
 import { isMockMode, MOCK_PLAYERS } from "@/lib/mock";
 
 export async function GET() {
@@ -91,8 +92,11 @@ export async function POST(req: NextRequest) {
       await setPlayerCurrent(account.puuid, current);
     }
 
-    // Fetch recent matches
-    const matchIds = await getMatchIds(account.puuid, 100);
+    // Fetch Set 17 match history (paginated). Caps at 30 on initial add;
+    // subsequent Sync Now calls backfill the rest 30 at a time.
+    const setStartSec = Math.floor(SET_START / 1000);
+    const allMatchIds = await getAllMatchIds(account.puuid, setStartSec);
+    const matchIds = allMatchIds.slice(0, 30);
     const matchRecords: MatchRecord[] = [];
 
     for (const matchId of matchIds) {

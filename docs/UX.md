@@ -40,14 +40,14 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 | **Best Top 4%** | Highest top-4 rate (min 1 game) |
 | **Most Wins (1st)** | Most 1st-place finishes |
 | **Most Time Played** | Highest scoped playtime |
-| **Highest LP Gain** | Largest LP delta (last − first history snapshot in window) |
+| **Highest LP Gain** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
 | **Fastest Climber** | Highest LP gain per game played |
 
 Card labels are contextual — they append "Set 17" or "This Week" depending on the selected tab (e.g. "Most Games Set 17" vs "Most Games This Week").
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
 
-Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown.
+Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width.
 
 When loading or no players are fetched, all 6 cards render with "..." as placeholder values. Cards stretch to equal height in the grid regardless of whether a player chip is present.
 
@@ -67,7 +67,7 @@ Three `GlassCard` components show aggregate metrics for the **currently selected
 
 A full-width table inside a `GlassCard`. Columns and stats adapt to the selected tab.
 
-**Column sorting**: All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold with a gold SVG chevron indicator that rotates for ascending. Inactive chevrons appear at 40% opacity on hover as an affordance. On mobile, the table uses smaller font sizes and tighter padding for horizontal density. The Rank column uses `white-space: nowrap` to keep the rank on one line. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration).
+**Column sorting**: All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use Lucide arrow icons: `ArrowDown` (active desc) / `ArrowUp` (active asc) in gold; `ArrowUpDown` (⇅) at 40% opacity on hover for inactive columns as a sortability affordance. On mobile, the table uses smaller font sizes and tighter padding for horizontal density. The Rank column uses `white-space: nowrap` to keep the rank on one line. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration).
 
 **"Set 17" view — 6 columns:**
 
@@ -157,7 +157,7 @@ Accessed by clicking a superlative card on the Weekly Stats page. Category slugs
 - Same sticky tab bar as other pages (Set 17 / Week 1–N)
 
 ### Rankings Table
-Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline progress bar relative to leader). The leader's row has a subtle gold background highlight.
+Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline progress bar relative to leader). The leader's row has a subtle gold background highlight. All rank numbers are pill badges — gold for the leader, dim/muted for the rest — with a fixed `min-width` so they align vertically.
 
 ## Interaction States
 
