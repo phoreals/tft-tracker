@@ -186,21 +186,22 @@ const RankBadge = styled.div<{ $color: string }>`
 
 // ── Tab navigation styled components ─────────────────────────────
 
-const StickyTabWrap = styled.div`
+const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   position: sticky;
   top: 0;
   z-index: 20;
-  backdrop-filter: blur(16px);
+  transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
+  backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  box-shadow: 0 4px 16px rgba(229, 197, 135, 0.06);
+  box-shadow: ${({ $isSticky }) => $isSticky ? "0 4px 16px rgba(229, 197, 135, 0.06)" : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   margin-right: -${({ theme }) => theme.primitive.spacing.sm};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    margin-left: -${({ theme }) => theme.primitive.spacing.xl};
-    margin-right: -${({ theme }) => theme.primitive.spacing.xl};
-    padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.xl};
+    margin-left: calc(-${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px));
+    margin-right: calc(-${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px));
+    padding: ${({ theme }) => theme.primitive.spacing.xs} calc(${({ theme }) => theme.primitive.spacing.xl} + var(--bleed-extra, 0px));
   }
 `;
 
@@ -246,8 +247,7 @@ const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
 const Tab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
-  min-height: 44px;
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : "transparent"};
@@ -259,25 +259,12 @@ const Tab = styled.button<{ $active: boolean }>`
   transition: all 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.textPrimary};
     background: ${({ $active, theme }) =>
       $active ? theme.semantic.color.accentHover : theme.semantic.color.borderDim};
   }
-`;
-
-const TabWeekDate = styled.span`
-  display: block;
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-  letter-spacing: 0.05em;
-  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  opacity: 0.6;
 `;
 
 const TabSelect = styled.select`
@@ -581,6 +568,38 @@ function formatDateTime(ts: number): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
+function useFullBleedSticky(
+  stickyRef: React.RefObject<HTMLDivElement | null>,
+  sentinelRef: React.RefObject<HTMLDivElement | null>
+) {
+  const [isSticky, setIsSticky] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const obs = new IntersectionObserver(([entry]) => setIsSticky(!entry.isIntersecting), { threshold: 0 });
+    obs.observe(sentinel);
+    return () => obs.disconnect();
+  }, [sentinelRef]);
+
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+    const main = el.closest("main");
+    if (!main) return;
+    const update = () => {
+      const extra = Math.max(0, (main.getBoundingClientRect().width - 1440) / 2);
+      el.style.setProperty("--bleed-extra", `${extra}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(main);
+    return () => ro.disconnect();
+  }, [stickyRef]);
+
+  return { isSticky };
+}
+
 function useScrollFade(ref: React.RefObject<HTMLDivElement | null>) {
   const [fadeLeft, setFadeLeft] = useState(false);
   const [fadeRight, setFadeRight] = useState(false);
@@ -625,7 +644,10 @@ export default function PlayerDrilldownPage() {
   });
 
   const tabBarRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
+  const { isSticky } = useFullBleedSticky(stickyRef, sentinelRef);
 
   useEffect(() => {
     const bar = tabBarRef.current;
@@ -839,7 +861,8 @@ export default function PlayerDrilldownPage() {
         </SyncWrap>
       </PlayerHeader>
 
-      <StickyTabWrap>
+      <div ref={sentinelRef} style={{ height: 0 }} />
+      <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
         {/* Mobile: dropdown */}
         <TabSelect
           value={isSet ? "set" : String(selectedTab)}
@@ -848,11 +871,9 @@ export default function PlayerDrilldownPage() {
             setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
           }}
         >
-          <option value="set">Set 17</option>
+          <option value="set">{SET_LABEL}</option>
           {weeks.map((w, i) => (
-            <option key={i} value={String(i)}>
-              {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
-            </option>
+            <option key={i} value={String(i)}>{w.label}</option>
           ))}
         </TabSelect>
 
@@ -863,7 +884,7 @@ export default function PlayerDrilldownPage() {
             data-active={isSet ? "true" : undefined}
             onClick={() => setSelectedTab("set")}
           >
-            Set 17
+            {SET_LABEL}
           </Tab>
           {weeks.map((w, i) => (
             <Tab
@@ -873,9 +894,6 @@ export default function PlayerDrilldownPage() {
               onClick={() => setSelectedTab(i)}
             >
               {w.label}
-              <TabWeekDate>
-                {formatShortDate(w.start)}–{formatShortDate(w.end)}
-              </TabWeekDate>
             </Tab>
           ))}
         </TabBar>
@@ -884,7 +902,7 @@ export default function PlayerDrilldownPage() {
       <StatsGrid>
         <GlassCard>
           <StatRow>
-            <StatLabel>Games {isSet ? "Set 17" : "This Week"}</StatLabel>
+            <StatLabel>Games {isSet ? SET_LABEL : weeks[selectedTab as number]?.weekNumber ? `Week ${weeks[selectedTab as number].weekNumber}` : "This Week"}</StatLabel>
             <Gamepad2 size={ICON_SIZE.sm} color={CHART.gold} />
           </StatRow>
           <StatValue>
