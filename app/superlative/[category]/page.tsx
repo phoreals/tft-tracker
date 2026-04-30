@@ -471,7 +471,7 @@ export default function SuperlativeDrilldownPage() {
         <LoadingText>No data for this time period.</LoadingText>
       ) : (
         <>
-          <GlassCard title="Rankings">
+          <GlassCard title="Rankings" prominent>
             <Table>
               <Thead>
                 <tr>

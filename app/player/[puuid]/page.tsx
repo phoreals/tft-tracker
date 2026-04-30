@@ -938,7 +938,7 @@ export default function PlayerDrilldownPage() {
       )}
 
       {/* Rank over time — always full history, selected week highlighted */}
-      <GlassCard title="Rank Over Time" icon={TrendingUp}>
+      <GlassCard title="Rank Over Time" icon={TrendingUp} prominent>
         <ChartContainer>
           {rankChartData.length === 0 ? (
             <EmptyState>Rank history builds daily with each sync.</EmptyState>
@@ -1006,7 +1006,7 @@ export default function PlayerDrilldownPage() {
       </GlassCard>
 
       {/* Placement per game — scoped to selected tab */}
-      <GlassCard title={`Placement Per Game${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`}>
+      <GlassCard title={`Placement Per Game${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`} prominent>
         <ChartContainer>
           {placementChartData.length === 0 ? (
             <EmptyState>No games {isSet ? "this set" : "this week"}.</EmptyState>
@@ -1061,7 +1061,7 @@ export default function PlayerDrilldownPage() {
       </GlassCard>
 
       {/* Match history — scoped to selected tab */}
-      <GlassCard title={`Match History${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`}>
+      <GlassCard title={`Match History${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`} prominent>
         <MatchList>
           {[...scopedMatches].reverse().map((m) => (
             <MatchRow key={m.matchId} $top4={m.placement <= 4}>

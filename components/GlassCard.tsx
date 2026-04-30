@@ -35,8 +35,10 @@ const Header = styled.div`
   }
 `;
 
-const Title = styled.h3`
+const Title = styled.h3<{ $prominent?: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ $prominent, theme }) =>
+    $prominent ? theme.primitive.fontSize.md : "12px"};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   display: flex;
   align-items: center;
@@ -59,6 +61,7 @@ interface GlassCardProps {
   title?: string;
   icon?: React.ElementType;
   headerAction?: React.ReactNode;
+  prominent?: boolean;
 }
 
 export function GlassCard({
@@ -67,6 +70,7 @@ export function GlassCard({
   title,
   icon: Icon,
   headerAction,
+  prominent,
 }: GlassCardProps) {
   return (
     <Card
@@ -78,7 +82,7 @@ export function GlassCard({
       {(title || Icon || headerAction) && (
         <Header>
           {title && (
-            <Title>
+            <Title $prominent={prominent}>
               {Icon && <IconWrapper><Icon size={ICON_SIZE.md} /></IconWrapper>}
               {title}
             </Title>

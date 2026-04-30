@@ -39,7 +39,7 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
   );
 
   return (
-    <GlassCard title="Player Performance" headerAction={toggle}>
+    <GlassCard title="Player Performance" headerAction={toggle} prominent>
       {view === "table" ? (
         <PlayerTableView
           rows={sortedRows}
