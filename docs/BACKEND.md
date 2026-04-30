@@ -74,14 +74,17 @@ Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 1. Fetch league entries → update `player:{puuid}:current`
 2. Append daily snapshot to `player:{puuid}:history` (deduped by date)
 3. `getAllMatchIds(puuid, SET_START_SECONDS)` — paginate all Set 17 match IDs
-4. Diff against stored matches → fetch up to **30 new matches per player per run**
-5. Update `player:{puuid}:matches` with merged + sorted list
+4. Diff against stored matches → collect all new match IDs
+5. Process in batches of 30 until all new matches are fetched or 50s elapsed
+6. Update `player:{puuid}:matches` with merged + sorted list
 
-**Backfill behavior**: Players with large match history gaps (e.g. added mid-set) are caught up 30 matches per sync run. Hit "Sync Now" multiple times until counts stabilize.
+**Backfill behavior**: A single sync run will process as many batches of 30 as the 50s budget allows. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
 
 **Rate limiting**: 100ms delay between API calls, 200ms delay between players.
 
-**Response**: `{ synced: number, results: [{ puuid, success, error? }] }`
+**Console logging**: Each sync emits `[sync] PlayerName:` prefixed logs covering rank updates, per-batch progress, per-match errors, and a final summary.
+
+**Response**: `{ synced: number, totalAdded: number, totalRemaining: number, results: [{ puuid, name, success, matchesAdded, matchesRemaining, batches, matchErrors, error? }] }`
 
 ### `POST /api/seed`
 Add the 7 original hardcoded players (same flow as POST /api/players, repeated).
@@ -200,7 +203,7 @@ interface MatchRecord {
 
 - Riot API errors propagate as `Error` with status code + response body (e.g. `Riot API 403: {"status":{"message":"Forbidden",...}}`)
 - Redis connection failures are caught early in seed/sync and return a descriptive `500` (e.g. `Redis connection failed: ...`)
-- Individual match fetch failures are silently skipped (catch blocks in loops)
+- Individual match fetch failures are logged via `console.error` and counted in `matchErrors` in the sync response
 - Sync reports per-player success/failure in the response
 - Client-side errors surface the actual server error message in the UI (red text below form inputs)
 
