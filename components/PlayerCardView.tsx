@@ -216,7 +216,7 @@ export function PlayerCardView({ rows, isSet }: PlayerCardViewProps) {
                 <StatLabel>GAMES</StatLabel>
               </Stat>
               <Stat>
-                <StatValue style={{ color: "inherit" }}>{row.top4Rate}%</StatValue>
+                <StatValue>{row.top4Rate}%</StatValue>
                 <StatLabel>TOP 4</StatLabel>
               </Stat>
               <Stat>
