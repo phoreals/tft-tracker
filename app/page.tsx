@@ -54,6 +54,7 @@ const PageTitle = styled.h1`
 
 const PageSubtitle = styled.p`
   font-family: ${({ theme }) => theme.semantic.font.body};
+  font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   color: ${({ theme }) => theme.semantic.color.textMuted};
   margin-top: 4px;
 `;
@@ -594,7 +595,7 @@ export default function WeeklyStatsPage() {
       const val = leader ? leader[cat.key] : null;
       return {
         slug: cat.slug,
-        label: cat.label(isSetMode),
+        label: cat.label(isSetMode, weeks[selectedTab as number]?.weekNumber),
         value: val !== null ? cat.format(val as number) : "—",
         player: leader?.player ?? null,
       };
@@ -610,7 +611,7 @@ export default function WeeklyStatsPage() {
           <PageTitle>The Asylum TFT Tracker</PageTitle>
           <PageSubtitle>
             {isSet
-              ? SET_LABEL
+              ? `${SET_LABEL} · ${formatShortDate(SET_START)}–${formatShortDate(SET_END)}`
               : (() => {
                   const w = weeks[selectedTab as number];
                   return w ? `${w.label} · ${formatShortDate(w.start)}–${formatShortDate(w.end)}` : "";
@@ -669,7 +670,7 @@ export default function WeeklyStatsPage() {
 
       <SuperlativesGrid>
         {(loading || superlatives.length === 0
-          ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.label(selectedTab === "set"), value: "...", player: null }))
+          ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.label(selectedTab === "set", weeks[selectedTab as number]?.weekNumber), value: "...", player: null }))
           : superlatives
         ).map((s) => (
           <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}?tab=${selectedTab}`}>

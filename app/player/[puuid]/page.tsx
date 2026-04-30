@@ -778,7 +778,7 @@ export default function PlayerDrilldownPage() {
       const val = me ? me[cat.key] : null;
       return {
         slug: cat.slug,
-        label: cat.label(isSet),
+        label: cat.label(isSet, weeks[selectedTab as number]?.weekNumber),
         value: val !== null ? cat.format(val as number) : "—",
       };
     });

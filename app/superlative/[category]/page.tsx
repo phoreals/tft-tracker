@@ -60,8 +60,23 @@ const PageTitle = styled.h1`
 
 const PageSubtitle = styled.p`
   font-family: ${({ theme }) => theme.semantic.font.body};
+  font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   color: ${({ theme }) => theme.semantic.color.textMuted};
   margin-top: 4px;
+`;
+
+const DurationPill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  background: rgba(229, 197, 135, 0.10);
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.accent};
+  margin-left: ${({ theme }) => theme.primitive.spacing.xs};
+  vertical-align: middle;
 `;
 
 const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
@@ -420,9 +435,11 @@ export default function SuperlativeDrilldownPage() {
       <div>
         <PageTitle>{cat.title}</PageTitle>
         <PageSubtitle>
-          {isSet ? `Leaderboard · ${SET_LABEL}` : (() => {
+          {isSet ? (
+            <>Leaderboard <DurationPill>{SET_LABEL}</DurationPill></>
+          ) : (() => {
             const w = weeks[selectedTab as number];
-            return w ? `Leaderboard · ${w.label} (${formatShortDate(w.start)}–${formatShortDate(w.end)})` : "Leaderboard";
+            return w ? `Leaderboard · ${w.label}` : "Leaderboard";
           })()}
         </PageSubtitle>
       </div>
@@ -477,7 +494,7 @@ export default function SuperlativeDrilldownPage() {
                 <tr>
                   <th style={{ width: 40 }}>#</th>
                   <th>Summoner</th>
-                  <th style={{ textAlign: "right" }}>{cat.label(isSet)}</th>
+                  <th style={{ textAlign: "right" }}>{cat.label(isSet, weeks[selectedTab as number]?.weekNumber)}</th>
                 </tr>
               </Thead>
               <Tbody>
