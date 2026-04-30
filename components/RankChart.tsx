@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -10,7 +10,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceArea,
-  Legend,
 } from "recharts";
 import styled from "styled-components";
 import { GlassCard } from "./GlassCard";
@@ -40,11 +39,21 @@ const CHART = {
     fontSize:   theme.semantic.typography.label.fontSize,
     labelColor: theme.primitive.color.neutral200,
   },
-  legend: {
-    fontFamily: "Space Grotesk",
-    fontSize:   theme.primitive.fontSize.sm,
-  },
 } as const;
+
+// Distinct line colors — chosen to avoid rank-tier hues (no gold/green/teal/purple).
+const LINE_COLORS = [
+  "#f472b6", // pink
+  "#60a5fa", // blue
+  "#fb923c", // orange
+  "#a3e635", // lime
+  "#e879f9", // fuchsia
+  "#38bdf8", // sky
+  "#fbbf24", // amber
+  "#4ade80", // mint
+  "#f87171", // rose
+  "#818cf8", // indigo
+];
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -69,15 +78,6 @@ const EmptyState = styled.div`
 
 // ── Constants ────────────────────────────────────────────────────
 
-const LINE_COLORS = [
-  theme.primitive.color.gold300,   // accent
-  theme.primitive.color.cyan500,   // info
-  theme.primitive.color.purple300, // highlight
-  theme.primitive.color.red400,    // danger
-  theme.primitive.color.green400,  // success
-  "#60a5fa", "#fbbf24", "#a78bfa", "#fb923c", "#2dd4bf",
-];
-
 // Tier base LP values and short display labels, ordered low→high.
 const TIER_BASES: { lp: number; short: string }[] = [
   { lp: 0,    short: "Iron"    },
@@ -91,6 +91,8 @@ const TIER_BASES: { lp: number; short: string }[] = [
   { lp: 3200, short: "GM"      },
   { lp: 3600, short: "Chal"    },
 ];
+
+const PROFILE_ICON_BASE = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons";
 
 function formatDateTick(ts: number): string {
   const d = new Date(ts);
@@ -138,12 +140,71 @@ function RankTooltip({ active, payload, label }: {
   );
 }
 
-// ── Component ────────────────────────────────────────────────────
+// ── Profile dot ──────────────────────────────────────────────────
 
 interface PlayerData {
   gameName: string;
+  profileIconId?: number;
   history: HistorySnapshot[];
 }
+
+const DOT_R = 12; // radius of the profile pic circle
+
+function makeProfileDot(player: PlayerData, color: string, lastIdx: number) {
+  const uid = `pdot_${player.gameName.replace(/[^a-z0-9]/gi, "_")}`;
+  return function ProfileDot(props: {
+    cx?: number;
+    cy?: number;
+    index?: number;
+    payload?: Record<string, unknown>;
+  }) {
+    const { cx, cy, index, payload } = props;
+    if (cx === undefined || cy === undefined || index === undefined) return <g />;
+    if (payload?.[player.gameName] === undefined) return <g />;
+
+    // Last valid data point — render profile pic + name label.
+    if (index === lastIdx) {
+      return (
+        <g>
+          <defs>
+            <clipPath id={uid}>
+              <circle cx={cx} cy={cy} r={DOT_R} />
+            </clipPath>
+          </defs>
+          {player.profileIconId ? (
+            <image
+              href={`${PROFILE_ICON_BASE}/${player.profileIconId}.jpg`}
+              x={cx - DOT_R}
+              y={cy - DOT_R}
+              width={DOT_R * 2}
+              height={DOT_R * 2}
+              clipPath={`url(#${uid})`}
+              preserveAspectRatio="xMidYMid slice"
+            />
+          ) : (
+            <circle cx={cx} cy={cy} r={DOT_R} fill={color} opacity={0.25} />
+          )}
+          <circle cx={cx} cy={cy} r={DOT_R} fill="none" stroke={color} strokeWidth={1.5} />
+          <text
+            x={cx + DOT_R + 5}
+            y={cy + 4}
+            fill={color}
+            fontSize={10}
+            fontFamily="Space Grotesk"
+            fontWeight={600}
+          >
+            {player.gameName}
+          </text>
+        </g>
+      );
+    }
+
+    // All other data points — small dot.
+    return <circle cx={cx} cy={cy} r={2.5} fill={color} />;
+  };
+}
+
+// ── Component ────────────────────────────────────────────────────
 
 interface RankChartProps {
   players: PlayerData[];
@@ -152,15 +213,6 @@ interface RankChartProps {
 }
 
 export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
-  const [showLegend, setShowLegend] = useState(false);
-
-  useEffect(() => {
-    const check = () => setShowLegend(window.innerWidth >= parseInt(theme.primitive.breakpoint.md));
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
   // The highlighted week — always the selected week, or the latest week for "This Set".
   const highlightWeek =
     selectedTab === "set"
@@ -168,7 +220,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
 
   // Build a unified daily timeline from all players' history snapshots.
-  const { chartData, yTicks, yDomain } = useMemo(() => {
+  const { chartData, yTicks, yDomain, lastValidIndices } = useMemo(() => {
     // Collect all unique date timestamps.
     const tsSet = new Set<number>();
     players.forEach((p) => {
@@ -176,7 +228,14 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
     });
     const allTs = [...tsSet].sort((a, b) => a - b);
 
-    if (allTs.length === 0) return { chartData: [], yTicks: [], yDomain: [0, 3700] as [number, number] };
+    if (allTs.length === 0) {
+      return {
+        chartData: [],
+        yTicks: [],
+        yDomain: [0, 3700] as [number, number],
+        lastValidIndices: {} as Record<string, number>,
+      };
+    }
 
     // Build data points: one per day, one LP value per player.
     const data = allTs.map((ts) => {
@@ -189,6 +248,16 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
         }
       });
       return point;
+    });
+
+    // Last index where each player has data.
+    const lastValidIndices: Record<string, number> = {};
+    players.forEach((p) => {
+      let last = -1;
+      data.forEach((pt, i) => {
+        if (pt[p.gameName] !== undefined) last = i;
+      });
+      lastValidIndices[p.gameName] = last;
     });
 
     // Compute Y-axis range from actual data, snapped to tier boundaries.
@@ -211,6 +280,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
       chartData: data,
       yTicks: ticks,
       yDomain: [Math.max(0, minBase), maxBase] as [number, number],
+      lastValidIndices,
     };
   }, [players]);
 
@@ -228,7 +298,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
           <EmptyState>No rank history yet. Sync to start tracking.</EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
+            <LineChart data={chartData} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
 
               <XAxis
@@ -268,22 +338,23 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
               <Tooltip content={<RankTooltip />} />
 
-              {showLegend && (
-                <Legend wrapperStyle={CHART.legend} />
-              )}
-
-              {players.map((p, i) => (
-                <Line
-                  key={p.gameName}
-                  type="monotone"
-                  dataKey={p.gameName}
-                  stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                  strokeWidth={2}
-                  dot={{ r: 3 }}
-                  connectNulls
-                  isAnimationActive={false}
-                />
-              ))}
+              {players.map((p, i) => {
+                const color = LINE_COLORS[i % LINE_COLORS.length];
+                const lastIdx = lastValidIndices[p.gameName] ?? -1;
+                return (
+                  <Line
+                    key={p.gameName}
+                    type="monotone"
+                    dataKey={p.gameName}
+                    stroke={color}
+                    strokeWidth={2}
+                    dot={makeProfileDot(p, color, lastIdx)}
+                    activeDot={{ r: 4, stroke: color, strokeWidth: 2 }}
+                    connectNulls
+                    isAnimationActive={false}
+                  />
+                );
+              })}
             </LineChart>
           </ResponsiveContainer>
         )}

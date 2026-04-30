@@ -740,6 +740,7 @@ export default function WeeklyStatsPage() {
       <RankChart
         players={players.map((p) => ({
           gameName: p.gameName,
+          profileIconId: p.profileIconId,
           history: p.history,
         }))}
         selectedTab={selectedTab}

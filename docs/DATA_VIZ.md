@@ -4,18 +4,13 @@ All charts use [Recharts](https://recharts.org/) 3.x with `ResponsiveContainer` 
 
 ---
 
-## Placement Over Time (`components/RankChart.tsx`)
+## Rank Over Time (`components/RankChart.tsx`)
 
-Shown on the Weekly Stats page (`/`). Plots placement data for all tracked players on a shared timeline.
+Shown on the Weekly Stats page (`/`). Plots **daily LP** (converted from tier + rank + lp via `rankToLP`) for all tracked players on a shared timeline.
 
 ### Modes
 
-Mode is controlled by the **page-level tab** (`selectedTab` prop from `app/page.tsx`) — RankChart has no internal tab bar.
-
-| Page tab | Chart behavior | X-axis | Y-axis |
-|----------|---------------|--------|--------|
-| **Week tabs** | Individual game placements for the selected week | Game timestamps formatted `M/D` | Actual placement (1–8) |
-| **"This Set"** | Avg placement per set-week | Set-week labels (`Wk 1`, `Wk 2`, …) | Avg placement per week (1–8) |
+Mode is controlled by the **page-level tab** (`selectedTab` prop from `app/page.tsx`) — RankChart has no internal tab bar. The selected week is shaded as a `ReferenceArea` in all modes.
 
 ### Chart Configuration
 
@@ -23,54 +18,66 @@ Mode is controlled by the **page-level tab** (`selectedTab` prop from `app/page.
 Component:    LineChart > Line (one per player)
 Container:    ResponsiveContainer width="100%" height="100%"
 Height:       220px mobile / 288px desktop (ChartContainer styled div)
-Y-axis:       reversed, domain [1, 8], ticks [1..8], width 24px
-X-axis:       dataKey="week", no axis line, no tick line
-Grid:         CartesianGrid horizontal only (vertical=false), stroke #e5c58711
-Reference:    ReferenceLine y=4.5 — top-4 / bottom-4 boundary
-Line:         type="monotone", strokeWidth=2, dot r=3, connectNulls=true
-Legend:       shown at ≥768px via JS resize listener (CSS media queries don't work with Recharts Legend)
+Y-axis:       domain snapped to tier boundaries (400 LP increments), ticks = tier names
+              e.g. "Iron", "Bronze", … "Diamond", "Master"
+X-axis:       dataKey="ts" (epoch ms), scale="time", formatted M/D, ~6 ticks max
+Grid:         CartesianGrid horizontal only (vertical=false)
+Reference:    ReferenceArea x1/x2 = selected week start/end (gold tint)
+Line:         type="monotone", strokeWidth=2, connectNulls=true, isAnimationActive=false
+Margin:       top: 16, right: 8, bottom: 0, left: 0
 ```
+
+### Player Identification
+
+Each player's line uses a **profile picture dot** at their last valid data point, with their `gameName` (no `#tagLine`) rendered as a small label to the right. All other data points use a small solid dot (r=2.5). No legend is rendered.
+
+- Profile icons fetched from `https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/{profileIconId}.jpg`
+- Clipped to a circle (r=12) with a colored border ring matching the line color
+- Falls back to a translucent circle if `profileIconId` is undefined
+- The SVG is rendered with `overflow: visible` by Recharts, so labels at the right edge extend outside the chart area without clipping
 
 ### Color Assignment
 
-Lines cycle through `LINE_COLORS` (10 values) by player index:
+Lines cycle through `LINE_COLORS` (10 values) by player index. Colors are chosen to avoid rank-tier hues (no gold/green/teal/purple) to prevent visual confusion between line color and rank tier:
+
 ```ts
 const LINE_COLORS = [
-  "#e5c587", "#00fbfb", "#e4b9ff", "#f87171", "#34d399",
-  "#60a5fa", "#fbbf24", "#a78bfa", "#fb923c", "#2dd4bf",
+  "#f472b6", // pink
+  "#60a5fa", // blue
+  "#fb923c", // orange
+  "#a3e635", // lime
+  "#e879f9", // fuchsia
+  "#38bdf8", // sky
+  "#fbbf24", // amber
+  "#4ade80", // mint
+  "#f87171", // rose
+  "#818cf8", // indigo
 ];
 ```
+
 Color is index-stable — if the player list order changes, line colors will shift.
 
 ### Data Transforms
 
-**This Week** — merged chronological timeline:
-1. Filter each player's matches to `timestamp >= currentWeek.start && timestamp < currentWeek.end`
-2. Flatten into `{ ts, player, placement }` entries and sort by `ts`
-3. Build a `Map<ts, point>` where each point is `{ week: "M/D", [playerName]: placement }`
-4. Multiple players can share a timestamp slot (same game time); they are merged into one point
-
-**This Set** — weekly averages:
-1. Build week buckets from `SET_START` to `SET_END` in 7-day increments
-2. For each week × player: average placement of all matches in that window (rounded to 2dp)
-3. Weeks with no data for any player are omitted (filtered out)
-
-### Empty States
-
-| Mode | Message |
-|------|---------|
-| This Week | "No games played this week yet." |
-| This Set | "No match data yet. Sync to start tracking." |
+1. Collect all unique `date` timestamps from all players' `history` snapshots
+2. Sort chronologically, build one data point per date
+3. For each point: `{ ts, [gameName]: rankToLP(tier, rank, lp), [gameName__label]: formatRank(...) }`
+4. Players missing data for a given date have no key in that point (`connectNulls` bridges gaps)
+5. Y-axis domain computed from all LP values, snapped to nearest 400 LP tier boundaries ± one tier
 
 ### Tooltip
 
 ```
-Background:  #18202b
-Border:      1px solid #e5c58733 (4px radius)
-Font:        Space Grotesk 12px
-Label:       date string (M/D), color #d0c5b5
-Value:       placement formatted to 2dp (e.g. "2.50")
+Background:  theme.primitive.color.neutral850
+Border:      1px solid theme.semantic.color.borderDefault
+Font:        Space Grotesk
+Label:       date string (M/D)
+Value:       human-readable rank string, e.g. "Diamond II 47 LP"
 ```
+
+### Empty State
+
+"No rank history yet. Sync to start tracking."
 
 ---
 
@@ -119,7 +126,7 @@ Same style as RankChart tooltip. Shows:
 1. **No axis lines or tick lines** — use `axisLine={false} tickLine={false}` on both axes. The grid provides visual reference instead.
 2. **Tick font**: always `{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }`. These are hardcoded — Recharts tick props don't access theme.
 3. **Horizontal-only grid**: `<CartesianGrid vertical={false}>` keeps charts uncluttered.
-4. **Y-axis reversed**: placement 1 is always at the top. Use `reversed` prop on `YAxis` (not a data transform).
-5. **`connectNulls`**: enabled on all lines so gaps (weeks with no data) don't break the line.
+4. **`connectNulls`**: enabled on all lines so gaps (days with no data) don't break the line.
+5. **`isAnimationActive={false}`**: disabled on RankChart to prevent re-animation when dot functions recreate on render.
 6. **Responsive height**: `ChartContainer` is a styled div with a fixed height, not a `%` on `ResponsiveContainer` — this avoids the Recharts "height 0" bug when the parent doesn't have an explicit height.
-7. **Legend**: always guarded by a `showLegend` state driven by a `resize` event listener (set to `true` at ≥768px). Never use CSS to hide the Legend wrapper — Recharts renders it outside the SVG and media queries may not apply reliably.
+7. **No Legend in RankChart**: player identity is conveyed by profile picture endpoint labels. No `showLegend` state or `Legend` component.
