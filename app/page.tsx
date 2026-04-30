@@ -117,21 +117,22 @@ const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
   white-space: pre-line;
 `;
 
-const StickyTabWrap = styled.div`
+const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   position: sticky;
   top: 0;
   z-index: 20;
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  box-shadow: 0 4px 16px rgba(229, 197, 135, 0.06);
+  transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
+  backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
+  border-bottom: 1px solid ${({ $isSticky, theme }) => $isSticky ? theme.semantic.color.borderDefault : "transparent"};
+  box-shadow: ${({ $isSticky }) => $isSticky ? "0 4px 16px rgba(229, 197, 135, 0.06)" : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   margin-right: -${({ theme }) => theme.primitive.spacing.sm};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    margin-left: -${({ theme }) => theme.primitive.spacing.xl};
-    margin-right: -${({ theme }) => theme.primitive.spacing.xl};
-    padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.xl};
+    margin-left: calc(-${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px));
+    margin-right: calc(-${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px));
+    padding: ${({ theme }) => theme.primitive.spacing.xs} calc(${({ theme }) => theme.primitive.spacing.xl} + var(--bleed-extra, 0px));
   }
 `;
 
@@ -393,6 +394,38 @@ function formatShortDate(ts: number): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+function useFullBleedSticky(
+  stickyRef: React.RefObject<HTMLDivElement | null>,
+  sentinelRef: React.RefObject<HTMLDivElement | null>
+) {
+  const [isSticky, setIsSticky] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const obs = new IntersectionObserver(([entry]) => setIsSticky(!entry.isIntersecting), { threshold: 0 });
+    obs.observe(sentinel);
+    return () => obs.disconnect();
+  }, [sentinelRef]);
+
+  useEffect(() => {
+    const el = stickyRef.current;
+    if (!el) return;
+    const main = el.closest("main");
+    if (!main) return;
+    const update = () => {
+      const extra = Math.max(0, (main.getBoundingClientRect().width - 1440) / 2);
+      el.style.setProperty("--bleed-extra", `${extra}px`);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(main);
+    return () => ro.disconnect();
+  }, [stickyRef]);
+
+  return { isSticky };
+}
+
 function useScrollFade(ref: React.RefObject<HTMLDivElement | null>) {
   const [fadeLeft, setFadeLeft] = useState(false);
   const [fadeRight, setFadeRight] = useState(false);
@@ -441,7 +474,10 @@ export default function WeeklyStatsPage() {
   });
 
   const tabBarRef = useRef<HTMLDivElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
+  const { isSticky } = useFullBleedSticky(stickyRef, sentinelRef);
 
   useEffect(() => {
     const bar = tabBarRef.current;
@@ -611,7 +647,8 @@ export default function WeeklyStatsPage() {
         </SyncWrap>
       </PageHeader>
 
-      <StickyTabWrap>
+      <div ref={sentinelRef} style={{ height: 0 }} />
+      <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
         {/* Mobile: dropdown */}
         <PageTabSelect
           value={selectedTab === "set" ? "set" : String(selectedTab)}
