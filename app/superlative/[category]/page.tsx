@@ -415,7 +415,7 @@ export default function SuperlativeDrilldownPage() {
     <Page>
       <BackLink href={`/?tab=${selectedTab}`}>
         <ArrowLeft size={ICON_SIZE.sm} />
-        BACK TO WEEKLY STATS
+        BACK TO HOME
       </BackLink>
 
       <div>

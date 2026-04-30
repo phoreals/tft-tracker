@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styled from "styled-components";
-import { Calendar, Search } from "lucide-react";
+import { Home, Users } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
 
 const Nav = styled.nav`
@@ -44,8 +44,8 @@ const NavLabel = styled.span`
 `;
 
 const navItems = [
-  { href: "/", icon: Calendar, label: "Weekly" },
-  { href: "/players", icon: Search, label: "Players" },
+  { href: "/", icon: Home, label: "Home" },
+  { href: "/players", icon: Users, label: "Players" },
 ];
 
 export function BottomNav() {

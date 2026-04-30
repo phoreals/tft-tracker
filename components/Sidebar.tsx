@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styled from "styled-components";
-import { Calendar, Search, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Home, Users, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
 
 // Same SVG path used for the app favicon (app/icon.tsx)
@@ -189,8 +189,8 @@ const CollapseBtnLabel = styled.span<{ $expanded: boolean }>`
 `;
 
 const navItems = [
-  { href: "/", icon: Calendar, label: "TFT Tracker" },
-  { href: "/players", icon: Search, label: "Manage Players" },
+  { href: "/", icon: Home, label: "Home" },
+  { href: "/players", icon: Users, label: "Manage Players" },
 ];
 
 interface SidebarProps {

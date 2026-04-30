@@ -796,7 +796,7 @@ export default function PlayerDrilldownPage() {
     <Page>
       <BackLink href="/">
         <ArrowLeft size={ICON_SIZE.sm} />
-        BACK TO WEEKLY STATS
+        BACK TO HOME
       </BackLink>
 
       <PlayerHeader>
