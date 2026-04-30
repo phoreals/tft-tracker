@@ -25,6 +25,7 @@ const TOTAL_TIMEOUT_MS = 50_000; // leave 10s buffer before Vercel's 60s limit
 
 export async function POST() {
   const syncStart = Date.now();
+  const deadline = syncStart + TOTAL_TIMEOUT_MS;
   const players = await getTrackedPlayers();
   const results: {
     puuid: string;
@@ -41,6 +42,13 @@ export async function POST() {
 
   for (const player of players) {
     const playerLabel = `${player.gameName ?? player.puuid}`;
+
+    if (Date.now() >= deadline) {
+      console.warn(`[sync] ${playerLabel}: skipping — out of time budget`);
+      results.push({ puuid: player.puuid, name: playerLabel, success: false, matchesAdded: 0, matchesRemaining: -1, batches: 0, matchErrors: 0, error: "Skipped: out of time budget" });
+      continue;
+    }
+
     try {
       // Refresh profileIconId if missing
       if (!player.profileIconId) {
@@ -52,7 +60,7 @@ export async function POST() {
       }
 
       // Fetch rank data
-      const entries = await getLeagueEntries(player.puuid);
+      const entries = await getLeagueEntries(player.puuid, deadline);
       const tftEntry = entries.find((e) => e.queueType === "RANKED_TFT");
 
       if (tftEntry) {
@@ -85,7 +93,7 @@ export async function POST() {
       // caught up or the function timeout approaches.
       await delay(100);
       const setStartSec = Math.floor(SET_START / 1000);
-      const matchIds = await getAllMatchIds(player.puuid, setStartSec);
+      const matchIds = await getAllMatchIds(player.puuid, setStartSec, deadline);
       const existing = await getPlayerMatches(player.puuid);
       const existingIds = new Set(existing.map((m) => m.matchId));
       const allNewMatchIds = matchIds.filter((id) => !existingIds.has(id));
@@ -93,18 +101,11 @@ export async function POST() {
       console.log(`[sync] ${playerLabel}: ${existing.length} stored, ${allNewMatchIds.length} new to fetch`);
 
       const allNewRecords: MatchRecord[] = [];
-      // Give each player an equal share of the remaining time budget so
-      // players later in the list aren't starved by earlier ones.
-      const playersRemaining = players.length - players.indexOf(player);
-      const elapsed = Date.now() - syncStart;
-      const perPlayerBudget = Math.floor((TOTAL_TIMEOUT_MS - elapsed) / playersRemaining);
-      const playerStart = Date.now();
-
       let offset = 0;
       let batches = 0;
       let matchErrors = 0;
 
-      while (offset < allNewMatchIds.length && Date.now() - playerStart < perPlayerBudget) {
+      while (offset < allNewMatchIds.length && Date.now() < deadline) {
         const batch = allNewMatchIds.slice(offset, offset + BATCH_SIZE);
         batches++;
         console.log(`[sync] ${playerLabel}: batch ${batches} — fetching matches ${offset + 1}–${offset + batch.length} of ${allNewMatchIds.length}`);
@@ -112,7 +113,7 @@ export async function POST() {
         for (const matchId of batch) {
           await delay(100);
           try {
-            const match = await getMatch(matchId);
+            const match = await getMatch(matchId, deadline);
             const participant = match.info.participants.find(
               (p) => p.puuid === player.puuid
             );

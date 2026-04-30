@@ -465,6 +465,10 @@ export default function WeeklyStatsPage() {
     setSyncStatus(null);
     try {
       const res = await fetch("/api/sync", { method: "POST" });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Server error ${res.status}${text ? `: ${text.slice(0, 120)}` : ""}`);
+      }
       const data = await res.json();
       await fetchPlayers();
 

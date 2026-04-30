@@ -3,16 +3,20 @@ const RIOT_API_KEY = process.env.RIOT_API_KEY ?? "";
 const REGIONAL_HOST = "https://americas.api.riotgames.com";
 const PLATFORM_HOST = "https://na1.api.riotgames.com";
 
-async function riotFetch<T>(url: string, retries = 3): Promise<T> {
+async function riotFetch<T>(url: string, retries = 3, deadlineMs?: number): Promise<T> {
   const res = await fetch(url, {
     headers: { "X-Riot-Token": RIOT_API_KEY },
   });
 
-  // Handle rate limiting — wait and retry
+  // Handle rate limiting — wait and retry, but never sleep past the deadline
   if (res.status === 429 && retries > 0) {
     const retryAfter = parseInt(res.headers.get("Retry-After") ?? "5", 10);
-    await delay((retryAfter + 1) * 1000);
-    return riotFetch<T>(url, retries - 1);
+    const sleepMs = (retryAfter + 1) * 1000;
+    if (deadlineMs !== undefined && Date.now() + sleepMs > deadlineMs) {
+      throw new Error(`Riot API 429: rate limited, retry-after ${retryAfter}s exceeds remaining budget`);
+    }
+    await delay(sleepMs);
+    return riotFetch<T>(url, retries - 1, deadlineMs);
   }
 
   if (!res.ok) {
@@ -76,10 +80,13 @@ export interface LeagueEntry {
 }
 
 export async function getLeagueEntries(
-  puuid: string
+  puuid: string,
+  deadlineMs?: number,
 ): Promise<LeagueEntry[]> {
   return riotFetch<LeagueEntry[]>(
-    `${PLATFORM_HOST}/tft/league/v1/by-puuid/${puuid}`
+    `${PLATFORM_HOST}/tft/league/v1/by-puuid/${puuid}`,
+    3,
+    deadlineMs,
   );
 }
 
@@ -99,15 +106,18 @@ export async function getMatchIds(
 
 // Fetch all match IDs by paginating through the API.
 // Pass startTime (Unix seconds) to scope to a specific time window.
-export async function getAllMatchIds(puuid: string, startTime?: number): Promise<string[]> {
+export async function getAllMatchIds(puuid: string, startTime?: number, deadlineMs?: number): Promise<string[]> {
   const all: string[] = [];
   let start = 0;
   const pageSize = 100;
   while (true) {
+    if (deadlineMs !== undefined && Date.now() > deadlineMs) break;
     const params = new URLSearchParams({ start: String(start), count: String(pageSize) });
     if (startTime != null) params.set("start_time", String(startTime));
     const batch = await riotFetch<string[]>(
-      `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?${params}`
+      `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?${params}`,
+      3,
+      deadlineMs,
     );
     if (batch.length === 0) break;
     all.push(...batch);
@@ -136,8 +146,10 @@ export interface MatchDetail {
   info: MatchInfo;
 }
 
-export async function getMatch(matchId: string): Promise<MatchDetail> {
+export async function getMatch(matchId: string, deadlineMs?: number): Promise<MatchDetail> {
   return riotFetch<MatchDetail>(
-    `${REGIONAL_HOST}/tft/match/v1/matches/${matchId}`
+    `${REGIONAL_HOST}/tft/match/v1/matches/${matchId}`,
+    3,
+    deadlineMs,
   );
 }
