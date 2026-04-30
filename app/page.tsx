@@ -446,7 +446,7 @@ export default function WeeklyStatsPage() {
 
   const fetchPlayers = useCallback(async () => {
     try {
-      const res = await fetch("/api/players");
+      const res = await fetch("/api/players", { cache: "no-store" });
       const data = await res.json();
       setPlayers(data);
     } catch (err) {
@@ -689,7 +689,6 @@ export default function WeeklyStatsPage() {
           profileIconId: p.profileIconId,
           current: p.current,
           matches: p.matches,
-          history: p.history,
         }))}
         selectedTab={selectedTab}
         weeks={weeks}

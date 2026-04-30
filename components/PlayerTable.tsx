@@ -9,7 +9,6 @@ import { ICON_SIZE } from "@/styles/theme";
 import {
   formatPlaytime,
   formatRank,
-  formatRankShort,
   formatRankAbbr,
   percentOf,
   getRankColor,
@@ -17,7 +16,7 @@ import {
   SET_START,
   SET_END,
 } from "@/lib/utils";
-import type { PlayerCurrentStats, MatchRecord, HistorySnapshot } from "@/lib/kv";
+import type { PlayerCurrentStats, MatchRecord } from "@/lib/kv";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -170,16 +169,6 @@ const RankCell = styled.div`
   white-space: nowrap;
 `;
 
-const RankSub = styled.span`
-  display: block;
-  font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: 9px;
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-  color: ${({ theme }) => theme.semantic.color.textDisabled};
-  letter-spacing: 0.03em;
-  margin-top: 2px;
-`;
-
 const RankFull = styled.span`
   display: none;
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -226,7 +215,6 @@ interface PlayerRow {
   profileIconId?: number;
   current: PlayerCurrentStats | null;
   matches: MatchRecord[];
-  history: HistorySnapshot[];
 }
 
 interface PlayerTableProps {
@@ -240,23 +228,6 @@ interface PlayerTableProps {
 function formatShortDate(ts: number): string {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}`;
-}
-
-function getPeakAndLow(
-  history: HistorySnapshot[],
-  window: { start: number; end: number }
-): { peak: HistorySnapshot | null; low: HistorySnapshot | null } {
-  const snaps = history.filter((h) => {
-    const t = new Date(h.date).getTime();
-    return t >= window.start && t < window.end;
-  });
-  if (snaps.length === 0) return { peak: null, low: null };
-  const sorted = [...snaps].sort(
-    (a, b) => rankToLP(a.tier, a.rank, a.lp) - rankToLP(b.tier, b.rank, b.lp)
-  );
-  const peak = sorted[sorted.length - 1];
-  const low = sorted[0];
-  return { peak, low: rankToLP(peak.tier, peak.rank, peak.lp) === rankToLP(low.tier, low.rank, low.lp) ? null : low };
 }
 
 // ── RankEmblem ───────────────────────────────────────────────────
@@ -331,8 +302,6 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
     const scopedFirsts = scopedMatches.filter((m) => m.placement === 1).length;
     const scopedDuration = scopedMatches.reduce((s, m) => s + m.duration, 0);
 
-    const { peak, low } = getPeakAndLow(p.history, win);
-
     return {
       puuid: p.puuid,
       name: `${p.gameName}#${p.tagLine}`,
@@ -346,8 +315,6 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
       top4Rate: percentOf(scopedTop4, scopedGames),
       firstRate: percentOf(scopedFirsts, scopedGames),
       scopedTime: formatPlaytime(scopedDuration),
-      peakRank: peak,
-      lowRank: low,
       // Raw numeric values for sorting
       rankLP: p.current ? rankToLP(p.current.tier, p.current.rank, p.current.lp) : -1,
       gamesNum: isSet ? totalGames : scopedGames,
@@ -458,18 +425,6 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
                           <RankAbbr>{row.rankAbbr}</RankAbbr>
                         </span>
                       </div>
-                      {row.peakRank && (
-                        <RankSub>
-                          <RankFull>Peak: {formatRankShort(row.peakRank.tier, row.peakRank.rank, row.peakRank.lp)}</RankFull>
-                          <RankAbbr>Peak: {formatRankAbbr(row.peakRank.tier, row.peakRank.rank, row.peakRank.lp)}</RankAbbr>
-                        </RankSub>
-                      )}
-                      {!isSet && row.lowRank && (
-                        <RankSub>
-                          <RankFull>Low: {formatRankShort(row.lowRank.tier, row.lowRank.rank, row.lowRank.lp)}</RankFull>
-                          <RankAbbr>Low: {formatRankAbbr(row.lowRank.tier, row.lowRank.rank, row.lowRank.lp)}</RankAbbr>
-                        </RankSub>
-                      )}
                     </RankCell>
                   </td>
                   <CenterCell>{isSet ? row.totalGames : row.scopedGames}</CenterCell>

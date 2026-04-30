@@ -73,9 +73,8 @@ Wraps content in a `motion.div` with fade-in + slide-up (16px) animation on moun
 ### PlayerTable
 Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:
 1. Derives the active time window from `selectedTab` (`SET_START–SET_END` for "set", `weeks[i]` for week tabs)
-2. Calls `getPeakAndLow(history, window)` per player to find peak/low rank snapshots
-3. Renders a `<table>` inside a `GlassCard` with 6 columns ("This Set") or 7 columns (week tabs)
-4. No internal tab state or tab bar
+2. Renders a `<table>` inside a `GlassCard` with 6 columns
+3. No internal tab state or tab bar
 
 ### RankChart
 Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:

@@ -78,7 +78,7 @@ Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 5. Process in batches of 30 until all new matches are fetched or 50s elapsed
 6. Update `player:{puuid}:matches` with merged + sorted list
 
-**Backfill behavior**: A single sync run will process as many batches of 30 as the time budget allows. The 50s budget is divided equally among all players so no player is starved by earlier ones. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
+**Backfill behavior**: A single sync run will process as many batches of 30 as the time budget allows. Players are sorted by stored match count descending before the loop — those who are already caught up (cheap to process) go first, preserving the remaining time budget for players who are behind. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
 
 **Rate limiting**: 100ms delay between API calls, 200ms delay between players. If a 429 response is received and the `Retry-After` wait would fit within the remaining budget, `riotFetch` waits and retries automatically. If the wait would exceed the deadline, a `RateLimitError` is thrown (exported from `lib/riot.ts`).
 

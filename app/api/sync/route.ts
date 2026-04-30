@@ -27,7 +27,12 @@ const TOTAL_TIMEOUT_MS = 50_000; // leave 10s buffer before Vercel's 60s limit
 export async function POST() {
   const syncStart = Date.now();
   const deadline = syncStart + TOTAL_TIMEOUT_MS;
-  const players = await getTrackedPlayers();
+  const rawPlayers = await getTrackedPlayers();
+  const matchCounts = await Promise.all(rawPlayers.map((p) => getPlayerMatches(p.puuid).then((m) => m.length)));
+  const players = rawPlayers
+    .map((p, i) => ({ ...p, _storedCount: matchCounts[i] }))
+    .sort((a, b) => b._storedCount - a._storedCount);
+  console.log(`[sync] Player order: ${players.map((p) => `${p.gameName ?? p.puuid}(${p._storedCount})`).join(", ")}`);
   const results: {
     puuid: string;
     name: string;
