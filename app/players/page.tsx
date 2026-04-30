@@ -76,6 +76,10 @@ const Page = styled.div`
     gap: ${({ theme }) => theme.primitive.spacing.xl};
     padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
   }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+    min-height: calc(100dvh - 2 * ${({ theme }) => theme.primitive.spacing.xl});
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -108,6 +112,7 @@ const Grid = styled.div`
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     grid-template-columns: 4fr 8fr;
+    flex: 1;
   }
 `;
 
@@ -243,23 +248,36 @@ const SyncBadge = styled.button`
 const PlayerList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.primitive.spacing.sm};
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
   flex: 1;
   overflow-y: auto;
   max-height: min(600px, 55vh);
   padding-right: 8px;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    gap: ${({ theme }) => theme.primitive.spacing.sm};
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+    max-height: none;
+    min-height: 0;
+  }
 `;
 
 const PlayerRow = styled(motion.div)<{ $elite: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${({ theme }) => theme.primitive.spacing.md};
+  padding: ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.table.headerBg};
   border: 1px solid ${({ $elite, theme }) =>
     $elite ? theme.semantic.color.borderDefault : theme.semantic.color.borderDim};
   border-radius: ${({ theme }) => theme.primitive.radius.lg};
   transition: all 0.2s;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    padding: ${({ theme }) => theme.primitive.spacing.md};
+  }
 
   /* only translate on pointer devices to avoid touch overflow */
   @media (hover: hover) {
@@ -278,14 +296,19 @@ const PlayerInfo = styled.div`
 `;
 
 const Avatar = styled.div<{ $color: string }>`
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 2px solid ${({ $color }) => $color};
   overflow: hidden;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.3);
   transition: border-color 0.2s;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    width: 48px;
+    height: 48px;
+  }
 
   img {
     width: 100%;
@@ -298,7 +321,12 @@ const Avatar = styled.div<{ $color: string }>`
 const PlayerName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  }
 `;
 
 const PlayerTag = styled.span`
@@ -311,7 +339,11 @@ const PlayerMeta = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  margin-top: 2px;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  }
 `;
 
 const TierLabel = styled.span<{ $color: string }>`
@@ -593,6 +625,7 @@ export default function ManagePlayersPage() {
         <GlassCard
           title="Tracked Players"
           icon={Users}
+          style={{ flex: 1, minHeight: 0 }}
           headerAction={
             <SyncBadge onClick={handleSync} disabled={syncing}>
               <RefreshCw
