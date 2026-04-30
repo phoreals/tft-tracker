@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import styled from "styled-components";
 import Link from "next/link";
@@ -15,7 +15,7 @@ import {
   ReferenceLine,
   ReferenceArea,
 } from "recharts";
-import { ArrowLeft, Trophy, Gamepad2, Clock, TrendingUp } from "lucide-react";
+import { ArrowLeft, Trophy, Gamepad2, Clock, TrendingUp, RefreshCw } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import {
   formatPlaytime,
@@ -466,6 +466,60 @@ const LoadingText = styled.div`
   color: ${({ theme }) => theme.semantic.color.textMuted};
 `;
 
+const SyncWrap = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  margin-left: auto;
+  flex-shrink: 0;
+`;
+
+const SyncButton = styled.button`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const SpinningRefresh = styled(RefreshCw)<{ $spinning: boolean }>`
+  color: ${({ theme }) => theme.semantic.color.accent};
+  animation: ${({ $spinning }) => ($spinning ? "spin 1s linear infinite" : "none")};
+`;
+
+const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
+  font-family: ${({ theme }) => theme.semantic.font.body};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme, $tone }) =>
+    $tone === "error"
+      ? theme.semantic.color.info
+      : $tone === "warn"
+        ? theme.semantic.color.accent
+        : theme.semantic.color.textMuted};
+  margin: 0;
+  text-align: right;
+  white-space: pre-line;
+`;
+
 // ── Helpers ──────────────────────────────────────────────────────
 
 function RankEmblem({ tier, size, color }: { tier: string; size: number; color: string }) {
@@ -555,6 +609,8 @@ export default function PlayerDrilldownPage() {
   const [player, setPlayer] = useState<PlayerData | null>(null);
   const [allPlayers, setAllPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{ tone: "muted" | "warn" | "error"; message: string } | null>(null);
 
   const weeks = useMemo(() => getSetWeeks(), []);
 
@@ -578,16 +634,71 @@ export default function PlayerDrilldownPage() {
     active?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, [selectedTab]);
 
-  useEffect(() => {
-    fetch("/api/players")
-      .then((r) => r.json())
-      .then((data: PlayerData[]) => {
-        setAllPlayers(data);
-        const found = data.find((p) => p.puuid === puuid);
-        if (found) setPlayer(found);
-      })
-      .finally(() => setLoading(false));
+  const fetchPlayer = useCallback(async () => {
+    const data: PlayerData[] = await fetch("/api/players").then((r) => r.json());
+    setAllPlayers(data);
+    const found = data.find((p) => p.puuid === puuid);
+    if (found) setPlayer(found);
   }, [puuid]);
+
+  useEffect(() => {
+    fetchPlayer().finally(() => setLoading(false));
+  }, [fetchPlayer]);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setSyncStatus(null);
+
+    let pass = 0;
+    let totalAdded = 0;
+
+    try {
+      while (true) {
+        pass++;
+        setSyncStatus({ tone: "muted", message: pass === 1 ? "Syncing…" : `Pass ${pass} — ${totalAdded} matches added so far…` });
+
+        const res = await fetch(`/api/sync/${puuid}`, { method: "POST" });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error ?? `Server error ${res.status}`);
+        }
+        const data = await res.json();
+        totalAdded += data.totalAdded ?? 0;
+        const maxRateLimitMs: number = data.maxRateLimitMs ?? 0;
+
+        await fetchPlayer();
+
+        if (maxRateLimitMs > 0) {
+          let secsLeft = Math.ceil(maxRateLimitMs / 1000);
+          while (secsLeft > 0) {
+            setSyncStatus({ tone: "warn", message: `Rate limited — waiting ${secsLeft}s before next pass…` });
+            await new Promise((r) => setTimeout(r, 1000));
+            secsLeft--;
+          }
+          continue;
+        }
+
+        if ((data.matchesRemaining ?? 0) > 0) {
+          setSyncStatus({ tone: "muted", message: `Pass ${pass} done — ${data.matchesRemaining} matches remaining, continuing…` });
+          await new Promise((r) => setTimeout(r, 1500));
+          continue;
+        }
+
+        const errNote = (data.matchErrors ?? 0) > 0 ? ` (${data.matchErrors} match fetch error${data.matchErrors > 1 ? "s" : ""})` : "";
+        setSyncStatus({
+          tone: (data.matchErrors ?? 0) > 0 ? "warn" : "muted",
+          message: totalAdded > 0
+            ? `All caught up — ${totalAdded} match${totalAdded > 1 ? "es" : ""} added across ${pass} pass${pass > 1 ? "es" : ""}${errNote}`
+            : `Up to date${errNote}`,
+        });
+        break;
+      }
+    } catch (err) {
+      setSyncStatus({ tone: "error", message: err instanceof Error ? err.message : "Sync failed" });
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   // Active time window
   const isSet = selectedTab === "set";
@@ -719,6 +830,13 @@ export default function PlayerDrilldownPage() {
             </RankBadge>
           )}
         </PlayerInfo>
+        <SyncWrap>
+          <SyncButton onClick={handleSync} disabled={syncing}>
+            <SpinningRefresh size={ICON_SIZE.sm} $spinning={syncing} />
+            <span>{syncing ? "SYNCING..." : "SYNC"}</span>
+          </SyncButton>
+          {syncStatus && <SyncStatus $tone={syncStatus.tone}>{syncStatus.message}</SyncStatus>}
+        </SyncWrap>
       </PlayerHeader>
 
       <StickyTabWrap>

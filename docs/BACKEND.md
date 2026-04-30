@@ -80,11 +80,22 @@ Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 
 **Backfill behavior**: A single sync run will process as many batches of 30 as the time budget allows. The 50s budget is divided equally among all players so no player is starved by earlier ones. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
 
-**Rate limiting**: 100ms delay between API calls, 200ms delay between players.
+**Rate limiting**: 100ms delay between API calls, 200ms delay between players. If a 429 response is received and the `Retry-After` wait would fit within the remaining budget, `riotFetch` waits and retries automatically. If the wait would exceed the deadline, a `RateLimitError` is thrown (exported from `lib/riot.ts`).
+
+**Rate limit queuing**: If a `RateLimitError` is caught at the player level (i.e., the 429 happened during league entry or match ID fetching), the player is recorded as `success: true, matchesRemaining: 1, rateLimitMs: <ms>` rather than failing. The response includes `maxRateLimitMs` (the longest wait across all rate-limited players). The frontend uses this to pause before triggering the next sync pass.
 
 **Console logging**: Each sync emits `[sync] PlayerName:` prefixed logs covering rank updates, per-batch progress, per-match errors, and a final summary.
 
-**Response**: `{ synced: number, totalAdded: number, totalRemaining: number, results: [{ puuid, name, success, matchesAdded, matchesRemaining, batches, matchErrors, error? }] }`
+**Response**: `{ synced: number, totalAdded: number, totalRemaining: number, maxRateLimitMs: number, results: [{ puuid, name, success, matchesAdded, matchesRemaining, batches, matchErrors, rateLimitMs?, error? }] }`
+
+### `POST /api/sync/[puuid]`
+Sync a single player by PUUID. The entire 50s budget is dedicated to that one player — useful for targeted backfill when a player's match count looks wrong. `maxDuration = 60`.
+
+**Flow**: Same as the per-player block in `POST /api/sync` (rank update → match ID fetch → batch match fetch), but with no competition from other players for the time budget.
+
+**Response**: `{ totalAdded: number, matchesRemaining: number, maxRateLimitMs: number, batches: number, matchErrors: number }`
+
+**Error responses**: 404 if puuid not in tracked players. 500 with `{ error }` for other failures. Rate limit that exceeds the budget returns 200 with `matchesRemaining: 1, maxRateLimitMs: <ms>` (same retryable pattern as the bulk sync).
 
 ### `POST /api/seed`
 Add the 7 original hardcoded players (same flow as POST /api/players, repeated).
@@ -202,6 +213,7 @@ interface MatchRecord {
 ## Error Handling
 
 - Riot API errors propagate as `Error` with status code + response body (e.g. `Riot API 403: {"status":{"message":"Forbidden",...}}`)
+- Riot 429 rate limit errors are `RateLimitError` (subclass of `Error`) with a `retryAfterMs` field. The sync route catches these at the player level and returns them as retryable rather than failures, with `maxRateLimitMs` in the response so the frontend knows how long to wait.
 - Redis connection failures are caught early in seed/sync and return a descriptive `500` (e.g. `Redis connection failed: ...`)
 - Individual match fetch failures are logged via `console.error` and counted in `matchErrors` in the sync response
 - Sync reports per-player success/failure in the response

@@ -3,20 +3,29 @@ const RIOT_API_KEY = process.env.RIOT_API_KEY ?? "";
 const REGIONAL_HOST = "https://americas.api.riotgames.com";
 const PLATFORM_HOST = "https://na1.api.riotgames.com";
 
+export class RateLimitError extends Error {
+  readonly retryAfterMs: number;
+  constructor(retryAfterSec: number) {
+    super(`Riot API rate limited — retry after ${retryAfterSec}s`);
+    this.name = "RateLimitError";
+    this.retryAfterMs = (retryAfterSec + 1) * 1000;
+  }
+}
+
 async function riotFetch<T>(url: string, retries = 3, deadlineMs?: number): Promise<T> {
   const res = await fetch(url, {
     headers: { "X-Riot-Token": RIOT_API_KEY },
   });
 
-  // Handle rate limiting — wait and retry, but never sleep past the deadline
-  if (res.status === 429 && retries > 0) {
+  if (res.status === 429) {
     const retryAfter = parseInt(res.headers.get("Retry-After") ?? "5", 10);
     const sleepMs = (retryAfter + 1) * 1000;
-    if (deadlineMs !== undefined && Date.now() + sleepMs > deadlineMs) {
-      throw new Error(`Riot API 429: rate limited, retry-after ${retryAfter}s exceeds remaining budget`);
+    // Retry if we have attempts left and enough time budget
+    if (retries > 0 && (deadlineMs === undefined || Date.now() + sleepMs <= deadlineMs)) {
+      await delay(sleepMs);
+      return riotFetch<T>(url, retries - 1, deadlineMs);
     }
-    await delay(sleepMs);
-    return riotFetch<T>(url, retries - 1, deadlineMs);
+    throw new RateLimitError(retryAfter);
   }
 
   if (!res.ok) {

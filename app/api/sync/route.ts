@@ -17,6 +17,7 @@ import {
   getAllMatchIds,
   getMatch,
   delay,
+  RateLimitError,
 } from "@/lib/riot";
 import { SET_START } from "@/lib/utils";
 
@@ -36,6 +37,7 @@ export async function POST() {
     batches: number;
     matchErrors: number;
     error?: string;
+    rateLimitMs?: number;
   }[] = [];
 
   console.log(`[sync] Starting sync for ${players.length} players`);
@@ -162,18 +164,32 @@ export async function POST() {
         matchErrors,
       });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Unknown error";
-      console.error(`[sync] ${playerLabel}: sync failed —`, message);
-      results.push({
-        puuid: player.puuid,
-        name: playerLabel,
-        success: false,
-        matchesAdded: 0,
-        matchesRemaining: 0,
-        batches: 0,
-        matchErrors: 0,
-        error: message,
-      });
+      if (err instanceof RateLimitError) {
+        console.warn(`[sync] ${playerLabel}: rate limited — will retry after ${err.retryAfterMs}ms`);
+        results.push({
+          puuid: player.puuid,
+          name: playerLabel,
+          success: true,
+          matchesAdded: 0,
+          matchesRemaining: 1,
+          batches: 0,
+          matchErrors: 0,
+          rateLimitMs: err.retryAfterMs,
+        });
+      } else {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error(`[sync] ${playerLabel}: sync failed —`, message);
+        results.push({
+          puuid: player.puuid,
+          name: playerLabel,
+          success: false,
+          matchesAdded: 0,
+          matchesRemaining: 0,
+          batches: 0,
+          matchErrors: 0,
+          error: message,
+        });
+      }
     }
 
     // Delay between players to respect rate limits
@@ -182,7 +198,8 @@ export async function POST() {
 
   const totalAdded = results.reduce((s, r) => s + r.matchesAdded, 0);
   const totalRemaining = results.reduce((s, r) => s + r.matchesRemaining, 0);
-  console.log(`[sync] Done — ${totalAdded} matches added, ${totalRemaining} still remaining across all players`);
+  const maxRateLimitMs = results.reduce((max, r) => Math.max(max, r.rateLimitMs ?? 0), 0);
+  console.log(`[sync] Done — ${totalAdded} matches added, ${totalRemaining} still remaining across all players${maxRateLimitMs > 0 ? `, rate limited (retry in ${maxRateLimitMs}ms)` : ""}`);
 
-  return NextResponse.json({ synced: results.length, totalAdded, totalRemaining, results });
+  return NextResponse.json({ synced: results.length, totalAdded, totalRemaining, maxRateLimitMs, results });
 }

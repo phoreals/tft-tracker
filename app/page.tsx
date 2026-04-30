@@ -479,6 +479,7 @@ export default function WeeklyStatsPage() {
         }
         const data = await res.json();
         totalAdded += data.totalAdded ?? 0;
+        const maxRateLimitMs: number = data.maxRateLimitMs ?? 0;
 
         const failed = (data.results ?? []).filter((r: { success: boolean }) => !r.success);
         const withErrors = (data.results ?? []).filter((r: { matchErrors: number }) => r.matchErrors > 0);
@@ -494,12 +495,22 @@ export default function WeeklyStatsPage() {
           break;
         }
 
-        if (withRemaining.length > 0) {
-          // More matches to fetch — pause briefly then run another pass
-          const remaining = withRemaining.reduce((s: number, r: { matchesRemaining: number }) => s + r.matchesRemaining, 0);
-          setSyncStatus({ tone: "muted", message: `Pass ${pass} done — ${remaining} matches remaining, continuing…` });
+        if (withRemaining.length > 0 || maxRateLimitMs > 0) {
           await fetchPlayers();
-          await new Promise((r) => setTimeout(r, 1500));
+          if (maxRateLimitMs > 0) {
+            // Rate limited — count down before next pass
+            let secsLeft = Math.ceil(maxRateLimitMs / 1000);
+            while (secsLeft > 0) {
+              setSyncStatus({ tone: "warn", message: `Rate limited — waiting ${secsLeft}s before next pass…` });
+              await new Promise((r) => setTimeout(r, 1000));
+              secsLeft--;
+            }
+          } else {
+            // More matches to fetch — pause briefly then run another pass
+            const remaining = withRemaining.reduce((s: number, r: { matchesRemaining: number }) => s + r.matchesRemaining, 0);
+            setSyncStatus({ tone: "muted", message: `Pass ${pass} done — ${remaining} matches remaining, continuing…` });
+            await new Promise((r) => setTimeout(r, 1500));
+          }
           continue;
         }
 

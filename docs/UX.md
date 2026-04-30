@@ -110,7 +110,7 @@ Empty states:
 - Set 17: "No match data yet. Sync to start tracking."
 
 ### Sync Button
-Top-right of the page header. Calls `POST /api/sync`, shows a spinning icon while active, then refreshes all data.
+Top-right of the page header. Runs a multi-pass loop: calls `POST /api/sync` repeatedly until `matchesRemaining === 0` across all players. Shows a spinning icon and live status text ("Syncing…", "Pass 2 — 45 matches remaining, continuing…"). If a pass returns `maxRateLimitMs > 0`, counts down the rate-limit wait second-by-second before the next pass.
 
 ## Manage Players (`/players`)
 
@@ -198,9 +198,15 @@ Scrollable list of all matches (newest first). Each row:
 - Gold left border for top 4 finishes
 - Duration + date/time
 
+## Player Drilldown (`/player/[puuid]`)
+
+### Sync Button
+Top-right of the player header (alongside the avatar and rank badge). Calls `POST /api/sync/[puuid]` — a targeted sync that dedicates the full 50s budget to a single player. Same multi-pass loop and rate-limit countdown as the main page sync. Intended for manual backfill when a player's match count looks wrong. Refreshes player data after each pass.
+
 ## Data Refresh Flow
 
 1. **Automatic**: Vercel Cron hits `GET /api/cron` daily at midnight UTC
-2. **Manual**: User clicks "Sync Now" on either page → `POST /api/sync`
-3. **On add**: Adding a player fetches their rank + first 30 Set 17 matches. Subsequent syncs backfill any remaining history (30 per run).
-4. Page data is fetched via `GET /api/players` on mount (client-side `useEffect`)
+2. **Manual (all players)**: User clicks "Sync Now" on the home or players page → multi-pass `POST /api/sync`
+3. **Manual (one player)**: User clicks "SYNC" on the player drilldown page → multi-pass `POST /api/sync/[puuid]`
+4. **On add**: Adding a player fetches their rank + first 30 Set 17 matches. Subsequent syncs backfill any remaining history (30 per run).
+5. Page data is fetched via `GET /api/players` on mount (client-side `useEffect`)
