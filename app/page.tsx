@@ -386,8 +386,11 @@ interface PlayerData {
 // ── Helpers ──────────────────────────────────────────────────────
 
 function formatShortDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  return new Date(ts).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function useFullBleedSticky(
@@ -627,10 +630,10 @@ export default function WeeklyStatsPage() {
           <PageTitle>The Asylum TFT Tracker</PageTitle>
           <PageSubtitle>
             {isSet
-              ? `${SET_LABEL} · ${formatShortDate(SET_START)}–${formatShortDate(SET_END)}`
+              ? `${SET_LABEL} · ${formatShortDate(SET_START)}\u2009\u2013\u2009${formatShortDate(SET_END)}`
               : (() => {
                   const w = weeks[selectedTab as number];
-                  return w ? `${w.label} · ${formatShortDate(w.start)}–${formatShortDate(w.end)}` : "";
+                  return w ? `${w.label} · ${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)}` : "";
                 })()}
           </PageSubtitle>
         </div>
@@ -657,7 +660,7 @@ export default function WeeklyStatsPage() {
           <option value="set">Set 17</option>
           {weeks.map((w, i) => (
             <option key={i} value={String(i)}>
-              {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
+              {`${w.label} (${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)})`}
             </option>
           ))}
         </PageTabSelect>

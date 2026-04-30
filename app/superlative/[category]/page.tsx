@@ -268,8 +268,11 @@ const LoadingText = styled.p`
 // ── Helpers ──────────────────────────────────────────────────────
 
 function formatShortDate(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+  return new Date(ts).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function useFullBleedSticky(
@@ -440,7 +443,7 @@ export default function SuperlativeDrilldownPage() {
           <option value="set">{SET_LABEL}</option>
           {weeks.map((w, i) => (
             <option key={i} value={String(i)}>
-              {w.label} ({formatShortDate(w.start)}–{formatShortDate(w.end)})
+              {`${w.label} (${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)})`}
             </option>
           ))}
         </TabSelect>
