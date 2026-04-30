@@ -201,7 +201,7 @@ export const SUPERLATIVE_CATEGORIES: SuperlativeCategory[] = [
   { slug: "most-wins",        title: "Most Wins (1st)",               label: (s) => s ? `Most Wins (1st) ${SET_LABEL}` : "Most Wins (1st) This Week",         key: "firsts",    format: (v) => String(v),                                      filter: (s) => s.firsts > 0 },
   { slug: "most-time",        title: "Most Time Played",              label: (s) => s ? `Most Time Played ${SET_LABEL}` : "Most Time Played This Week",       key: "time",      format: (v) => formatPlaytime(v),                              filter: (s) => s.time > 0 },
   { slug: "highest-lp",       title: "Highest LP Gain",               label: (s) => s ? `Highest LP Gain ${SET_LABEL}` : "Highest LP Gain This Week",         key: "lpDiff",    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,                  filter: (s) => s.lpDiff !== null },
-  { slug: "best-lp-per-game", title: "Fastest Climber", label: (s) => s ? `Fastest Climber ${SET_LABEL}` : "Fastest Climber This Week",         key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },
+  { slug: "best-lp-per-game", title: "Most Efficient Climb", label: (s) => s ? `Most Efficient Climb ${SET_LABEL}` : "Most Efficient Climb This Week", key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },
 ];
 
 export function findLeader(stats: PlayerStat[], cat: SuperlativeCategory): PlayerStat | null {
