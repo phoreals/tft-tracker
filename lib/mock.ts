@@ -589,7 +589,7 @@ function buildHistory(
 }
 
 export function isMockMode() {
-  return !process.env.KV_REST_API_URL;
+  return !process.env.KV_REST_API_URL && process.env.NODE_ENV !== "production";
 }
 
 export function getMockPlayer(puuid: string) {

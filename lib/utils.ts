@@ -1,8 +1,6 @@
 // ── Set Schedule ─────────────────────────────────────────────────
 
-// SET_START is 2026-02-18 (10 weeks before Apr 29) so week tabs reach Wk 10 in local dev.
-// Change back to 2026-04-15 when the actual set launches.
-export const SET_START = new Date("2026-02-18T00:00:00").getTime();
+export const SET_START = new Date("2026-04-15T00:00:00").getTime();
 export const SET_END = new Date("2026-07-29T23:59:59").getTime();
 export const SET_NUMBER = 17;
 export const SET_LABEL = `Set ${SET_NUMBER}`;
