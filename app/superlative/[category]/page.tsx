@@ -149,8 +149,7 @@ const TabSelect = styled.select`
 const Tab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
-  min-height: 44px;
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $active, theme }) => $active ? theme.semantic.color.borderHover : "transparent"};
   background: ${({ $active, theme }) => $active ? theme.semantic.color.accentHover : "transparent"};
@@ -159,10 +158,6 @@ const Tab = styled.button<{ $active: boolean }>`
   transition: all 0.2s;
   white-space: nowrap;
   flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.textPrimary};
@@ -170,14 +165,6 @@ const Tab = styled.button<{ $active: boolean }>`
   }
 `;
 
-const WeekDate = styled.span`
-  display: block;
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-  letter-spacing: 0.05em;
-  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  opacity: 0.6;
-`;
 
 const Table = styled.table`
   width: 100%;
@@ -473,7 +460,6 @@ export default function SuperlativeDrilldownPage() {
               onClick={() => setSelectedTab(i)}
             >
               {w.label}
-              <WeekDate>{formatShortDate(w.start)}–{formatShortDate(w.end)}</WeekDate>
             </Tab>
           ))}
         </TabBar>
