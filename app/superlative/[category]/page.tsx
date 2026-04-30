@@ -387,7 +387,7 @@ export default function SuperlativeDrilldownPage() {
       </BackLink>
 
       <div>
-        <PageTitle>{cat.label}</PageTitle>
+        <PageTitle>{cat.title}</PageTitle>
         <PageSubtitle>
           {isSet ? `Leaderboard · ${SET_LABEL}` : (() => {
             const w = weeks[selectedTab as number];
@@ -446,7 +446,7 @@ export default function SuperlativeDrilldownPage() {
                 <tr>
                   <th style={{ width: 40 }}>#</th>
                   <th>Summoner</th>
-                  <th style={{ textAlign: "right" }}>{cat.label}</th>
+                  <th style={{ textAlign: "right" }}>{cat.label(isSet)}</th>
                 </tr>
               </Thead>
               <Tbody>

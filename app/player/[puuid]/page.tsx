@@ -667,7 +667,7 @@ export default function PlayerDrilldownPage() {
       const val = me ? me[cat.key] : null;
       return {
         slug: cat.slug,
-        label: cat.label,
+        label: cat.label(isSet),
         value: val !== null ? cat.format(val as number) : "—",
       };
     });

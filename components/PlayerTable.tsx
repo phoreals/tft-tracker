@@ -5,7 +5,7 @@ import styled from "styled-components";
 import Link from "next/link";
 import { User } from "lucide-react";
 import { GlassCard } from "./GlassCard";
-import { ICON_SIZE } from "@/styles/theme";
+import { theme, ICON_SIZE } from "@/styles/theme";
 import {
   formatPlaytime,
   formatRank,
@@ -41,10 +41,14 @@ const Table = styled.table`
   width: 100%;
   text-align: left;
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
   letter-spacing: 0.02em;
   border-collapse: collapse;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  }
 `;
 
 const Thead = styled.thead`
@@ -53,14 +57,15 @@ const Thead = styled.thead`
     background: ${({ theme }) => theme.component.table.headerBg};
   }
   th {
-    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+    padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.xs};
     font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+    font-size: 8px;
     letter-spacing: 0.05em;
     color: ${({ theme }) => theme.semantic.color.textDisabled};
 
     @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
       padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
+      font-size: ${({ theme }) => theme.primitive.fontSize.xs};
     }
   }
 `;
@@ -77,10 +82,26 @@ const SortTh = styled.th<{ $active: boolean }>`
   }
 `;
 
-const SortArrow = styled.span<{ $visible: boolean }>`
+const SortChevron = styled.svg<{ $visible: boolean }>`
   opacity: ${({ $visible }) => ($visible ? 1 : 0)};
-  margin-left: 4px;
-  font-size: 10px;
+  margin-left: 3px;
+  flex-shrink: 0;
+  vertical-align: middle;
+  transition: opacity 0.15s;
+`;
+
+// Show chevron on hover even when not active
+const SortThInner = styled.span`
+  display: inline-flex;
+  align-items: center;
+
+  &:hover ${SortChevron} {
+    opacity: 0.4;
+  }
+
+  &:hover ${SortChevron}[data-active="true"] {
+    opacity: 1;
+  }
 `;
 
 const Tbody = styled.tbody`
@@ -92,7 +113,7 @@ const Tbody = styled.tbody`
     }
   }
   td {
-    padding: 12px ${({ theme }) => theme.primitive.spacing.md};
+    padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.xs};
 
     @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
       padding: 20px ${({ theme }) => theme.primitive.spacing.lg};
@@ -124,11 +145,15 @@ const SummonerIcon = styled.div`
 const SummonerName = styled(Link)`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   letter-spacing: 0.05em;
   text-decoration: none;
   transition: color 0.2s;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  }
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.accent};
@@ -140,6 +165,7 @@ const RankCell = styled.div`
   flex-direction: column;
   align-items: flex-start;
   gap: 0;
+  white-space: nowrap;
 `;
 
 const RankSub = styled.span`
@@ -347,6 +373,28 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
     return sorted;
   }, [rows, sortKey, sortDir]);
 
+  const renderSortLabel = (key: SortKey, label: string) => {
+    const isActive = sortKey === key;
+    const isAsc = isActive && sortDir === "asc";
+    return (
+      <SortThInner>
+        {label}
+        <SortChevron
+          $visible={isActive}
+          data-active={isActive ? "true" : undefined}
+          width="8"
+          height="6"
+          viewBox="0 0 8 6"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ transform: isAsc ? "rotate(180deg)" : undefined }}
+        >
+          <path d="M1 1l3 3.5L7 1" stroke={theme.semantic.color.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </SortChevron>
+      </SortThInner>
+    );
+  };
+
   return (
     <GlassCard title="Player Performance">
       <TableWrap>
@@ -354,22 +402,22 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
           <Thead>
             <tr>
               <SortTh $active={sortKey === "name"} onClick={() => toggleSort("name")}>
-                Summoner<SortArrow $visible={sortKey === "name"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+                {renderSortLabel("name", "Summoner")}
               </SortTh>
               <SortTh $active={sortKey === "rankLP"} onClick={() => toggleSort("rankLP")}>
-                Rank<SortArrow $visible={sortKey === "rankLP"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+                {renderSortLabel("rankLP", "Rank")}
               </SortTh>
               <SortTh $active={sortKey === "games"} style={{ textAlign: "center" }} onClick={() => toggleSort("games")}>
-                {isSet ? "Total Games" : "Games This Week"}<SortArrow $visible={sortKey === "games"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+                {renderSortLabel("games", isSet ? "Total Games" : "Games This Week")}
               </SortTh>
               <SortTh $active={sortKey === "top4Rate"} style={{ textAlign: "center" }} onClick={() => toggleSort("top4Rate")}>
-                Top 4%<SortArrow $visible={sortKey === "top4Rate"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+                {renderSortLabel("top4Rate", "Top 4%")}
               </SortTh>
               <SortTh $active={sortKey === "firstRate"} style={{ textAlign: "center" }} onClick={() => toggleSort("firstRate")}>
-                1st%<SortArrow $visible={sortKey === "firstRate"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+                {renderSortLabel("firstRate", "1st%")}
               </SortTh>
               <SortTh $active={sortKey === "time"} style={{ textAlign: "right" }} onClick={() => toggleSort("time")}>
-                Time Played<SortArrow $visible={sortKey === "time"}>{sortDir === "asc" ? "▲" : "▼"}</SortArrow>
+                {renderSortLabel("time", "Time Played")}
               </SortTh>
             </tr>
           </Thead>

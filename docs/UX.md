@@ -38,10 +38,12 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 |------|--------|
 | **Most Games** | Highest scoped game count |
 | **Best Top 4%** | Highest top-4 rate (min 1 game) |
-| **Most Wins** | Most 1st-place finishes |
+| **Most Wins (1st)** | Most 1st-place finishes |
 | **Most Time Played** | Highest scoped playtime |
 | **Highest LP Gain** | Largest LP delta (last − first history snapshot in window) |
-| **Best LP/Game** | Highest LP gain per game played |
+| **Fastest Climber** | Highest LP gain per game played |
+
+Card labels are contextual — they append "Set 17" or "This Week" depending on the selected tab (e.g. "Most Games Set 17" vs "Most Games This Week").
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
 
@@ -65,7 +67,7 @@ Three `GlassCard` components show aggregate metrics for the **currently selected
 
 A full-width table inside a `GlassCard`. Columns and stats adapt to the selected tab.
 
-**Column sorting**: All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold with a ▲/▼ arrow indicator. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration).
+**Column sorting**: All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold with a gold SVG chevron indicator that rotates for ascending. Inactive chevrons appear at 40% opacity on hover as an affordance. On mobile, the table uses smaller font sizes and tighter padding for horizontal density. The Rank column uses `white-space: nowrap` to keep the rank on one line. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration).
 
 **"Set 17" view — 6 columns:**
 

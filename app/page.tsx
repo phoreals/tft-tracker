@@ -476,12 +476,13 @@ export default function WeeklyStatsPage() {
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
     const stats = computePlayerStats(players, win);
 
+    const isSetMode = selectedTab === "set";
     return SUPERLATIVE_CATEGORIES.map((cat) => {
       const leader = findLeader(stats, cat);
       const val = leader ? leader[cat.key] : null;
       return {
         slug: cat.slug,
-        label: cat.label,
+        label: cat.label(isSetMode),
         value: val !== null ? cat.format(val as number) : "—",
         player: leader?.player ?? null,
       };
@@ -556,7 +557,7 @@ export default function WeeklyStatsPage() {
 
       <SuperlativesGrid>
         {(loading || superlatives.length === 0
-          ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.label, value: "...", player: null }))
+          ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.label(selectedTab === "set"), value: "...", player: null }))
           : superlatives
         ).map((s) => (
           <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}`}>
