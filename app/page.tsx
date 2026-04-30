@@ -255,6 +255,19 @@ const StatLabel = styled.span`
   color: ${({ theme }) => theme.semantic.color.textMuted};
 `;
 
+const DurationPill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  background: rgba(229, 197, 135, 0.10);
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  color: ${({ theme }) => theme.semantic.color.accent};
+  flex-shrink: 0;
+`;
+
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.xl};
@@ -590,12 +603,15 @@ export default function WeeklyStatsPage() {
     const stats = computePlayerStats(players, win);
 
     const isSetMode = selectedTab === "set";
+    const weekNumber = weeks[selectedTab as number]?.weekNumber;
+    const period = isSetMode ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
     return SUPERLATIVE_CATEGORIES.map((cat) => {
       const leader = findLeader(stats, cat);
       const val = leader ? leader[cat.key] : null;
       return {
         slug: cat.slug,
-        label: cat.label(isSetMode, weeks[selectedTab as number]?.weekNumber),
+        label: cat.title,
+        period,
         value: val !== null ? cat.format(val as number) : "—",
         player: leader?.player ?? null,
       };
@@ -670,13 +686,14 @@ export default function WeeklyStatsPage() {
 
       <SuperlativesGrid>
         {(loading || superlatives.length === 0
-          ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.label(selectedTab === "set", weeks[selectedTab as number]?.weekNumber), value: "...", player: null }))
+          ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.title, period: "···", value: "...", player: null }))
           : superlatives
         ).map((s) => (
           <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}?tab=${selectedTab}`}>
             <GlassCard>
               <StatRow>
                 <StatLabel>{s.label}</StatLabel>
+                <DurationPill>{s.period}</DurationPill>
               </StatRow>
               <StatValue>{s.value}</StatValue>
               {s.player && (
