@@ -425,6 +425,12 @@ export default function WeeklyStatsPage() {
   const weeks = useMemo(() => getSetWeeks(), []);
 
   const [selectedTab, setSelectedTab] = useState<"set" | number>(() => {
+    const tabParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null;
+    if (tabParam === "set") return "set";
+    if (tabParam !== null) {
+      const n = parseInt(tabParam, 10);
+      if (!isNaN(n)) return n;
+    }
     const now = Date.now();
     const ws = getSetWeeks();
     let idx = 0;
@@ -652,7 +658,7 @@ export default function WeeklyStatsPage() {
           ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.label(selectedTab === "set"), value: "...", player: null }))
           : superlatives
         ).map((s) => (
-          <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}`}>
+          <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}?tab=${selectedTab}`}>
             <GlassCard>
               <StatRow>
                 <StatLabel>{s.label}</StatLabel>

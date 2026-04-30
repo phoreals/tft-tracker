@@ -327,6 +327,12 @@ export default function SuperlativeDrilldownPage() {
   const weeks = useMemo(() => getSetWeeks(), []);
 
   const [selectedTab, setSelectedTab] = useState<"set" | number>(() => {
+    const tabParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null;
+    if (tabParam === "set") return "set";
+    if (tabParam !== null) {
+      const n = parseInt(tabParam, 10);
+      if (!isNaN(n)) return n;
+    }
     const now = Date.now();
     const ws = getSetWeeks();
     let idx = 0;
@@ -383,7 +389,7 @@ export default function SuperlativeDrilldownPage() {
 
   return (
     <Page>
-      <BackLink href="/">
+      <BackLink href={`/?tab=${selectedTab}`}>
         <ArrowLeft size={ICON_SIZE.sm} />
         BACK TO WEEKLY STATS
       </BackLink>
