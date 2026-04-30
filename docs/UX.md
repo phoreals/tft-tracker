@@ -4,14 +4,14 @@
 
 The app has two pages, accessed via a persistent sidebar (desktop) or bottom nav (mobile):
 
-| Page | Route | Role |
-|------|-------|------|
-| **Weekly Stats** | `/` | Main view. At-a-glance squad performance for the current week. |
-| **Manage Players** | `/players` | Add/remove tracked players, trigger manual syncs, seed original squad. |
+| Page | Route | Nav icon | Role |
+|------|-------|----------|------|
+| **Home** | `/` | `Home` | Main view. Squad stats, superlatives, player table, and rank chart — across the current set or any individual week. |
+| **Manage Players** | `/players` | `Users` | Add/remove tracked players, trigger manual syncs, seed original squad. |
 
 Navigation is always visible. The active page is highlighted with a gold accent bar (sidebar) or gold icon tint (bottom nav).
 
-## Weekly Stats (`/`)
+## Home (`/`)
 
 ### Page-Level Tab Navigation
 
@@ -21,14 +21,13 @@ A scrollable tab bar sits between the page header and the summary cards. It cont
 
 - Calculated from the TFT set start date in 7-day increments. Future weeks are hidden.
 - Default on load: the current week (not "Set 17").
-- Each week tab shows "Week N" on the first line and the date range (e.g. "4/15–4/22") below.
-- The bar overflows horizontally; `mask-image` gradients fade the left and/or right edges (48px) to signal scrollability. Gradients are conditional on scroll position — no fade on the left when fully scrolled left, no fade on the right when fully scrolled right. Driven by a `useScrollFade` hook that listens to `scroll` events and `ResizeObserver`.
-- Horizontal scrollbar is flush against the bottom of the container — no padding gap. The scrollbar thumb is invisible by default and only appears on hover.
-- All tab buttons stretch to equal height via `align-items: stretch` + `display: flex; justify-content: center` on each button, so tabs with and without sub-dates are visually even.
-- On load and on tab change, the active tab scrolls into view via `data-active="true"` + `scrollIntoView({ block: 'nearest', inline: 'nearest' })`.
-- **Sticky**: the tab wrap sticks to `top: 0` as the user scrolls. It has no background color — uses `backdrop-filter: blur(16px)` and a gold `border-bottom` + subtle glow so content shows through.
+- Tab labels are the period name only ("Set 17", "Week 1", etc.) — no date ranges in the tab buttons or select options.
+- The bar overflows horizontally; `mask-image` gradients fade the left and/or right edges (48px) to signal scrollability. Gradients are conditional on scroll position. Driven by a `useScrollFade` hook.
+- Horizontal scrollbar thumb is invisible by default and appears on hover.
+- On load and on tab change, the active tab scrolls into view via `data-active="true"` + `scrollIntoView`.
+- **Sticky**: the tab wrap sticks to `top: 0`. An `IntersectionObserver` on a zero-height sentinel element before the tab wrap drives a `$isSticky` prop — `backdrop-filter: blur(16px)` and a subtle gold glow activate only when stuck. On wide viewports (>1440px), `--bleed-extra` is computed via `ResizeObserver` so the sticky strip always bleeds edge-to-edge.
 - A mobile dropdown (`<select>`) mirrors the same tab options; the desktop tab bar is hidden on small screens.
-- The same tab system and sticky behavior applies to the **Player Drilldown** page.
+- **The same tab system and sticky behavior applies to the Superlative Drilldown and Player Drilldown pages.**
 
 ### Superlatives
 
@@ -43,7 +42,9 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 | **Highest LP Gain** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
 | **Most Efficient Climb** | Highest LP gain per game played |
 
-Card labels are contextual — they append "Set 17" or "This Week" depending on the selected tab (e.g. "Most Games Set 17" vs "Most Games This Week").
+Each card has a **duration pill** in the top-right of its header showing the active time window — "Set 17" (gold accent pill) or "Week N". The card label is the category name only (e.g. "Most Games"); the period is communicated by the pill alone.
+
+`cat.label(isSet, weekNumber?)` on `SuperlativeCategory` is still used for column headers in the drilldown table — it returns e.g. "Most Games Week 2" or "Most Games Set 17" depending on context.
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
 
@@ -69,7 +70,7 @@ A `GlassCard` with a **view toggle** (table / card) in the header. Data and sort
 
 **View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 
-**Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use Lucide arrow icons: `ArrowDown` / `ArrowUp` in gold when active; `ArrowUpDown` (⇅) at 40% opacity on hover for inactive columns. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
+**Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use custom SVG arrows sized to the x-height of the header text. **Default sort on load: Rank descending (highest rank first).** Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
 
 **Table view — 6 columns:**
 
@@ -143,7 +144,7 @@ Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
 Accessed by clicking a superlative card on the Weekly Stats page. Category slugs: `most-games`, `best-top4`, `most-wins`, `most-time`, `highest-lp`, `best-lp-per-game`.
 
 ### Layout
-- Back link to Weekly Stats
+- Back link to Home
 - Page title = category label (e.g. "Most Games")
 - Same sticky tab bar as other pages (Set 17 / Week 1–N)
 

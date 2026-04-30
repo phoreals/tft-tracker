@@ -18,7 +18,7 @@
 app/
 ├── layout.tsx              Root layout (SSR). Wraps children in StyledComponentsRegistry + NavigationShell.
 ├── globals.css             Minimal CSS: resets, font imports, body background, scrollbar, keyframes.
-├── page.tsx                Weekly Stats page (client component).
+├── page.tsx                Home page (client component).
 ├── players/
 │   └── page.tsx            Manage Players page (client component).
 └── api/                    (see BACKEND.md)
@@ -85,7 +85,7 @@ Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Int
 5. No internal tab state or tab bar
 
 ### usePlayerRows
-The data layer behind PlayerTable. Computes `PlayerRowData[]` from raw player input, manages `sortKey`/`sortDir` state, and returns `sortedRows`. All row derivation (LP conversion, scoped match filtering, rate calculations) lives here — not in the view components. This is the pattern to follow for other data-driven tables (e.g. the superlative drilldown will get its own `useSuperlativeRows`).
+The data layer behind PlayerTable. Computes `PlayerRowData[]` from raw player input, manages `sortKey`/`sortDir` state, and returns `sortedRows`. Default sort: `rankLP` descending (highest rank first). All row derivation (LP conversion, scoped match filtering, rate calculations) lives here — not in the view components. This is the pattern to follow for other data-driven tables (e.g. the superlative drilldown will get its own `useSuperlativeRows`).
 
 ### ViewToggle
 Generic component. Takes `views: { id, icon, label? }[]`, `value`, and `onChange`. Renders a pill-shaped group of icon buttons inside a dimmed background. Active button gets a glass-card background + accent color. Designed to sit in `GlassCard`'s `headerAction`. Import once and use across any table that needs a view switcher.
@@ -144,7 +144,7 @@ error: string             — validation/API error message
    padding-left: ${spacing.md}; padding-right: ${spacing.md};
    ```
 7. **Hover-only interactions**: wrap `transform`, `opacity`, and other hover effects in `@media (hover: hover)` so they don't trigger on touch devices. For elements that are hidden until hover (e.g. delete button), provide a fallback visible state under `@media (hover: none)`.
-8. **Touch tap targets**: interactive elements should be at least 44×44px. Use `min-height: 44px` on tab bars and buttons.
+8. **Touch tap targets**: interactive elements should be at least 44×44px on interactive controls; tab buttons are compact (no min-height) but the full-width sticky strip provides adequate touch area.
 
 ## Local Development / Mock Data
 
