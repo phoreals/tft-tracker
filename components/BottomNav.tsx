@@ -17,9 +17,7 @@ const Nav = styled.nav`
   background: ${({ theme }) => theme.component.bottomNav.bg};
   backdrop-filter: blur(24px);
   border-top: 1px solid ${({ theme }) => theme.semantic.color.borderSubtle};
-  align-items: center;
-  justify-content: space-around;
-  padding: 0 ${({ theme }) => theme.primitive.spacing.md};
+  align-items: stretch;
   z-index: 100;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -29,8 +27,10 @@ const Nav = styled.nav`
 
 const NavLink = styled(Link)<{ $active: boolean }>`
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   text-decoration: none;
   transition: color 0.2s;
