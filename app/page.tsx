@@ -93,6 +93,30 @@ const SpinningIcon = styled(RefreshCw)<{ $spinning: boolean }>`
   animation: ${({ $spinning }) => ($spinning ? "spin 1s linear infinite" : "none")};
 `;
 
+const SyncWrap = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    align-items: flex-end;
+  }
+`;
+
+const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
+  font-family: ${({ theme }) => theme.semantic.font.body};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme, $tone }) =>
+    $tone === "error"
+      ? theme.semantic.color.info
+      : $tone === "warn"
+        ? theme.semantic.color.accent
+        : theme.semantic.color.textMuted};
+  margin: 0;
+  white-space: pre-line;
+`;
+
 const StickyTabWrap = styled.div`
   position: sticky;
   top: 0;
@@ -396,6 +420,7 @@ export default function WeeklyStatsPage() {
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{ tone: "muted" | "warn" | "error"; message: string } | null>(null);
 
   const weeks = useMemo(() => getSetWeeks(), []);
 
@@ -437,11 +462,33 @@ export default function WeeklyStatsPage() {
 
   const handleSync = async () => {
     setSyncing(true);
+    setSyncStatus(null);
     try {
-      await fetch("/api/sync", { method: "POST" });
+      const res = await fetch("/api/sync", { method: "POST" });
+      const data = await res.json();
       await fetchPlayers();
+
+      const failed = data.results?.filter((r: { success: boolean }) => !r.success) ?? [];
+      const withErrors = data.results?.filter((r: { matchErrors: number }) => r.matchErrors > 0) ?? [];
+      const withRemaining = data.results?.filter((r: { matchesRemaining: number }) => r.matchesRemaining > 0) ?? [];
+
+      if (failed.length > 0) {
+        setSyncStatus({
+          tone: "error",
+          message: failed.map((r: { name: string; error?: string }) => `${r.name}: ${r.error ?? "unknown error"}`).join("\n"),
+        });
+      } else if (withRemaining.length > 0) {
+        const lines = withRemaining.map((r: { name: string; matchesRemaining: number }) => `${r.name}: ${r.matchesRemaining} matches remaining`);
+        setSyncStatus({ tone: "warn", message: ["Run sync again to continue backfill:", ...lines].join("\n") });
+      } else {
+        const added = data.totalAdded ?? 0;
+        const matchErrCount = withErrors.reduce((s: number, r: { matchErrors: number }) => s + r.matchErrors, 0);
+        const errNote = matchErrCount > 0 ? ` (${matchErrCount} match fetch error${matchErrCount > 1 ? "s" : ""})` : "";
+        setSyncStatus({ tone: matchErrCount > 0 ? "warn" : "muted", message: added > 0 ? `Added ${added} match${added > 1 ? "es" : ""}${errNote}` : `All players up to date${errNote}` });
+      }
     } catch (err) {
       console.error("Sync failed:", err);
+      setSyncStatus({ tone: "error", message: "Sync request failed — check console" });
     } finally {
       setSyncing(false);
     }
@@ -509,10 +556,13 @@ export default function WeeklyStatsPage() {
                 })()}
           </PageSubtitle>
         </div>
-        <SyncButton onClick={handleSync} disabled={syncing}>
-          <SpinningIcon size={ICON_SIZE.md} $spinning={syncing} />
-          <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
-        </SyncButton>
+        <SyncWrap>
+          <SyncButton onClick={handleSync} disabled={syncing}>
+            <SpinningIcon size={ICON_SIZE.md} $spinning={syncing} />
+            <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
+          </SyncButton>
+          {syncStatus && <SyncStatus $tone={syncStatus.tone}>{syncStatus.message}</SyncStatus>}
+        </SyncWrap>
       </PageHeader>
 
       <StickyTabWrap>
