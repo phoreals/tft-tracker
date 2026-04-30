@@ -3,8 +3,9 @@
 import React from "react";
 import styled from "styled-components";
 import Link from "next/link";
-import { User, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
+import { User } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
+import { SortChevron } from "./SortChevron";
 import { getRankColor } from "@/lib/utils";
 import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
@@ -232,12 +233,12 @@ interface PlayerTableViewProps {
 export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: PlayerTableViewProps) {
   const renderSortLabel = (key: SortKey, label: string) => {
     const isActive = sortKey === key;
-    const Icon = isActive ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
+    const direction = isActive ? sortDir : "none";
     return (
       <SortThInner>
         {label}
         <SortIcon $active={isActive} data-active={isActive ? "true" : undefined}>
-          <Icon size={10} />
+          <SortChevron direction={direction} />
         </SortIcon>
       </SortThInner>
     );
