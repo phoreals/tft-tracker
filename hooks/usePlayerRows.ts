@@ -53,7 +53,7 @@ export function usePlayerRows(
   selectedTab: "set" | number,
   weeks: { label: string; start: number; end: number }[],
 ) {
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey | null>("rankLP");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const isSet = selectedTab === "set";
