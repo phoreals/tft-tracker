@@ -42,16 +42,12 @@ const PageHeader = styled.div`
 
 const PageTitle = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   overflow-wrap: break-word;
   word-break: break-word;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
-  }
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
@@ -611,15 +607,13 @@ export default function WeeklyStatsPage() {
     <Page>
       <PageHeader>
         <div>
-          <PageTitle>{isSet ? "The Asylum Set 17 Stats" : "The Asylum Weekly Stats"}</PageTitle>
+          <PageTitle>The Asylum TFT Tracker</PageTitle>
           <PageSubtitle>
             {isSet
-              ? "Squad performance · Set 17"
+              ? SET_LABEL
               : (() => {
                   const w = weeks[selectedTab as number];
-                  return w
-                    ? `Squad performance · ${w.label} (${formatShortDate(w.start)}–${formatShortDate(w.end)})`
-                    : "Squad performance this week";
+                  return w ? `${w.label} · ${formatShortDate(w.start)}–${formatShortDate(w.end)}` : "";
                 })()}
           </PageSubtitle>
         </div>

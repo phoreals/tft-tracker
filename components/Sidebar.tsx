@@ -189,7 +189,7 @@ const CollapseBtnLabel = styled.span<{ $expanded: boolean }>`
 `;
 
 const navItems = [
-  { href: "/", icon: Calendar, label: "Weekly Stats" },
+  { href: "/", icon: Calendar, label: "TFT Tracker" },
   { href: "/players", icon: Search, label: "Manage Players" },
 ];
 
