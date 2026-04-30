@@ -421,10 +421,12 @@ export default function SuperlativeDrilldownPage() {
       <div>
         <PageTitle>{cat.title}</PageTitle>
         <PageSubtitle>
-          {isSet ? `Leaderboard · ${SET_LABEL}` : (() => {
-            const w = weeks[selectedTab as number];
-            return w ? `Leaderboard · ${w.label}` : "Leaderboard";
-          })()}
+          {isSet
+            ? `Leaderboard · ${SET_LABEL} · ${formatShortDate(SET_START)}\u2009\u2013\u2009${formatShortDate(SET_END)}`
+            : (() => {
+                const w = weeks[selectedTab as number];
+                return w ? `Leaderboard · ${w.label} · ${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)}` : "Leaderboard";
+              })()}
         </PageSubtitle>
       </div>
 

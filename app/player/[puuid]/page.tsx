@@ -171,6 +171,13 @@ const PlayerTag = styled.span`
   letter-spacing: 0;
 `;
 
+const PageSubtitle = styled.p`
+  font-family: ${({ theme }) => theme.semantic.font.body};
+  font-size: ${({ theme }) => theme.primitive.fontSize.lg};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  margin-top: 4px;
+`;
+
 const RankBadge = styled.div<{ $color: string }>`
   display: inline-flex;
   align-items: center;
@@ -563,6 +570,14 @@ function formatShortDate(ts: number): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
+function formatDisplayDate(ts: number): string {
+  return new Date(ts).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function formatDateTime(ts: number): string {
   const d = new Date(ts);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -857,6 +872,15 @@ export default function PlayerDrilldownPage() {
           {syncStatus && <SyncStatus $tone={syncStatus.tone}>{syncStatus.message}</SyncStatus>}
         </SyncWrap>
       </PlayerHeader>
+
+      <PageSubtitle>
+        {isSet
+          ? `${SET_LABEL} · ${formatDisplayDate(SET_START)}\u2009\u2013\u2009${formatDisplayDate(SET_END)}`
+          : (() => {
+              const w = weeks[selectedTab as number];
+              return w ? `${w.label} · ${formatDisplayDate(w.start)}\u2009\u2013\u2009${formatDisplayDate(w.end)}` : "";
+            })()}
+      </PageSubtitle>
 
       <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
         {/* Mobile: dropdown */}
