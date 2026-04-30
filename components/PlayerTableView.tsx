@@ -59,18 +59,7 @@ const Thead = styled.thead`
   }
 `;
 
-const SortTh = styled.th<{ $active: boolean }>`
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.15s;
-  color: ${({ $active, theme }) =>
-    $active ? theme.semantic.color.accent : theme.semantic.color.textDisabled} !important;
-
-  &:hover {
-    color: ${({ theme }) => theme.semantic.color.textPrimary} !important;
-  }
-`;
-
+// SortIcon must be defined before SortTh so SortTh can reference it as a selector.
 const SortIcon = styled.span<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
@@ -82,17 +71,32 @@ const SortIcon = styled.span<{ $active: boolean }>`
   transition: opacity 0.15s, color 0.15s;
 `;
 
-const SortThInner = styled.span`
-  display: inline-flex;
-  align-items: center;
+const SortTh = styled.th<{ $active: boolean }>`
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textDisabled} !important;
 
-  &:hover ${SortIcon} {
-    opacity: 0.4;
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary} !important;
   }
 
+  /* Show the sort indicator on hover of the full cell, not just the label text. */
+  &:hover ${SortIcon} {
+    opacity: 0.5;
+  }
+
+  /* Keep active indicators fully visible on hover. */
   &:hover ${SortIcon}[data-active="true"] {
     opacity: 1;
   }
+`;
+
+// Layout only — no hover logic here.
+const SortThInner = styled.span`
+  display: inline-flex;
+  align-items: center;
 `;
 
 const Tbody = styled.tbody`
@@ -233,7 +237,9 @@ interface PlayerTableViewProps {
 export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: PlayerTableViewProps) {
   const renderSortLabel = (key: SortKey, label: string) => {
     const isActive = sortKey === key;
-    const direction = isActive ? sortDir : "none";
+    // For inactive columns: show "desc" chevron on hover — previewing what the first click will do.
+    // For active columns: show current direction.
+    const direction = isActive ? sortDir : "desc";
     return (
       <SortThInner>
         {label}
