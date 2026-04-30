@@ -101,8 +101,9 @@ const PageTitle = styled.h1`
 
 const PageDescription = styled.p`
   font-family: ${({ theme }) => theme.semantic.font.body};
-  color: ${({ theme }) => theme.semantic.color.textSecondary};
-  max-width: 640px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.lg};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  margin-top: 4px;
 `;
 
 const Grid = styled.div`
