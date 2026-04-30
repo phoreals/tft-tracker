@@ -41,7 +41,7 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 | **Most Wins (1st)** | Most 1st-place finishes |
 | **Most Time Played** | Highest scoped playtime |
 | **Highest LP Gain** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
-| **Fastest Climber** | Highest LP gain per game played |
+| **Most Efficient Climb** | Highest LP gain per game played |
 
 Card labels are contextual — they append "Set 17" or "This Week" depending on the selected tab (e.g. "Most Games Set 17" vs "Most Games This Week").
 
@@ -65,49 +65,40 @@ Three `GlassCard` components show aggregate metrics for the **currently selected
 
 ### Player Performance Table
 
-A full-width table inside a `GlassCard`. Columns and stats adapt to the selected tab.
+A `GlassCard` with a **view toggle** (table / card) in the header. Data and sort state live in `usePlayerRows`; the active view is managed by `PlayerTable`.
 
-**Column sorting**: All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use Lucide arrow icons: `ArrowDown` (active desc) / `ArrowUp` (active asc) in gold; `ArrowUpDown` (⇅) at 40% opacity on hover for inactive columns as a sortability affordance. On mobile, the table uses smaller font sizes and tighter padding for horizontal density. The Rank column uses `white-space: nowrap` to keep the rank on one line. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration).
+**View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 
-**"Set 17" view — 6 columns:**
+**Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use Lucide arrow icons: `ArrowDown` / `ArrowUp` in gold when active; `ArrowUpDown` (⇅) at 40% opacity on hover for inactive columns. Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
+
+**Table view — 6 columns:**
 
 | Column | Source | Notes |
 |--------|--------|-------|
 | Summoner | `gameName#tagLine` | Riot profile icon (Community Dragon CDN); falls back to `User` icon |
-| Rank | `tier rank LP` | Tier-colored. Sub-line: "Peak: {rank}" — highest rank reached this set from daily snapshots |
-| Total Games | All-time match count | |
-| Top 4% | Set-scoped `(placements ≤ 4) / total * 100` | Includes progress bar |
-| 1st% | Set-scoped `(placements == 1) / total * 100` | Cyan text |
-| Time Played | All-time total playtime | |
+| Rank | `tier rank LP` | Tier-colored rank emblem + abbreviated rank on mobile, full string on desktop |
+| Games | Set total or week count depending on tab | |
+| Top 4% | Scoped `(placements ≤ 4) / total * 100` | |
+| 1st% | Scoped `(placements == 1) / total * 100` | Cyan text |
+| Time Played | Scoped playtime | |
 
-**Week tab view — 7 columns:**
+**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab.
 
-| Column | Source | Notes |
-|--------|--------|-------|
-| Summoner | `gameName#tagLine` | Same as above |
-| Rank | `tier rank LP` | Tier-colored. "Peak: {rank}" and "Low: {rank}" sub-lines from daily snapshots within the week (omitted if no history data for that week) |
-| Total Games | All-time match count | |
-| {Week Label} | Games played in the selected week | Cyan highlight |
-| Top 4% | Week-scoped top-4 rate | Includes progress bar |
-| 1st% | Week-scoped 1st-place rate | Cyan text |
-| Time Played | Week time (primary) / total time (sub-line) | |
+Empty state: centered message "No players tracked yet. Add players to get started." in both views.
 
-**Peak and Low rank** are derived from `player.history` (daily rank snapshots stored by the cron job). If no snapshots exist for the selected window, sub-lines are omitted — the cell degrades gracefully to just the current rank string.
+### Rank Over Time Chart
 
-Empty state: centered message "No players tracked yet. Add players to get started."
+A Recharts `LineChart` inside a `GlassCard`. Mode is driven entirely by the page-level tab — no internal controls on the chart. Plots **daily LP** (converted from tier + rank + lp) for all tracked players on a shared timeline.
 
-### Placement Over Time Chart
+- Y-axis: tier names (Iron → Challenger) at 400 LP boundaries, domain auto-snapped to data range ± one tier
+- X-axis: date (M/D), up to ~6 ticks, epoch timestamp scale
+- Selected week is shaded as a `ReferenceArea` (gold tint)
+- Each player's last valid data point shows their circular **profile picture** (24px, clipped to circle) with their `gameName` label to the right — no legend
+- Line colors avoid rank-tier hues; 10-color palette (pink, blue, orange, lime, fuchsia, sky, amber, mint, rose, indigo)
 
-A Recharts `LineChart` inside a `GlassCard`. Mode is driven entirely by the page-level tab — no internal controls on the chart.
+Empty state: "No rank history yet. Sync to start tracking."
 
-- **"Set 17" tab** — average placement per set-week (Wk 1 through present), one point per week per player. Empty weeks omitted.
-- **Week tabs** — individual game placements for the selected week on a merged chronological timeline. Each X-axis point is a real game timestamp (formatted M/D).
-
-Both modes: Y-axis placement 1–8 reversed (1st at top), reference line at y=4.5 (top-4 boundary), 10-color line palette, legend hidden on mobile (shown at 768px+).
-
-Empty states:
-- Week tabs: "No games played this week yet."
-- Set 17: "No match data yet. Sync to start tracking."
+See `docs/DATA_VIZ.md` for full chart spec.
 
 ### Sync Button
 Top-right of the page header. Runs a multi-pass loop: calls `POST /api/sync` repeatedly until `matchesRemaining === 0` across all players. Shows a spinning icon and live status text ("Syncing…", "Pass 2 — 45 matches remaining, continuing…"). If a pass returns `maxRateLimitMs > 0`, counts down the rate-limit wait second-by-second before the next pass.

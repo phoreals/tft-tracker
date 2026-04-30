@@ -28,8 +28,14 @@ components/
 ├── Sidebar.tsx             Desktop sidebar with nav links. Uses Next.js Link + usePathname.
 ├── BottomNav.tsx           Mobile bottom nav. Same logic as Sidebar.
 ├── NavigationShell.tsx     Layout shell: Sidebar + main content area + BottomNav.
-├── PlayerTable.tsx         Stats table. Computes derived metrics from match data.
-└── RankChart.tsx           Recharts LineChart with weekly/all-time toggle.
+├── ViewToggle.tsx          Generic icon-button toggle for switching between named views (table/card/…).
+├── PlayerTable.tsx         Thin shell: calls usePlayerRows, manages view state, renders ViewToggle + active view.
+├── PlayerTableView.tsx     Table view for player stats — <table> with sortable headers.
+├── PlayerCardView.tsx      Card view for player stats — CSS Grid, auto-fill columns, each player a card.
+└── RankChart.tsx           Recharts LineChart. Profile-pic endpoint labels, no legend.
+
+hooks/
+└── usePlayerRows.ts        Data + sort logic for player stats. Returns sortedRows, sortKey, sortDir, toggleSort.
 
 styles/
 ├── tokens.ts              Three-layer design token system (primitive → semantic → component).
@@ -70,11 +76,24 @@ Card padding is 16px on mobile, switching to the `glassCard.padding` token (24px
 
 Wraps content in a `motion.div` with fade-in + slide-up (16px) animation on mount.
 
-### PlayerTable
+### PlayerTable (shell)
 Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:
-1. Derives the active time window from `selectedTab` (`SET_START–SET_END` for "set", `weeks[i]` for week tabs)
-2. Renders a `<table>` inside a `GlassCard` with 6 columns
-3. No internal tab state or tab bar
+1. Calls `usePlayerRows(players, selectedTab, weeks)` to get sorted rows and sort state
+2. Manages `view: "table" | "card"` state
+3. Renders a `ViewToggle` as the `GlassCard` `headerAction`
+4. Delegates rendering to `PlayerTableView` (table) or `PlayerCardView` (card)
+5. No internal tab state or tab bar
+
+### usePlayerRows
+The data layer behind PlayerTable. Computes `PlayerRowData[]` from raw player input, manages `sortKey`/`sortDir` state, and returns `sortedRows`. All row derivation (LP conversion, scoped match filtering, rate calculations) lives here — not in the view components. This is the pattern to follow for other data-driven tables (e.g. the superlative drilldown will get its own `useSuperlativeRows`).
+
+### ViewToggle
+Generic component. Takes `views: { id, icon, label? }[]`, `value`, and `onChange`. Renders a pill-shaped group of icon buttons inside a dimmed background. Active button gets a glass-card background + accent color. Designed to sit in `GlassCard`'s `headerAction`. Import once and use across any table that needs a view switcher.
+
+### PlayerTableView / PlayerCardView
+Presentational only — receive `rows`, sort state, and `isSet`; no data fetching or computation.
+- `PlayerTableView`: semantic `<table>` with sortable `<th>` elements, bleed scroll wrapper, rank emblems, profile icons
+- `PlayerCardView`: `display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))`. Each card links to the player drilldown. Shows avatar, rank, and four stats (games, top4%, 1st%, time).
 
 ### RankChart
 Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:
