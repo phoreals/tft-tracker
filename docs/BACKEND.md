@@ -78,7 +78,7 @@ Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 5. Process in batches of 30 until all new matches are fetched or 50s elapsed
 6. Update `player:{puuid}:matches` with merged + sorted list
 
-**Backfill behavior**: A single sync run will process as many batches of 30 as the 50s budget allows. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
+**Backfill behavior**: A single sync run will process as many batches of 30 as the time budget allows. The 50s budget is divided equally among all players so no player is starved by earlier ones. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
 
 **Rate limiting**: 100ms delay between API calls, 200ms delay between players.
 

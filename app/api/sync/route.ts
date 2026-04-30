@@ -21,7 +21,7 @@ import {
 import { SET_START } from "@/lib/utils";
 
 const BATCH_SIZE = 30;
-const TIMEOUT_MS = 50_000; // leave 10s buffer before Vercel's 60s limit
+const TOTAL_TIMEOUT_MS = 50_000; // leave 10s buffer before Vercel's 60s limit
 
 export async function POST() {
   const syncStart = Date.now();
@@ -93,11 +93,18 @@ export async function POST() {
       console.log(`[sync] ${playerLabel}: ${existing.length} stored, ${allNewMatchIds.length} new to fetch`);
 
       const allNewRecords: MatchRecord[] = [];
+      // Give each player an equal share of the remaining time budget so
+      // players later in the list aren't starved by earlier ones.
+      const playersRemaining = players.length - players.indexOf(player);
+      const elapsed = Date.now() - syncStart;
+      const perPlayerBudget = Math.floor((TOTAL_TIMEOUT_MS - elapsed) / playersRemaining);
+      const playerStart = Date.now();
+
       let offset = 0;
       let batches = 0;
       let matchErrors = 0;
 
-      while (offset < allNewMatchIds.length && Date.now() - syncStart < TIMEOUT_MS) {
+      while (offset < allNewMatchIds.length && Date.now() - playerStart < perPlayerBudget) {
         const batch = allNewMatchIds.slice(offset, offset + BATCH_SIZE);
         batches++;
         console.log(`[sync] ${playerLabel}: batch ${batches} — fetching matches ${offset + 1}–${offset + batch.length} of ${allNewMatchIds.length}`);
