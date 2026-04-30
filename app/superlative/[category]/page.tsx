@@ -4,16 +4,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+// recharts removed — bar chart not currently used
 import { ArrowLeft, User } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import {
@@ -24,32 +15,11 @@ import {
   computePlayerStats,
   SUPERLATIVE_CATEGORIES,
   findLeader,
-  type PlayerStat,
   type PlayerStatInput,
 } from "@/lib/utils";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
-// ── Chart constants ──────────────────────────────────────────────
-
-const CHART = {
-  grid:    theme.semantic.color.chartGrid,
-  tick: {
-    fill:       theme.primitive.color.neutral200,
-    fontSize:   parseInt(theme.primitive.fontSize["2xs"]),
-    fontFamily: "Space Grotesk",
-  },
-  tooltip: {
-    bg:     theme.primitive.color.neutral850,
-    border: `1px solid ${theme.semantic.color.borderDefault}`,
-    radius: parseInt(theme.primitive.radius.md),
-    font:   "Space Grotesk",
-    size:   12,
-    label:  theme.semantic.color.textMuted,
-  },
-  gold:  theme.primitive.color.gold300,
-  cyan:  theme.primitive.color.cyan500,
-  muted: theme.semantic.color.textDisabled,
-} as const;
+// ── Constants ────────────────────────────────────────────────────
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -206,16 +176,6 @@ const WeekDate = styled.span`
   letter-spacing: 0.05em;
   margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
   opacity: 0.6;
-`;
-
-const ChartContainer = styled.div`
-  height: 300px;
-  width: 100%;
-  margin-top: ${({ theme }) => theme.primitive.spacing.md};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    height: 400px;
-  }
 `;
 
 const Table = styled.table`
@@ -417,14 +377,6 @@ export default function SuperlativeDrilldownPage() {
   const leader = cat ? findLeader(stats, cat) : null;
   const maxVal = ranked.length > 0 ? Math.max(...ranked.map((r) => Math.abs((r[cat!.key] as number) ?? 0))) : 1;
 
-  const chartData = useMemo(() => {
-    return ranked.map((r) => ({
-      name: r.player.gameName,
-      value: (r[cat!.key] as number) ?? 0,
-      puuid: r.player.puuid,
-    }));
-  }, [ranked, cat]);
-
   if (!cat) return <LoadingText>Category not found.</LoadingText>;
 
   return (
@@ -488,51 +440,6 @@ export default function SuperlativeDrilldownPage() {
         <LoadingText>No data for this time period.</LoadingText>
       ) : (
         <>
-          <GlassCard>
-            <ChartContainer>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} horizontal={false} />
-                  <XAxis
-                    type="number"
-                    tick={CHART.tick}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={CHART.tick}
-                    axisLine={false}
-                    tickLine={false}
-                    width={100}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: CHART.tooltip.bg,
-                      border: CHART.tooltip.border,
-                      borderRadius: CHART.tooltip.radius,
-                      fontFamily: CHART.tooltip.font,
-                      fontSize: CHART.tooltip.size,
-                    }}
-                    labelStyle={{ color: CHART.tooltip.label }}
-                    formatter={(value) => [cat.format(value as number), cat.label]}
-                    cursor={{ fill: "rgba(229, 197, 135, 0.05)" }}
-                  />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                    {chartData.map((entry, i) => (
-                      <Cell
-                        key={entry.puuid}
-                        fill={i === 0 ? CHART.gold : CHART.muted}
-                        fillOpacity={i === 0 ? 1 : 0.5}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </GlassCard>
-
           <GlassCard title="Rankings">
             <Table>
               <Thead>

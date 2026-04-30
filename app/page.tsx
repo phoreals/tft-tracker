@@ -268,11 +268,23 @@ const SuperlativesGrid = styled.div`
   }
 `;
 
-const PlayerChip = styled.div`
+const PlayerChip = styled(Link)`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   margin-top: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
+  margin-left: -${({ theme }) => theme.primitive.spacing.xs};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  z-index: 1;
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(229, 197, 135, 0.08);
+  }
 `;
 
 const ChipIcon = styled.div`
@@ -300,9 +312,13 @@ const ChipName = styled.span`
 const SuperlativeCardLink = styled(Link)`
   text-decoration: none;
   color: inherit;
-  display: block;
+  display: flex;
   border-radius: ${({ theme }) => theme.component.glassCard.radius};
   transition: transform 0.15s;
+
+  & > * {
+    flex: 1;
+  }
 
   &:hover {
     transform: translateY(-2px);
@@ -539,15 +555,18 @@ export default function WeeklyStatsPage() {
       </StickyTabWrap>
 
       <SuperlativesGrid>
-        {superlatives.map((s) => (
+        {(loading || superlatives.length === 0
+          ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.label, value: "...", player: null }))
+          : superlatives
+        ).map((s) => (
           <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}`}>
             <GlassCard>
               <StatRow>
                 <StatLabel>{s.label}</StatLabel>
               </StatRow>
-              <StatValue>{loading ? "..." : s.value}</StatValue>
+              <StatValue>{s.value}</StatValue>
               {s.player && (
-                <PlayerChip>
+                <PlayerChip href={`/player/${s.player.puuid}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                   <ChipIcon>
                     {s.player.profileIconId ? (
                       <img

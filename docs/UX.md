@@ -45,7 +45,9 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
 
-Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a horizontal bar chart and ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`).
+Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown.
+
+When loading or no players are fetched, all 6 cards render with "..." as placeholder values. Cards stretch to equal height in the grid regardless of whether a player chip is present.
 
 On the **Player Drilldown** page, any superlatives the viewed player currently holds appear as pill badges below the stat cards, linking to the corresponding superlative drilldown page.
 
@@ -151,9 +153,6 @@ Accessed by clicking a superlative card on the Weekly Stats page. Category slugs
 - Back link to Weekly Stats
 - Page title = category label (e.g. "Most Games")
 - Same sticky tab bar as other pages (Set 17 / Week 1–N)
-
-### Bar Chart
-Horizontal bar chart (Recharts `BarChart` with `layout="vertical"`) showing all players sorted by the stat value descending. The leader's bar is gold; other bars use the muted text color at 50% opacity.
 
 ### Rankings Table
 Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline progress bar relative to leader). The leader's row has a subtle gold background highlight.
