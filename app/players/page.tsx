@@ -248,17 +248,33 @@ const SyncBadge = styled.button`
   }
 `;
 
-const PlayerList = styled.div`
+const PlayerList = styled.div<{ $scrolled: boolean }>`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   flex: 1;
   overflow-y: auto;
   max-height: min(600px, 55vh);
-  padding-right: 8px;
+
+  /* Flush scrollbar against card edges */
+  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
+  margin-right: -${({ theme }) => theme.primitive.spacing.sm};
+  padding-left: ${({ theme }) => theme.primitive.spacing.sm};
+  padding-right: ${({ theme }) => theme.primitive.spacing.sm};
+
+  /* Top shadow when scrolled */
+  border-top: 1px solid ${({ $scrolled, theme }) =>
+    $scrolled ? theme.semantic.color.borderDefault : "transparent"};
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: ${({ $scrolled }) =>
+    $scrolled ? "inset 0 6px 8px -6px rgba(0, 0, 0, 0.25)" : "none"};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.sm};
+    margin-left: -${({ theme }) => theme.component.glassCard.padding};
+    margin-right: -${({ theme }) => theme.component.glassCard.padding};
+    padding-left: ${({ theme }) => theme.component.glassCard.padding};
+    padding-right: ${({ theme }) => theme.component.glassCard.padding};
   }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
@@ -271,15 +287,16 @@ const PlayerRow = styled(motion.div)<{ $elite: boolean }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.table.headerBg};
   border: 1px solid ${({ $elite, theme }) =>
     $elite ? theme.semantic.color.borderDefault : theme.semantic.color.borderDim};
-  border-radius: ${({ theme }) => theme.primitive.radius.lg};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
   transition: all 0.2s;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    padding: ${({ theme }) => theme.primitive.spacing.md};
+    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+    border-radius: ${({ theme }) => theme.primitive.radius.lg};
   }
 
   /* only translate on pointer devices to avoid touch overflow */
@@ -448,6 +465,7 @@ export default function ManagePlayersPage() {
   const [syncing, setSyncing] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seedProgress, setSeedProgress] = useState("");
+  const [listScrolled, setListScrolled] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -640,7 +658,10 @@ export default function ManagePlayersPage() {
             </SyncBadge>
           }
         >
-          <PlayerList>
+          <PlayerList
+            $scrolled={listScrolled}
+            onScroll={(e) => setListScrolled(e.currentTarget.scrollTop > 2)}
+          >
             {players.length === 0 ? (
               <EmptyState>No players tracked yet. Add a summoner to get started.</EmptyState>
             ) : (
