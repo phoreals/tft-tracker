@@ -202,5 +202,5 @@ Scrollable list of all matches (newest first). Each row:
 
 1. **Automatic**: Vercel Cron hits `GET /api/cron` daily at midnight UTC
 2. **Manual**: User clicks "Sync Now" on either page → `POST /api/sync`
-3. **On add**: Adding a player immediately fetches their rank + last 20 matches
+3. **On add**: Adding a player fetches their rank + first 30 Set 17 matches. Subsequent syncs backfill any remaining history (30 per run).
 4. Page data is fetched via `GET /api/players` on mount (client-side `useEffect`)

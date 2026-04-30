@@ -59,7 +59,7 @@ Add a new player to tracking.
 3. Call Riot API: summoner lookup → get summonerId
 4. Save player identity to Redis
 5. Fetch initial rank data → save to Redis
-6. Fetch last 20 matches → save to Redis
+6. Fetch all Set 17 match IDs (paginated) → fetch first 30 → save to Redis. Subsequent syncs backfill the rest.
 7. Return player data
 
 **Error responses**: 400 if gameName/tagLine missing or Riot API rejects
@@ -68,13 +68,16 @@ Add a new player to tracking.
 Remove a player and all their data (current, history, matches) from Redis.
 
 ### `POST /api/sync`
-Refresh data for ALL tracked players.
+Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 
 **Flow per player**:
 1. Fetch league entries → update `player:{puuid}:current`
 2. Append daily snapshot to `player:{puuid}:history` (deduped by date)
-3. Fetch match IDs → compare with stored matches → fetch only new ones
-4. Update `player:{puuid}:matches` with merged + sorted list
+3. `getAllMatchIds(puuid, SET_START_SECONDS)` — paginate all Set 17 match IDs
+4. Diff against stored matches → fetch up to **30 new matches per player per run**
+5. Update `player:{puuid}:matches` with merged + sorted list
+
+**Backfill behavior**: Players with large match history gaps (e.g. added mid-set) are caught up 30 matches per sync run. Hit "Sync Now" multiple times until counts stabilize.
 
 **Rate limiting**: 100ms delay between API calls, 200ms delay between players.
 
@@ -107,7 +110,8 @@ All calls go through `riotFetch<T>(url)` which adds the `X-Riot-Token` header.
 |----------|----------|---------|---------|
 | `getAccountByRiotId(name, tag)` | `/riot/account/v1/accounts/by-riot-id/{name}/{tag}` | americas | `{ puuid, gameName, tagLine }` |
 | `getLeagueEntries(puuid)` | `/tft/league/v1/by-puuid/{puuid}` | na1 | `LeagueEntry[]` |
-| `getMatchIds(puuid, count)` | `/tft/match/v1/matches/by-puuid/{puuid}/ids` | americas | `string[]` |
+| `getMatchIds(puuid, count, startTime?)` | `/tft/match/v1/matches/by-puuid/{puuid}/ids` | americas | `string[]` (single page) |
+| `getAllMatchIds(puuid, startTime?)` | same endpoint, paginated | americas | `string[]` (full history) |
 | `getMatch(matchId)` | `/tft/match/v1/matches/{matchId}` | americas | `MatchDetail` |
 
 **Routing**: Account and Match endpoints use regional routing (`americas.api.riotgames.com`). Summoner and League use platform routing (`na1.api.riotgames.com`).
