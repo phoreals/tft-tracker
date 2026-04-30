@@ -112,6 +112,7 @@ const Grid = styled.div`
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     grid-template-columns: 4fr 8fr;
+    grid-template-rows: 1fr;
     flex: 1;
   }
 `;
@@ -120,6 +121,7 @@ const LeftColumn = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
+  align-self: start;
 `;
 
 const FormGroup = styled.div`
@@ -625,7 +627,7 @@ export default function ManagePlayersPage() {
         <GlassCard
           title="Tracked Players"
           icon={Users}
-          style={{ flex: 1, minHeight: 0 }}
+          style={{ minHeight: 0 }}
           headerAction={
             <SyncBadge onClick={handleSync} disabled={syncing}>
               <RefreshCw
