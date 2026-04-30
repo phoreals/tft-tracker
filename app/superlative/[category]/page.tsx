@@ -6,6 +6,7 @@ import Link from "next/link";
 import styled from "styled-components";
 // recharts removed — bar chart not currently used
 import { ArrowLeft, User } from "lucide-react";
+import { SortChevron } from "@/components/SortChevron";
 import { GlassCard } from "@/components/GlassCard";
 import {
   getSetWeeks,
@@ -179,9 +180,46 @@ const Thead = styled.thead`
     font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
     color: ${({ theme }) => theme.semantic.color.textMuted};
     text-align: left;
-    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.sm};
     border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
   }
+`;
+
+// SortIcon must be defined before SortTh for selector interpolation.
+const SortIcon = styled.span<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  margin-left: 3px;
+  flex-shrink: 0;
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : "currentColor"};
+  opacity: ${({ $active }) => ($active ? 1 : 0)};
+  transition: opacity 0.15s, color 0.15s;
+`;
+
+const SortTh = styled.th<{ $active: boolean }>`
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted} !important;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary} !important;
+  }
+
+  &:hover ${SortIcon} {
+    opacity: 0.5;
+  }
+
+  &:hover ${SortIcon}[data-active="true"] {
+    opacity: 1;
+  }
+`;
+
+const SortThInner = styled.span`
+  display: inline-flex;
+  align-items: center;
 `;
 
 const Tbody = styled.tbody`
@@ -197,7 +235,7 @@ const Tbody = styled.tbody`
   }
 
   td {
-    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+    padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.sm};
     font-family: ${({ theme }) => theme.semantic.font.display};
     font-size: ${({ theme }) => theme.primitive.fontSize.sm};
     color: ${({ theme }) => theme.semantic.color.textPrimary};
@@ -344,6 +382,8 @@ export default function SuperlativeDrilldownPage() {
   const { category: slug } = useParams<{ category: string }>();
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortCol, setSortCol] = useState<"name" | "value">("value");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const cat = SUPERLATIVE_CATEGORIES.find((c) => c.slug === slug);
 
@@ -405,6 +445,27 @@ export default function SuperlativeDrilldownPage() {
         return bv - av;
       });
   }, [stats, cat]);
+
+  const toggleSort = (col: "name" | "value") => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortCol(col);
+      setSortDir(col === "name" ? "asc" : "desc");
+    }
+  };
+
+  const sortedRanked = useMemo(() => {
+    if (sortCol === "value") {
+      return sortDir === "desc" ? ranked : [...ranked].reverse();
+    }
+    // sort by name
+    return [...ranked].sort((a, b) => {
+      const an = a.player.gameName.toLowerCase();
+      const bn = b.player.gameName.toLowerCase();
+      return sortDir === "asc" ? an.localeCompare(bn) : bn.localeCompare(an);
+    });
+  }, [ranked, sortCol, sortDir]);
 
   const leader = cat ? findLeader(stats, cat) : null;
   const maxVal = ranked.length > 0 ? Math.max(...ranked.map((r) => Math.abs((r[cat!.key] as number) ?? 0))) : 1;
@@ -477,13 +538,27 @@ export default function SuperlativeDrilldownPage() {
             <Table>
               <Thead>
                 <tr>
-                  <th style={{ width: 40 }}>#</th>
-                  <th>Summoner</th>
-                  <th style={{ textAlign: "right" }}>{cat.label(isSet, weeks[selectedTab as number]?.weekNumber)}</th>
+                  <th style={{ width: 28 }}>#</th>
+                  <SortTh $active={sortCol === "name"} onClick={() => toggleSort("name")}>
+                    <SortThInner>
+                      Summoner
+                      <SortIcon $active={sortCol === "name"} data-active={sortCol === "name" || undefined}>
+                        <SortChevron direction={sortCol === "name" ? sortDir : "desc"} />
+                      </SortIcon>
+                    </SortThInner>
+                  </SortTh>
+                  <SortTh $active={sortCol === "value"} onClick={() => toggleSort("value")} style={{ textAlign: "right" }}>
+                    <SortThInner style={{ justifyContent: "flex-end" }}>
+                      {cat.label(isSet, weeks[selectedTab as number]?.weekNumber)}
+                      <SortIcon $active={sortCol === "value"} data-active={sortCol === "value" || undefined}>
+                        <SortChevron direction={sortCol === "value" ? sortDir : "desc"} />
+                      </SortIcon>
+                    </SortThInner>
+                  </SortTh>
                 </tr>
               </Thead>
               <Tbody>
-                {ranked.map((r, i) => {
+                {sortedRanked.map((r, i) => {
                   const val = (r[cat.key] as number) ?? 0;
                   const isLead = leader?.player.puuid === r.player.puuid;
                   const Row = isLead ? LeaderRow : "tr";

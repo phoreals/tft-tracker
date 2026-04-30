@@ -43,7 +43,6 @@ const Table = styled.table`
 const Thead = styled.thead`
   tr {
     border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
-    background: ${({ theme }) => theme.component.table.headerBg};
   }
   th {
     padding: ${({ theme }) => theme.primitive.spacing.xs};
