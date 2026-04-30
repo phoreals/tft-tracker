@@ -463,36 +463,60 @@ export default function WeeklyStatsPage() {
   const handleSync = async () => {
     setSyncing(true);
     setSyncStatus(null);
+
+    let pass = 0;
+    let totalAdded = 0;
+
     try {
-      const res = await fetch("/api/sync", { method: "POST" });
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(`Server error ${res.status}${text ? `: ${text.slice(0, 120)}` : ""}`);
-      }
-      const data = await res.json();
-      await fetchPlayers();
+      while (true) {
+        pass++;
+        setSyncStatus({ tone: "muted", message: pass === 1 ? "Syncing…" : `Pass ${pass} — ${totalAdded} matches added so far…` });
 
-      const failed = data.results?.filter((r: { success: boolean }) => !r.success) ?? [];
-      const withErrors = data.results?.filter((r: { matchErrors: number }) => r.matchErrors > 0) ?? [];
-      const withRemaining = data.results?.filter((r: { matchesRemaining: number }) => r.matchesRemaining > 0) ?? [];
+        const res = await fetch("/api/sync", { method: "POST" });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Server error ${res.status}${text ? `: ${text.slice(0, 120)}` : ""}`);
+        }
+        const data = await res.json();
+        totalAdded += data.totalAdded ?? 0;
 
-      if (failed.length > 0) {
-        setSyncStatus({
-          tone: "error",
-          message: failed.map((r: { name: string; error?: string }) => `${r.name}: ${r.error ?? "unknown error"}`).join("\n"),
-        });
-      } else if (withRemaining.length > 0) {
-        const lines = withRemaining.map((r: { name: string; matchesRemaining: number }) => `${r.name}: ${r.matchesRemaining} matches remaining`);
-        setSyncStatus({ tone: "warn", message: ["Run sync again to continue backfill:", ...lines].join("\n") });
-      } else {
-        const added = data.totalAdded ?? 0;
+        const failed = (data.results ?? []).filter((r: { success: boolean }) => !r.success);
+        const withErrors = (data.results ?? []).filter((r: { matchErrors: number }) => r.matchErrors > 0);
+        const withRemaining = (data.results ?? []).filter((r: { matchesRemaining: number }) => r.matchesRemaining > 0);
         const matchErrCount = withErrors.reduce((s: number, r: { matchErrors: number }) => s + r.matchErrors, 0);
+
+        if (failed.length > 0) {
+          await fetchPlayers();
+          setSyncStatus({
+            tone: "error",
+            message: failed.map((r: { name: string; error?: string }) => `${r.name}: ${r.error ?? "unknown error"}`).join("\n"),
+          });
+          break;
+        }
+
+        if (withRemaining.length > 0) {
+          // More matches to fetch — pause briefly then run another pass
+          const remaining = withRemaining.reduce((s: number, r: { matchesRemaining: number }) => s + r.matchesRemaining, 0);
+          setSyncStatus({ tone: "muted", message: `Pass ${pass} done — ${remaining} matches remaining, continuing…` });
+          await fetchPlayers();
+          await new Promise((r) => setTimeout(r, 1500));
+          continue;
+        }
+
+        // All caught up
+        await fetchPlayers();
         const errNote = matchErrCount > 0 ? ` (${matchErrCount} match fetch error${matchErrCount > 1 ? "s" : ""})` : "";
-        setSyncStatus({ tone: matchErrCount > 0 ? "warn" : "muted", message: added > 0 ? `Added ${added} match${added > 1 ? "es" : ""}${errNote}` : `All players up to date${errNote}` });
+        setSyncStatus({
+          tone: matchErrCount > 0 ? "warn" : "muted",
+          message: totalAdded > 0
+            ? `All caught up — ${totalAdded} match${totalAdded > 1 ? "es" : ""} added across ${pass} pass${pass > 1 ? "es" : ""}${errNote}`
+            : `All players up to date${errNote}`,
+        });
+        break;
       }
     } catch (err) {
       console.error("Sync failed:", err);
-      setSyncStatus({ tone: "error", message: "Sync request failed — check console" });
+      setSyncStatus({ tone: "error", message: err instanceof Error ? err.message : "Sync request failed — check console" });
     } finally {
       setSyncing(false);
     }
@@ -565,6 +589,7 @@ export default function WeeklyStatsPage() {
             <SpinningIcon size={ICON_SIZE.md} $spinning={syncing} />
             <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
           </SyncButton>
+
           {syncStatus && <SyncStatus $tone={syncStatus.tone}>{syncStatus.message}</SyncStatus>}
         </SyncWrap>
       </PageHeader>
