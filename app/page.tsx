@@ -123,7 +123,7 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   z-index: 20;
   transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
   backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
-  border-bottom: 1px solid ${({ $isSticky, theme }) => $isSticky ? theme.semantic.color.borderDefault : "transparent"};
+  border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   box-shadow: ${({ $isSticky }) => $isSticky ? "0 4px 16px rgba(229, 197, 135, 0.06)" : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   margin-right: -${({ theme }) => theme.primitive.spacing.sm};
