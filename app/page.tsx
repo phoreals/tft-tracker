@@ -176,8 +176,7 @@ const StatValue = styled.span`
 `;
 
 const StatUnit = styled.span`
-  font-size: 0.65em;
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
 `;
 
