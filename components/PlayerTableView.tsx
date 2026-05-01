@@ -129,6 +129,16 @@ const SummonerChip = styled(Link)`
   &:hover {
     background: rgba(229, 197, 135, 0.08);
   }
+
+  @media (hover: none) {
+    &:hover {
+      background: none;
+    }
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.12);
+  }
 `;
 
 const SummonerIcon = styled.div`

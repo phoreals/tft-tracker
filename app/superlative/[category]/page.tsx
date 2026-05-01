@@ -46,12 +46,23 @@ const BackLink = styled(Link)`
   text-decoration: none;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
   transition: color 0.2s, background 0.2s;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.accent};
     background: rgba(229, 197, 135, 0.08);
+  }
+
+  @media (hover: none) {
+    &:hover {
+      background: none;
+      color: ${({ theme }) => theme.semantic.color.textMuted};
+    }
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.12);
   }
 `;
 
@@ -261,8 +272,8 @@ const RankBadge = styled.span<{ $isLead?: boolean }>`
   justify-content: center;
   min-width: 20px;
   padding: 2px 4px;
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-  background: ${({ $isLead }) => $isLead ? "rgba(229, 197, 135, 0.12)" : "rgba(208, 197, 181, 0.06)"};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};

@@ -259,8 +259,7 @@ const DurationPill = styled.span`
   display: inline-flex;
   align-items: center;
   padding: 3px 8px;
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-  background: rgba(229, 197, 135, 0.10);
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
@@ -308,6 +307,16 @@ const PlayerChip = styled(Link)`
   &:hover {
     background: rgba(229, 197, 135, 0.08);
   }
+
+  @media (hover: none) {
+    &:hover {
+      background: none;
+    }
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.12);
+  }
 `;
 
 const ChipIcon = styled.div`
@@ -327,9 +336,6 @@ const ChipName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textSecondary};
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 `;
 
 const SuperlativeCardLink = styled(Link)`
