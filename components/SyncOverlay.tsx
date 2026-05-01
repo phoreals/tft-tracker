@@ -76,7 +76,7 @@ const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
   padding-right: calc(${({ theme }) => theme.primitive.spacing.sm} - (28px - 14px) / 2);
   min-height: 36px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 `;
 
@@ -85,7 +85,6 @@ const MessageWrap = styled.div`
   min-width: 0;
   max-height: 200px;
   overflow-y: auto;
-  padding: ${({ theme }) => theme.primitive.spacing.xs} 0;
 `;
 
 const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean }>`
@@ -106,10 +105,10 @@ const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean 
 
 const Actions = styled.div`
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   flex-shrink: 0;
-  padding: ${({ theme }) => theme.primitive.spacing.xs} 0;
+  align-self: flex-start;
 `;
 
 const IconButton = styled.button`
