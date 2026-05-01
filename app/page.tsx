@@ -336,8 +336,14 @@ function renderStatValue(s: string): React.ReactNode {
     if (last < s.length) segments.push(s.slice(last));
     return <>{segments}</>;
   }
-  // LP/game: "4.3 LP/game"
-  if (s.endsWith(" LP/game")) return <>{s.slice(0, -8)}<StatUnit> LP/game</StatUnit></>;
+  // LP/game: "+4.3 LP/game" or "-2.1 LP/game"
+  if (s.endsWith(" LP/game")) {
+    const num = s.slice(0, -8);
+    if (num[0] === "+" || num[0] === "-") {
+      return <><StatUnit>{num[0]}</StatUnit>{num.slice(1)}<StatUnit> LP/game</StatUnit></>;
+    }
+    return <>{num}<StatUnit> LP/game</StatUnit></>;
+  }
   // LP with optional sign: "+45 LP" or "-20 LP"
   if (s.endsWith(" LP")) {
     const num = s.slice(0, -3);
