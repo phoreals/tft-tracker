@@ -4,7 +4,6 @@ import {
   formatRankAbbr,
   percentOf,
   rankToLP,
-  formatPlaytime,
   SET_START,
   SET_END,
 } from "@/lib/utils";
@@ -32,11 +31,11 @@ export interface PlayerRowData {
   tier: string;
   rankLP: number;
   totalGames: number;
-  totalTime: string;
+  totalDurationSec: number;
   scopedGames: number;
   top4Rate: string;
   firstRate: string;
-  scopedTime: string;
+  scopedDurationSec: number;
   // Raw numerics for sorting
   gamesNum: number;
   top4RateNum: number;
@@ -93,11 +92,11 @@ export function usePlayerRows(
             ? rankToLP(p.current.tier, p.current.rank, p.current.lp)
             : -1,
           totalGames,
-          totalTime: formatPlaytime(totalDuration),
+          totalDurationSec: totalDuration,
           scopedGames,
           top4Rate: percentOf(scopedTop4, scopedGames),
           firstRate: percentOf(scopedFirsts, scopedGames),
-          scopedTime: formatPlaytime(scopedDuration),
+          scopedDurationSec: scopedDuration,
           gamesNum: isSet ? totalGames : scopedGames,
           top4RateNum: scopedGames > 0 ? (scopedTop4 / scopedGames) * 100 : 0,
           firstRateNum: scopedGames > 0 ? (scopedFirsts / scopedGames) * 100 : 0,

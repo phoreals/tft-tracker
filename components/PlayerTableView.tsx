@@ -7,6 +7,7 @@ import { User } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
 import { SortChevron } from "./SortChevron";
 import { getRankColor } from "@/lib/utils";
+import { PlaytimeDisplay } from "./PlaytimeDisplay";
 import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -377,7 +378,7 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
                 <CenterCell>{isSet ? row.totalGames : row.scopedGames}</CenterCell>
                 <CenterCell>{row.top4Rate}%</CenterCell>
                 <FirstCell>{row.firstRate}%</FirstCell>
-                <TimeCell>{isSet ? row.totalTime : row.scopedTime}</TimeCell>
+                <TimeCell><PlaytimeDisplay seconds={isSet ? row.totalDurationSec : row.scopedDurationSec} variant="hours" /></TimeCell>
               </tr>
             ))
           )}

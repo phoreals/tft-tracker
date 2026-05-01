@@ -36,7 +36,8 @@ components/
 ├── PlayerTable.tsx         Thin shell: calls usePlayerRows, manages view state, renders ViewToggle + active view.
 ├── PlayerTableView.tsx     Table view for player stats — <table> with sortable headers.
 ├── PlayerCardView.tsx      Card view for player stats — CSS Grid, auto-fill columns, each player a card.
-└── RankChart.tsx           Recharts LineChart. Profile-pic endpoint labels, no legend.
+├── PlaytimeDisplay.tsx     Reusable playtime formatter with portal tooltip. Three variants: full, hours, short.
+└── RankChart.tsx           Recharts LineChart. Y-axis tick tooltips via portal. Props: hideLegend, lineColors.
 
 hooks/
 └── usePlayerRows.ts        Data + sort logic for player stats. Returns sortedRows, sortKey, sortDir, toggleSort.
@@ -48,7 +49,7 @@ styles/
 └── StyledComponentsRegistry.tsx  SSR-compatible styled-components setup for App Router.
 
 lib/
-├── utils.ts               Formatters: formatPlaytime, formatRank, getStartOfWeek, percentOf.
+├── utils.ts               Formatters: formatPlaytime/Hours/Short/Full, formatRank, getSetWeeks, percentOf.
 ├── mock.ts                Mock data for local dev (activated when KV_REST_API_URL is absent).
 ├── riot.ts                (see BACKEND.md)
 └── kv.ts                  (see BACKEND.md)
@@ -89,7 +90,26 @@ Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Int
 5. No internal tab state or tab bar
 
 ### usePlayerRows
-The data layer behind PlayerTable. Computes `PlayerRowData[]` from raw player input, manages `sortKey`/`sortDir` state, and returns `sortedRows`. Default sort: `rankLP` descending (highest rank first). All row derivation (LP conversion, scoped match filtering, rate calculations) lives here — not in the view components. This is the pattern to follow for other data-driven tables (e.g. the superlative drilldown will get its own `useSuperlativeRows`).
+The data layer behind PlayerTable. Computes `PlayerRowData[]` from raw player input, manages `sortKey`/`sortDir` state, and returns `sortedRows`. Default sort: `rankLP` descending (highest rank first). All row derivation (LP conversion, scoped match filtering, rate calculations) lives here — not in the view components.
+
+Time fields are exposed as raw seconds (`totalDurationSec`, `scopedDurationSec`) — **not** pre-formatted strings. View components pass these to `<PlaytimeDisplay>` and choose the appropriate variant. `timeNum` (used for sorting) is the same value as the active duration field.
+
+### PlaytimeDisplay
+Reusable component for rendering playtime with a portal tooltip showing the most precise format on hover. Suppresses the tooltip on touch-only devices (`window.matchMedia('(hover: none)')`).
+
+```tsx
+<PlaytimeDisplay seconds={row.scopedDurationSec} variant="hours" />
+```
+
+**Variants and where each is used**:
+
+| Variant | Format | Used in |
+|---------|--------|---------|
+| `"full"` | `1d 23h 24m` | Player page stat card, squad playtime (main page) |
+| `"hours"` | `72h 24m` | Table view TIME column, card view TIME stat |
+| `"short"` | `72h` | (available; not currently used in production) |
+
+Tooltip always shows `formatPlaytimeFull` output (`1d 23h 24m 30s` with seconds). Portal renders to `document.body` to escape any clipping context.
 
 ### ViewToggle
 Generic component. Takes `views: { id, icon, label? }[]`, `value`, and `onChange`. Renders a pill-shaped group of icon buttons inside a dimmed background. Active button gets a glass-card background + accent color. Designed to sit in `GlassCard`'s `headerAction`. Import once and use across any table that needs a view switcher.
@@ -147,7 +167,7 @@ error: string             — validation/API error message
    margin-left: -${spacing.md}; margin-right: -${spacing.md};
    padding-left: ${spacing.md}; padding-right: ${spacing.md};
    ```
-7. **Hover-only interactions**: wrap `transform`, `opacity`, and other hover effects in `@media (hover: hover)` so they don't trigger on touch devices. For elements that are hidden until hover (e.g. delete button), provide a fallback visible state under `@media (hover: none)`.
+7. **Hover-only interactions**: wrap `transform`, `opacity`, and other hover effects in `@media (hover: hover)` so they don't trigger on touch devices. For elements that are hidden until hover (e.g. delete button), provide a fallback visible state under `@media (hover: none)`. For portal tooltips driven by JS, check `window.matchMedia('(hover: none)').matches` in the `onMouseEnter` handler and bail early rather than relying solely on CSS.
 8. **Touch tap targets**: interactive elements should be at least 44×44px on interactive controls; tab buttons are compact (no min-height) but the full-width sticky strip provides adequate touch area.
 
 ## Local Development / Mock Data

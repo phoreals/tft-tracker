@@ -85,6 +85,7 @@ export function formatRankAbbr(tier: string, rank: string, lp: number): string {
 
 // ── Formatters ───────────────────────────────────────────────────
 
+// Full: "1d 23h 24m"
 export function formatPlaytime(seconds: number): string {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -94,6 +95,30 @@ export function formatPlaytime(seconds: number): string {
     return `${days}d ${remainingHours}h ${minutes}m`;
   }
   return `${hours}h ${minutes}m`;
+}
+
+// Hours + minutes, no day conversion: "72h 24m"
+export function formatPlaytimeHours(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  return `${hours}h ${minutes}m`;
+}
+
+// Shortest: total hours only: "72h"
+export function formatPlaytimeShort(seconds: number): string {
+  return `${Math.floor(seconds / 3600)}h`;
+}
+
+// With seconds — used as tooltip detail text
+export function formatPlaytimeFull(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return `${d}d ${h % 24}h ${m}m ${s}s`;
+  }
+  return `${h}h ${m}m ${s}s`;
 }
 
 export function formatRank(tier?: string, rank?: string, lp?: number): string {

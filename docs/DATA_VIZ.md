@@ -35,6 +35,8 @@ Custom SVG tick component handles two cases:
 - **Tier boundary** (`lp % 400 === 0`): renders a 14px tier emblem (Community Dragon mini crest) on the left + "IV" text on the right (omitted for Master/GM/Chal which have no divisions)
 - **Sub-division** (`lp % 400 === 100/200/300`): renders "III", "II", or "I" text right-aligned; skipped for Master+ tiers
 
+Each tick wraps its SVG content in a `<g>` with a transparent 34×20px hit rect so small labels are easy to hover. On hover, a portal tooltip renders to `document.body` showing the full division name (e.g. "Emerald II"). The tooltip follows the cursor via `onMouseEnter` position capture.
+
 ### Player Identification & Legend
 
 No in-chart labels or profile picture dots. Player identity is conveyed by a **legend row** below the chart:
@@ -105,41 +107,41 @@ Content:      When a player is hovered, shows only that player; otherwise shows 
 
 ## Placement Per Game (`app/player/[puuid]/page.tsx`)
 
-Shown on the individual player drilldown page. Plots every stored match for one player.
+Shown on the individual player drilldown page. Plots **all stored matches** for one player (not filtered by the selected week tab).
 
 ### Chart Configuration
 
 ```
-Component:    LineChart > two Lines (actual + running average)
+Component:    ScatterChart > Scatter
 Container:    ResponsiveContainer width="100%" height="100%"
-Height:       220px (fixed styled div)
-Y-axis:       reversed, domain [1, 8], ticks [1..8], width 24px
-X-axis:       dataKey="game" (integer index, 1-based), label "Game #"
-Grid:         CartesianGrid horizontal only, stroke #e5c58711
+Height:       220px mobile / 320px desktop (ChartContainer styled div)
+Y-axis:       reversed, domain [0.5, 8.5], ticks [1..8] formatted as ordinals (1st/2nd…), width 36px
+X-axis:       dataKey="game" (integer index, 1-based), type="number", label "Game #"
+Grid:         CartesianGrid horizontal only
 Reference:    ReferenceLine y=4.5 — top-4 boundary
+Margin:       top: 16, right: 16, bottom: 0, left: 4
 ```
 
-### Lines
+### Dots
 
-| Line | Color | Style | Description |
-|------|-------|-------|-------------|
-| Placement | `#e5c587` (gold) | solid, strokeWidth 2, dot r=3 | Actual placement per game |
-| Avg | `#00fbfb` (cyan) | dashed (strokeDasharray "5 5"), strokeWidth 1.5, no dot | Running average up to each game |
+Each dot is a `<circle r=5>` rendered via a custom `shape` prop:
+- **Gold** (`gold300`, opacity 0.9): placement ≤ 4 (top 4)
+- **Grid color** (opacity 0.6): placement 5–8
+
+Domain `[0.5, 8.5]` (not `[1, 8]`) prevents Recharts from clipping 1st and 8th place ticks at the axis boundary.
 
 ### Data Transform
 
-Matches are sorted oldest-first. For each match at index `i`:
+All matches sorted oldest-first. For each match at index `i`:
 ```ts
-{ game: i + 1, placement: match.placement, avg: average of placements[0..i] }
+{ game: i + 1, placement: match.placement, date: "M/D" }
 ```
-Running average is computed inline (cumulative sum / count).
 
-### Tooltip
+### Custom Tooltip
 
-Same style as RankChart tooltip. Shows:
-- Label: `Game {n}`
-- Placement: exact integer (e.g. `3`)
-- Avg: running average to 2dp (e.g. `2.33`)
+Rendered via Recharts `content` prop (not a portal). Shows:
+- Label: `Game {n} · M/D`
+- Ordinal placement (e.g. `3rd`), colored gold if top 4
 
 ---
 

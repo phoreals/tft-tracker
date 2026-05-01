@@ -7,6 +7,7 @@ import { User } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
 import { getRankColor } from "@/lib/utils";
 import { SortChevron } from "./SortChevron";
+import { PlaytimeDisplay } from "./PlaytimeDisplay";
 import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -305,7 +306,9 @@ export function PlayerCardView({ rows, isSet, sortKey, sortDir, toggleSort }: Pl
                 <StatLabel>1ST</StatLabel>
               </Stat>
               <Stat>
-                <StatValue style={{ fontSize: 11 }}>{isSet ? row.totalTime : row.scopedTime}</StatValue>
+                <StatValue style={{ fontSize: 11 }}>
+                  <PlaytimeDisplay seconds={isSet ? row.totalDurationSec : row.scopedDurationSec} variant="hours" />
+                </StatValue>
                 <StatLabel>TIME</StatLabel>
               </Stat>
             </StatsGrid>

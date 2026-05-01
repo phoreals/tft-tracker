@@ -98,11 +98,12 @@ Sync a single player by PUUID. The entire 50s budget is dedicated to that one pl
 **Error responses**: 404 if puuid not in tracked players. 500 with `{ error }` for other failures. Rate limit that exceeds the budget returns 200 with `matchesRemaining: 1, maxRateLimitMs: <ms>` (same retryable pattern as the bulk sync).
 
 ### `POST /api/seed`
-Add the 7 original hardcoded players (same flow as POST /api/players, repeated).
+Add the original hardcoded players (same flow as POST /api/players, repeated).
 
 **Hardcoded players**:
 - Banh#boi, Richardpression#SAD, Lionnel#NA1, FireLordAppa#1335
-- V for Taehyung#NA1, Caramel Papi#PAPI1, demure#ggez
+- V for Taehyung#NA1, Caramel Papi#PAPI1, Demure#GGEZ
+- Nisca#CREAM, Goldeen#NA1, MrBonChen#NA1, KoN Aries#Liar
 
 Skips players that are already tracked.
 
@@ -195,9 +196,12 @@ interface HistorySnapshot {
 
 interface MatchRecord {
   matchId: string;
-  placement: number;  // 1-8
-  duration: number;   // seconds
-  timestamp: number;  // epoch milliseconds
+  placement: number;   // 1-8
+  duration: number;    // seconds
+  timestamp: number;   // epoch milliseconds
+  ranked?: boolean;    // true = Ranked TFT (queue_id 1100); false = other queue; undefined = pre-migration
+  lastRound?: number;  // round number when player was eliminated / game ended
+  gameType?: string;   // "standard" | "turbo" (Hyper Roll) | "pairs" (Double Up) | "choncc"
 }
 ```
 

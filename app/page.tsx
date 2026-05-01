@@ -8,7 +8,8 @@ import { GlassCard } from "@/components/GlassCard";
 import { CustomSelect } from "@/components/CustomSelect";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
-import { formatPlaytime, getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
+import { getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
+import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -753,7 +754,7 @@ export default function WeeklyStatsPage() {
               <StatLabel>Squad Playtime</StatLabel>
               <Clock size={ICON_SIZE.md} color={theme.semantic.color.info} />
             </StatRow>
-            <StatValue>{loading ? "..." : formatPlaytime(summaryStats.playtime)}</StatValue>
+            <StatValue>{loading ? "..." : <PlaytimeDisplay seconds={summaryStats.playtime} variant="full" />}</StatValue>
           </GlassCard>
         </SuperlativeCardLink>
 

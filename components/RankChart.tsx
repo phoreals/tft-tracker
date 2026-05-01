@@ -173,18 +173,42 @@ const EMBLEM_SIZE = 16;
 const AXIS_EMBLEM = 14;
 const DIV_LABELS: Record<number, string> = { 0: "IV", 100: "III", 200: "II", 300: "I" };
 
+function fullRankLabel(lp: number): string {
+  const withinTier = lp % 400;
+  const tierBase = lp - withinTier;
+  const tier = TIER_BASES.find((t) => t.lp === tierBase);
+  if (!tier) return "";
+  const name = tier.name.charAt(0).toUpperCase() + tier.name.slice(1);
+  const isHighTier = tierBase >= 2800;
+  if (isHighTier) return name;
+  return `${name} ${DIV_LABELS[withinTier] ?? ""}`;
+}
+
 function RankTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: number } }) {
+  const [tipPos, setTipPos] = useState<{ x: number; y: number } | null>(null);
+
   if (x === undefined || y === undefined || !payload) return null;
   const lp = payload.value;
   const withinTier = lp % 400;
   const tierBase = lp - withinTier;
-  const isHighTier = tierBase >= 2800; // Master/GM/Chal — no divisions
+  const isHighTier = tierBase >= 2800;
   const tier = TIER_BASES.find((t) => t.lp === tierBase);
 
-  if (withinTier === 0) {
-    if (!tier) return null;
-    return (
-      <g>
+  // Skip non-boundary high-tier ticks (no divisions)
+  if (isHighTier && withinTier !== 0) return null;
+
+  const label = fullRankLabel(lp);
+
+  return (
+    <g
+      onMouseEnter={(e) => setTipPos({ x: e.clientX, y: e.clientY })}
+      onMouseLeave={() => setTipPos(null)}
+      style={{ cursor: "default" }}
+    >
+      {/* Transparent hit area so small text is easy to hover */}
+      <rect x={x - 34} y={y - 10} width={34} height={20} fill="transparent" />
+
+      {withinTier === 0 && tier && (
         <image
           href={`${EMBLEM_BASE}/${tier.name}_tft.svg`}
           x={x - AXIS_EMBLEM - 15}
@@ -192,38 +216,59 @@ function RankTick({ x, y, payload }: { x?: number; y?: number; payload?: { value
           width={AXIS_EMBLEM}
           height={AXIS_EMBLEM}
         />
-        {!isHighTier && (
-          <text
-            x={x - 2}
-            y={y}
-            textAnchor="end"
-            dominantBaseline="middle"
-            fill={CHART.tick.fill}
-            fontSize={CHART.tick.fontSize}
-            fontFamily={CHART.tick.fontFamily}
-            opacity={0.4}
-          >
-            IV
-          </text>
-        )}
-      </g>
-    );
-  }
+      )}
+      {withinTier === 0 && !isHighTier && (
+        <text
+          x={x - 2}
+          y={y}
+          textAnchor="end"
+          dominantBaseline="middle"
+          fill={CHART.tick.fill}
+          fontSize={CHART.tick.fontSize}
+          fontFamily={CHART.tick.fontFamily}
+          opacity={0.4}
+        >
+          IV
+        </text>
+      )}
+      {withinTier !== 0 && (
+        <text
+          x={x - 2}
+          y={y}
+          textAnchor="end"
+          dominantBaseline="middle"
+          fill={CHART.tick.fill}
+          fontSize={CHART.tick.fontSize}
+          fontFamily={CHART.tick.fontFamily}
+          opacity={0.5}
+        >
+          {DIV_LABELS[withinTier]}
+        </text>
+      )}
 
-  if (isHighTier) return null;
-  return (
-    <text
-      x={x - 2}
-      y={y}
-      textAnchor="end"
-      dominantBaseline="middle"
-      fill={CHART.tick.fill}
-      fontSize={CHART.tick.fontSize}
-      fontFamily={CHART.tick.fontFamily}
-      opacity={0.5}
-    >
-      {DIV_LABELS[withinTier]}
-    </text>
+      {tipPos && typeof document !== "undefined" && createPortal(
+        <div style={{
+          position:             "fixed",
+          left:                 tipPos.x + 12,
+          top:                  tipPos.y - 13,
+          zIndex:               9999,
+          pointerEvents:        "none",
+          whiteSpace:           "nowrap",
+          background:           CHART.tooltip.bg,
+          backdropFilter:       `blur(${CHART.tooltip.backdropBlur})`,
+          WebkitBackdropFilter: `blur(${CHART.tooltip.backdropBlur})`,
+          border:               CHART.tooltip.border,
+          borderRadius:         CHART.tooltip.radius,
+          padding:              "3px 8px",
+          fontFamily:           CHART.tooltip.fontFamily,
+          fontSize:             CHART.tooltip.fontSize,
+          color:                CHART.tick.fill,
+        }}>
+          {label}
+        </div>,
+        document.body,
+      )}
+    </g>
   );
 }
 

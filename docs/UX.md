@@ -192,24 +192,34 @@ Accessed by clicking a player name in the Weekly Stats performance table.
 ### Header
 Horizontal layout: profile picture on the left, player info on the right.
 
-- **Profile picture** — 64px (mobile) / 80px (desktop) rounded square. Source: Community Dragon CDN using `player.profileIconId`. Border color matches current tier. Falls back to a generic avatar silhouette if the icon is unavailable.
+- **Profile picture** — 64px (mobile) / 80px (desktop) rounded square. Source: Community Dragon CDN using `player.profileIconId`. Uniform `borderHover` color (not rank-colored). Falls back to a generic avatar silhouette if the icon is unavailable.
 - **Player name + #tagline**
 - **Rank badge** — tier-colored pill showing rank text + W/L record. Includes a 20px rank emblem image (Community Dragon ranked mini crest) before the rank string. The emblem image self-hides via `onError` if unavailable.
 
-### Stat Cards (2x2 grid, 4 columns on desktop)
-- Total Games, Top 4 Rate %, 1st Place Rate %, Time Played
+### Tab Scope
+
+The page-level tab (Set / Week N) scopes the **stat cards only**. The rank chart, placement chart, and match history always show the full set history regardless of selected tab.
+
+### Stat Cards (2×2 grid, 4 columns on desktop)
+Games, Avg Placement, Top 4 Rate %, 1st Place Rate %, Time Played — all scoped to the selected tab window.
+
+### Rank Over Time Chart
+Uses the shared `<RankChart>` component with `hideLegend` and `lineColors={[gold300]}`. Single gold line, no legend. Same Y-axis tick tooltips and week highlight as the main page chart.
 
 ### Placement Per Game Chart
-A LineChart plotting every match chronologically:
-- **Gold line**: actual placement per game (Y-axis reversed, 1st at top)
+A `ScatterChart` plotting every stored match chronologically (not week-scoped):
+- **Gold dots**: placements ≤ 4 (top 4); muted grid-color dots for placements 5–8
+- Y-axis reversed, domain `[0.5, 8.5]`, ticks formatted as ordinals (1st, 2nd…)
 - **Reference line** at 4.5 (top 4 boundary)
-- Tooltip shows game number + date
+- Custom tooltip shows game number, date, and ordinal placement
 
 ### Match History List
-Scrollable list of all matches (newest first). Each row:
-- Placement number (gold=1st, cyan=top 4, muted=bottom 4)
-- Gold left border for top 4 finishes
-- Duration + date/time
+Scrollable list of **all stored matches** (newest first, not week-scoped). Each row shows:
+- **Ordinal placement** (gold=1st, cyan=top 4, muted=bottom 4) with gold left border for top 4
+- **Queue badge**: RANKED / NORMAL / HYPER ROLL / DOUBLE UP / CHONCC (dimmed if non-ranked, absent for pre-migration records)
+- **Last round** in stage-round format: `R3-2` (absent for pre-migration records)
+- **Duration** in `m:ss` format
+- **Relative time** (`2h ago`, `3d ago`) — hovering shows a portal tooltip with the full date/time; tooltip is suppressed on touch-only devices
 
 ## Player Drilldown (`/player/[puuid]`)
 

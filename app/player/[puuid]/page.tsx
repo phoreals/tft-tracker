@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import styled from "styled-components";
 import Link from "next/link";
@@ -20,8 +21,8 @@ import { ArrowLeft, Trophy, Gamepad2, Clock, TrendingUp, RefreshCw } from "lucid
 import { GlassCard } from "@/components/GlassCard";
 import { RankChart } from "@/components/RankChart";
 import { CustomSelect } from "@/components/CustomSelect";
+import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import {
-  formatPlaytime,
   formatRank,
   percentOf,
   getRankColor,
@@ -446,33 +447,6 @@ const MatchMeta = styled.span`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
 `;
 
-const TooltipWrap = styled.span`
-  position: relative;
-  cursor: default;
-
-  &::after {
-    content: attr(data-tip);
-    position: absolute;
-    bottom: calc(100% + 5px);
-    right: 0;
-    white-space: nowrap;
-    background: rgba(12, 20, 30, 0.92);
-    border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-    border-radius: ${({ theme }) => theme.primitive.radius.sm};
-    padding: 3px 8px;
-    font-family: ${({ theme }) => theme.semantic.font.display};
-    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-    color: ${({ theme }) => theme.semantic.color.textMuted};
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.08s;
-    z-index: 100;
-  }
-
-  &:hover::after {
-    opacity: 1;
-  }
-`;
 
 const QueueBadge = styled.span<{ $ranked: boolean | undefined }>`
   font-family: ${({ theme }) => theme.semantic.font.display};
@@ -590,6 +564,57 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
       style={{ display: "block", flexShrink: 0 }}
       onError={() => setFailed(true)}
     />
+  );
+}
+
+function PortalTooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [rect, setRect] = useState<DOMRect | null>(null);
+
+  if (typeof document === "undefined") return <>{children}</>;
+
+  const TOOLTIP_W = 180;
+  const TOOLTIP_H = 26;
+  const GAP = 6;
+
+  const style = rect ? (() => {
+    // Default: above, right-aligned to element
+    let left = rect.right - TOOLTIP_W;
+    let top = rect.top - TOOLTIP_H - GAP;
+    // Flip below if not enough space above
+    if (top < 4) top = rect.bottom + GAP;
+    // Clamp horizontally
+    left = Math.max(4, Math.min(left, window.innerWidth - TOOLTIP_W - 4));
+    return { left, top };
+  })() : null;
+
+  return (
+    <span
+      style={{ cursor: "default" }}
+      onMouseEnter={(e) => setRect((e.currentTarget as HTMLElement).getBoundingClientRect())}
+      onMouseLeave={() => setRect(null)}
+    >
+      {children}
+      {rect && style && createPortal(
+        <div style={{
+          position:    "fixed",
+          left:        style.left,
+          top:         style.top,
+          zIndex:      9999,
+          pointerEvents: "none",
+          whiteSpace:  "nowrap",
+          background:  CHART.tooltip.bg,
+          border:      CHART.tooltip.border,
+          borderRadius: CHART.tooltip.radius,
+          padding:     "3px 8px",
+          fontFamily:  "Space Grotesk",
+          fontSize:    theme.primitive.fontSize.xs,
+          color:       theme.semantic.color.textMuted,
+        }}>
+          {text}
+        </div>,
+        document.body,
+      )}
+    </span>
   );
 }
 
@@ -1007,7 +1032,7 @@ export default function PlayerDrilldownPage() {
             <StatLabel>Time Played</StatLabel>
             <Clock size={ICON_SIZE.sm} color={CHART.cyan} />
           </StatRow>
-          <StatValue>{totalDuration > 0 ? formatPlaytime(totalDuration) : "—"}</StatValue>
+          <StatValue><PlaytimeDisplay seconds={totalDuration} variant="full" /></StatValue>
         </GlassCard>
       </StatsGrid>
 
@@ -1146,9 +1171,9 @@ export default function PlayerDrilldownPage() {
                 <MatchMeta>R{formatRound(m.lastRound)}</MatchMeta>
               )}
               <MatchMeta>{formatMatchDuration(m.duration)}</MatchMeta>
-              <TooltipWrap data-tip={formatDateTime(m.timestamp)}>
+              <PortalTooltip text={formatDateTime(m.timestamp)}>
                 <MatchMeta>{formatRelativeTime(m.timestamp)}</MatchMeta>
-              </TooltipWrap>
+              </PortalTooltip>
             </MatchRow>
           ))}
           {allMatchesSorted.length === 0 && (
