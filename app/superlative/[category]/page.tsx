@@ -7,6 +7,7 @@ import styled from "styled-components";
 // recharts removed — bar chart not currently used
 import { ArrowLeft, User } from "lucide-react";
 import { SortChevron } from "@/components/SortChevron";
+import { CustomSelect } from "@/components/CustomSelect";
 import { GlassCard } from "@/components/GlassCard";
 import {
   getSetWeeks,
@@ -135,30 +136,8 @@ const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   }
 `;
 
-const TabSelect = styled.select`
+const MobileSelectWrap = styled.div`
   display: block;
-  width: 100%;
-  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
-  min-height: 44px;
-  background: ${({ theme }) => theme.component.glassCard.bg};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  color: ${({ theme }) => theme.semantic.color.textPrimary};
-  font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
-  letter-spacing: 0.05em;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23e5c587' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right ${({ theme }) => theme.primitive.spacing.md} center;
-  padding-right: ${({ theme }) => theme.primitive.spacing.xl};
-
-  option {
-    background: ${({ theme }) => theme.primitive.color.neutral850};
-    color: ${({ theme }) => theme.semantic.color.textPrimary};
-  }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     display: none;
@@ -524,20 +503,19 @@ export default function SuperlativeDrilldownPage() {
       </div>
 
       <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
-        <TabSelect
-          value={selectedTab === "set" ? "set" : String(selectedTab)}
-          onChange={(e) => {
-            const v = e.target.value;
-            setSelectedTab(v === "set" ? "set" : parseInt(v, 10));
-          }}
-        >
-          <option value="set">{SET_LABEL}</option>
-          {weeks.map((w, i) => (
-            <option key={i} value={String(i)}>
-              {`${w.label} (${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)})`}
-            </option>
-          ))}
-        </TabSelect>
+        <MobileSelectWrap>
+          <CustomSelect
+            value={selectedTab === "set" ? "set" : String(selectedTab)}
+            onChange={(v) => setSelectedTab(v === "set" ? "set" : parseInt(v, 10))}
+            options={[
+              { value: "set", label: SET_LABEL },
+              ...weeks.map((w, i) => ({
+                value: String(i),
+                label: `${w.label} (${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)})`,
+              })),
+            ]}
+          />
+        </MobileSelectWrap>
 
         <TabBar ref={tabBarRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
           <Tab
