@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import styled from "styled-components";
@@ -483,7 +483,8 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
 }
 
 function PortalTooltip({ text, children }: { text: string; children: React.ReactNode }) {
-  const [rect, setRect] = useState<DOMRect | null>(null);
+  const [hovered, setHovered] = useState(false);
+  const elRef = useRef<HTMLSpanElement>(null);
 
   if (typeof document === "undefined") return <>{children}</>;
 
@@ -491,25 +492,27 @@ function PortalTooltip({ text, children }: { text: string; children: React.React
   const TOOLTIP_H = 26;
   const GAP = 6;
 
-  const style = rect ? (() => {
-    // Default: above, right-aligned to element
+  // Compute position from the element's current rect at render time
+  // so it stays correct even when the scrollable parent moves.
+  let style: { left: number; top: number } | null = null;
+  if (hovered && elRef.current) {
+    const rect = elRef.current.getBoundingClientRect();
     let left = rect.right - TOOLTIP_W;
     let top = rect.top - TOOLTIP_H - GAP;
-    // Flip below if not enough space above
     if (top < 4) top = rect.bottom + GAP;
-    // Clamp horizontally
     left = Math.max(4, Math.min(left, window.innerWidth - TOOLTIP_W - 4));
-    return { left, top };
-  })() : null;
+    style = { left, top };
+  }
 
   return (
     <span
+      ref={elRef}
       style={{ cursor: "default" }}
-      onMouseEnter={(e) => setRect((e.currentTarget as HTMLElement).getBoundingClientRect())}
-      onMouseLeave={() => setRect(null)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {children}
-      {rect && style && createPortal(
+      {hovered && style && createPortal(
         <div style={{
           position:    "fixed",
           left:        style.left,
