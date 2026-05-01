@@ -492,12 +492,9 @@ function PortalTooltip({ text, children }: { text: string; children: React.React
   const TOOLTIP_H = 26;
   const GAP = 6;
 
-  // Compute position from the element's current rect at render time
-  // so it stays correct even when the scrollable parent moves.
   let style: { left: number; top: number } | null = null;
   if (hovered && elRef.current) {
     const rect = elRef.current.getBoundingClientRect();
-    // Center tooltip horizontally on the element
     let left = rect.left + rect.width / 2 - TOOLTIP_W / 2;
     let top = rect.top - TOOLTIP_H - GAP;
     if (top < 4) top = rect.bottom + GAP;
@@ -508,7 +505,7 @@ function PortalTooltip({ text, children }: { text: string; children: React.React
   return (
     <span
       ref={elRef}
-      style={{ cursor: "default" }}
+      style={{ cursor: "default", display: "inline-flex" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
