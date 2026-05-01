@@ -145,7 +145,7 @@ const SortPill = styled.button<{ $active: boolean }>`
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
-  background: ${({ $active }) => $active ? "rgba(229, 197, 135, 0.08)" : "transparent"};
+  background: ${({ $active }) => $active ? "${({ theme }) => theme.semantic.color.accentBgHover}" : "transparent"};
   color: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
   font-family: ${({ theme }) => theme.semantic.font.display};
@@ -171,7 +171,7 @@ const SortPill = styled.button<{ $active: boolean }>`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 `;
 

@@ -126,7 +126,7 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
   backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  box-shadow: ${({ $isSticky }) => $isSticky ? "0 4px 16px rgba(229, 197, 135, 0.06)" : "none"};
+  box-shadow: ${({ $isSticky, theme }) => $isSticky ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}` : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   margin-right: -${({ theme }) => theme.primitive.spacing.sm};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
@@ -210,7 +210,7 @@ const PageTab = styled.button<{ $active: boolean }>`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 `;
 
@@ -291,7 +291,7 @@ const PlayerChip = styled(Link)`
   max-width: calc(100% + ${({ theme }) => theme.primitive.spacing.xs});
 
   &:hover {
-    background: rgba(229, 197, 135, 0.08);
+    background: ${({ theme }) => theme.semantic.color.accentBgHover};
   }
 
   @media (hover: none) {
@@ -301,7 +301,7 @@ const PlayerChip = styled(Link)`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.12);
+    background: ${({ theme }) => theme.semantic.color.accentBgActive};
   }
 `;
 

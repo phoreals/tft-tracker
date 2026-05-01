@@ -56,13 +56,31 @@ On the **Player Drilldown** page, any superlatives the viewed player currently h
 
 ### Summary Cards
 
-Three `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart), not at the top.
+Four `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart). Each card is a link — clicking it navigates to a **Stat Drilldown** page (`/stats/[category]`) showing a per-player breakdown with a donut chart or gauge. The cards have the same hover lift effect as superlative cards.
 
-| Card | "Set 17" | Week tab |
-|------|-----------|---------|
-| **GAMES {label}** | Total games for the full set | Games for the selected week |
-| **SQUAD PLAYTIME** | Total playtime for the full set | Playtime for the selected week |
-| **AVG TOP 4 RATE** | Top-4 rate for the full set | Top-4 rate for the selected week |
+| Card | "Set 17" | Week tab | Drilldown |
+|------|-----------|---------|-----------|
+| **Games** | Total games for the full set | Games for the selected week | `/stats/games` |
+| **Squad Playtime** | Total playtime for the full set | Playtime for the selected week | `/stats/playtime` |
+| **Avg Top 4 Rate** | Top-4 rate for the full set | Top-4 rate for the selected week | `/stats/top4-rate` |
+| **Squad Win Rate** | 1st-place rate for the full set | 1st-place rate for the selected week | `/stats/win-rate` |
+
+## Stat Drilldown (`/stats/[category]`)
+
+Accessed by clicking a summary stat card on the home page. Categories: `games`, `playtime`, `top4-rate`, `win-rate`.
+
+### Layout
+- Back link to Home (preserves `?tab=` parameter)
+- Page title = category label
+- Same sticky tab bar (Set 17 / Week 1–N)
+
+### Content
+Two-column layout at `md`+: chart on the left, ranked player table on the right.
+
+- **Games / Playtime**: donut chart showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
+- **Top 4 Rate / Win Rate**: squad average gauge (value + 4px progress bar with 50% reference mark).
+
+**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat + inline bar). Leader row has a subtle gold background. Bar fill = share of total (games/playtime) or ratio of max (rates).
 
 ### Player Performance Table
 

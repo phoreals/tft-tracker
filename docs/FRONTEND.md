@@ -21,6 +21,10 @@ app/
 ├── page.tsx                Home page (client component).
 ├── players/
 │   └── page.tsx            Manage Players page (client component).
+├── stats/
+│   └── [category]/
+│       └── page.tsx        Stat drilldown: per-player donut (games/playtime) or gauge (rates) + ranked table.
+│                           Categories: games | playtime | top4-rate | win-rate
 └── api/                    (see BACKEND.md)
 
 components/

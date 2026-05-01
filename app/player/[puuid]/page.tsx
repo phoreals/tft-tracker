@@ -117,7 +117,7 @@ const BackLink = styled(Link)`
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.accent};
-    background: rgba(229, 197, 135, 0.08);
+    background: ${({ theme }) => theme.semantic.color.accentBgHover};
   }
 
   @media (hover: none) {
@@ -128,7 +128,7 @@ const BackLink = styled(Link)`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.12);
+    background: ${({ theme }) => theme.semantic.color.accentBgActive};
   }
 `;
 
@@ -217,7 +217,7 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
   backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  box-shadow: ${({ $isSticky }) => $isSticky ? "0 4px 16px rgba(229, 197, 135, 0.06)" : "none"};
+  box-shadow: ${({ $isSticky, theme }) => $isSticky ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}` : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   margin-right: -${({ theme }) => theme.primitive.spacing.sm};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
@@ -326,7 +326,7 @@ const BadgeLink = styled(Link)`
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
-  background: rgba(229, 197, 135, 0.08);
+  background: ${({ theme }) => theme.semantic.color.accentBgHover};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.full};
   text-decoration: none;

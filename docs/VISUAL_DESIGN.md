@@ -43,6 +43,11 @@ Maps primitives to UI roles. This is what components reference.
 
 **Accent system**: `accent` (gold), `accentDark`, `accentHover`
 
+**Interactive background layers** (for hover/active states on chips, links, buttons):
+- `accentBgSubtle` — 6% gold opacity: ghost button `:active`, leader row highlight, card `:active`
+- `accentBgHover` — 8% gold opacity: chip/link hover background
+- `accentBgActive` — 12% gold opacity: chip/link `:active` (pressed)
+
 **Feedback**: `info` (cyan), `success` (green), `danger` (red), `highlight` (purple)
 
 **Borders**: `borderSubtle` (10% opacity) → `borderDefault` (20%) → `borderHover` (40%)

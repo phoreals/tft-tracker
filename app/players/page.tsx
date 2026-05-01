@@ -229,7 +229,7 @@ const SeedButton = styled.button`
   }
 
   &:active:not(:disabled) {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 
   &:disabled {
@@ -259,7 +259,7 @@ const SyncBadge = styled.button`
   }
 
   &:active:not(:disabled) {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 
   &:disabled {
@@ -444,7 +444,7 @@ const DeleteButton = styled.button`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 `;
 

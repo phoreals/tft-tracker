@@ -134,7 +134,7 @@ const SummonerChip = styled(Link)`
   }
 
   &:hover {
-    background: rgba(229, 197, 135, 0.08);
+    background: ${({ theme }) => theme.semantic.color.accentBgHover};
   }
 
   @media (hover: none) {
@@ -144,7 +144,7 @@ const SummonerChip = styled(Link)`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.12);
+    background: ${({ theme }) => theme.semantic.color.accentBgActive};
   }
 `;
 

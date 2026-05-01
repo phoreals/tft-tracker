@@ -35,7 +35,7 @@ const Btn = styled.button<{ $active: boolean }>`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 `;
 

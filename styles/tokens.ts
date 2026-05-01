@@ -104,6 +104,10 @@ export const semantic = {
     accent: primitive.color.gold300,
     accentDark: primitive.color.gold400,
     accentHover: "rgba(229, 197, 135, 0.2)",
+    // Interactive background layers (used for hover/active states on chips, links, buttons)
+    accentBgSubtle: "rgba(229, 197, 135, 0.06)", // ghost button :active, leader row, card :active
+    accentBgHover:  "rgba(229, 197, 135, 0.08)", // chip/link hover
+    accentBgActive: "rgba(229, 197, 135, 0.12)", // chip/link :active (pressed)
 
     // Feedback
     info: primitive.color.cyan500,

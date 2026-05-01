@@ -109,7 +109,7 @@ const LegendChip = styled.button<{ $hidden: boolean }>`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 `;
 
@@ -142,7 +142,7 @@ const ClearChip = styled.button`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.06);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 `;
 

@@ -95,7 +95,7 @@ const OptionItem = styled.li<{ $selected: boolean; $focused: boolean }>`
   letter-spacing: 0.05em;
 
   &:active {
-    background: rgba(229, 197, 135, 0.08);
+    background: ${({ theme }) => theme.semantic.color.accentBgHover};
   }
 `;
 
