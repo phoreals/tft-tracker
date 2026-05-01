@@ -11,6 +11,7 @@ import { RankChart } from "@/components/RankChart";
 import { getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
+import { SyncOverlay } from "@/components/SyncOverlay";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -108,18 +109,6 @@ const SyncWrap = styled.div`
   }
 `;
 
-const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
-  font-family: ${({ theme }) => theme.semantic.font.body};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  color: ${({ theme, $tone }) =>
-    $tone === "error"
-      ? theme.semantic.color.danger
-      : $tone === "warn"
-        ? theme.semantic.color.accent
-        : theme.semantic.color.textMuted};
-  margin: 0;
-  white-space: pre-line;
-`;
 
 const StatsGrid = styled.div`
   display: grid;
@@ -504,9 +493,10 @@ export default function WeeklyStatsPage() {
             <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
           </SyncButton>
 
-          {syncStatus && <SyncStatus $tone={syncStatus.tone}>{syncStatus.message}</SyncStatus>}
         </SyncWrap>
       </PageHeader>
+
+      <SyncOverlay status={syncStatus} syncing={syncing} onDismiss={() => setSyncStatus(null)} />
 
       <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 

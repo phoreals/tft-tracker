@@ -22,6 +22,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { RankChart } from "@/components/RankChart";
 import { TabNavigation } from "@/components/TabNavigation";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
+import { SyncOverlay } from "@/components/SyncOverlay";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import {
   formatRank,
@@ -448,18 +449,6 @@ const SpinningRefresh = styled(RefreshCw)<{ $spinning: boolean }>`
   animation: ${({ $spinning }) => ($spinning ? "spin 1s linear infinite" : "none")};
 `;
 
-const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
-  font-family: ${({ theme }) => theme.semantic.font.body};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  color: ${({ theme, $tone }) =>
-    $tone === "error"
-      ? theme.semantic.color.danger
-      : $tone === "warn"
-        ? theme.semantic.color.accent
-        : theme.semantic.color.textMuted};
-  margin: 0;
-  white-space: pre-line;
-`;
 
 // ── Helpers ──────────────────────────────────────────────────────
 
@@ -799,9 +788,10 @@ export default function PlayerDrilldownPage() {
             <SpinningRefresh size={ICON_SIZE.md} $spinning={syncing} />
             <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
           </SyncButton>
-          {syncStatus && <SyncStatus $tone={syncStatus.tone}>{syncStatus.message}</SyncStatus>}
         </SyncWrap>
       </PlayerHeader>
+
+      <SyncOverlay status={syncStatus} syncing={syncing} onDismiss={() => setSyncStatus(null)} />
 
       <PageSubtitle>
         {isSet ? (
