@@ -77,7 +77,6 @@ const SpinnerIcon = styled(RefreshCw)`
   color: ${({ theme }) => theme.semantic.color.accent};
   animation: spin 1s linear infinite;
   flex-shrink: 0;
-  margin-top: 2px;
 `;
 
 const MessageWrap = styled.div`
@@ -109,7 +108,6 @@ const Actions = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   flex-shrink: 0;
-  margin-top: 1px;
 `;
 
 const IconButton = styled.button`
