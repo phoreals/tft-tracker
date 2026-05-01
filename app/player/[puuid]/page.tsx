@@ -664,11 +664,12 @@ export default function PlayerDrilldownPage() {
         }
 
         const errNote = (data.matchErrors ?? 0) > 0 ? ` (${data.matchErrors} match fetch error${data.matchErrors > 1 ? "s" : ""})` : "";
+        const name = player?.gameName ?? "Player";
         setSyncStatus({
           tone: (data.matchErrors ?? 0) > 0 ? "warn" : "muted",
           message: totalAdded > 0
-            ? `All caught up — ${totalAdded} match${totalAdded > 1 ? "es" : ""} added across ${pass} pass${pass > 1 ? "es" : ""}${errNote}`
-            : `Up to date${errNote}`,
+            ? `${name} synced — ${totalAdded} match${totalAdded > 1 ? "es" : ""} added${errNote}`
+            : `${name} is up to date${errNote}`,
         });
         break;
       }

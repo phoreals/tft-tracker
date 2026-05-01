@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import styled, { keyframes } from "styled-components";
-import { X, Copy, Check, RefreshCw } from "lucide-react";
-import { ICON_SIZE } from "@/styles/theme";
+import { X, Copy, Check } from "lucide-react";
 
 // ── Types ───────────────────────────────────────────────────────
 
@@ -67,16 +66,11 @@ const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
         : theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.lg};
   box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset};
-  padding: ${({ theme }) => theme.primitive.spacing.md};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
+  min-height: 36px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
-`;
-
-const SpinnerIcon = styled(RefreshCw)`
-  color: ${({ theme }) => theme.semantic.color.accent};
-  animation: spin 1s linear infinite;
-  flex-shrink: 0;
 `;
 
 const MessageWrap = styled.div`
@@ -84,6 +78,7 @@ const MessageWrap = styled.div`
   min-width: 0;
   max-height: 200px;
   overflow-y: auto;
+  padding: ${({ theme }) => theme.primitive.spacing.xs} 0;
 `;
 
 const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean }>`
@@ -163,16 +158,15 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
     });
   }, [status]);
 
-  if (!status || typeof document === "undefined") return null;
+  // Only show overlay for final results, not while syncing
+  if (!status || syncing || typeof document === "undefined") return null;
 
-  const showDismiss = !syncing;
   const showCopy = status.tone === "error";
   const isError = status.tone === "error";
 
   return createPortal(
     <Backdrop>
       <Card $tone={status.tone}>
-        {syncing && <SpinnerIcon size={ICON_SIZE.sm} />}
         <MessageWrap>
           <Message $tone={status.tone} $isError={isError}>
             {status.message}
@@ -187,11 +181,9 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
               {copied ? <Check size={14} /> : <Copy size={14} />}
             </IconButton>
           )}
-          {showDismiss && (
-            <IconButton onClick={onDismiss} title="Dismiss">
-              <X size={14} />
-            </IconButton>
-          )}
+          <IconButton onClick={onDismiss} title="Dismiss">
+            <X size={14} />
+          </IconButton>
         </Actions>
       </Card>
     </Backdrop>,

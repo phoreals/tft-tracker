@@ -417,11 +417,13 @@ export default function WeeklyStatsPage() {
         // All caught up
         await fetchPlayers();
         const errNote = matchErrCount > 0 ? ` (${matchErrCount} match fetch error${matchErrCount > 1 ? "s" : ""})` : "";
+        const updated = (data.results ?? []).filter((r: { matchesAdded: number }) => r.matchesAdded > 0);
+        const updatedNames = updated.map((r: { name: string; matchesAdded: number }) => `${r.name} +${r.matchesAdded}`).join(", ");
         setSyncStatus({
           tone: matchErrCount > 0 ? "warn" : "muted",
           message: totalAdded > 0
-            ? `All caught up — ${totalAdded} match${totalAdded > 1 ? "es" : ""} added across ${pass} pass${pass > 1 ? "es" : ""}${errNote}`
-            : `All players up to date${errNote}`,
+            ? `Synced ${data.synced ?? "all"} players — ${totalAdded} match${totalAdded > 1 ? "es" : ""} added${updatedNames ? ` (${updatedNames})` : ""}${errNote}`
+            : `All ${data.synced ?? ""} players up to date${errNote}`,
         });
         break;
       }
