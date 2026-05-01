@@ -310,7 +310,7 @@ const StatLabel = styled.span`
 const DurationPill = styled.span`
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
+  padding: 4px;
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   ${({ theme }) => theme.semantic.typography.label};

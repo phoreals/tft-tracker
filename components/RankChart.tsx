@@ -55,6 +55,21 @@ export const LINE_COLORS = [
   "#818cf8", // indigo
 ];
 
+// Dash patterns — paired with colors for an extra visual dimension.
+// 5 patterns cycle through the 10 colors (each pattern used twice, with different colors).
+const DASH_PATTERNS: (string | undefined)[] = [
+  undefined,  // solid
+  "6 3",      // dashed
+  "2 3",      // dotted
+  "8 3 2 3",  // dash-dot
+  "12 4",     // long dash
+  undefined,
+  "6 3",
+  "2 3",
+  "8 3 2 3",
+  "12 4",
+];
+
 // ── Styled ───────────────────────────────────────────────────────
 
 const ChartContainer = styled.div`
@@ -113,30 +128,73 @@ const LegendChip = styled.button<{ $hidden: boolean }>`
   }
 `;
 
-const LegendSwatch = styled.span<{ $color: string }>`
+const LegendSwatch = styled.span<{ $color: string; $dash?: string }>`
   display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
+  width: 18px;
+  height: 2px;
+  border-radius: 1px;
   background: ${({ $color }) => $color};
   flex-shrink: 0;
+  position: relative;
+`;
+
+const ClearChip = styled.button`
+  display: inline-flex;
+  align-items: center;
+  padding: 3px ${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  background: transparent;
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary};
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.06);
+  }
 `;
 
 // ── Constants ────────────────────────────────────────────────────
 
 // Tier base LP values and short display labels, ordered low→high.
-const TIER_BASES: { lp: number; short: string }[] = [
-  { lp: 0,    short: "Iron"    },
-  { lp: 400,  short: "Bronze"  },
-  { lp: 800,  short: "Silver"  },
-  { lp: 1200, short: "Gold"    },
-  { lp: 1600, short: "Plat"    },
-  { lp: 2000, short: "Em"      },
-  { lp: 2400, short: "Diamond" },
-  { lp: 2800, short: "Master"  },
-  { lp: 3200, short: "GM"      },
-  { lp: 3600, short: "Chal"    },
+const TIER_BASES: { lp: number; short: string; name: string }[] = [
+  { lp: 0,    short: "Iron",    name: "iron"        },
+  { lp: 400,  short: "Bronze",  name: "bronze"      },
+  { lp: 800,  short: "Silver",  name: "silver"      },
+  { lp: 1200, short: "Gold",    name: "gold"        },
+  { lp: 1600, short: "Plat",    name: "platinum"    },
+  { lp: 2000, short: "Em",      name: "emerald"     },
+  { lp: 2400, short: "Diamond", name: "diamond"     },
+  { lp: 2800, short: "Master",  name: "master"      },
+  { lp: 3200, short: "GM",      name: "grandmaster" },
+  { lp: 3600, short: "Chal",    name: "challenger"  },
 ];
+
+const EMBLEM_BASE = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests";
+
+const EMBLEM_SIZE = 16;
+
+function TierTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: number } }) {
+  if (x === undefined || y === undefined || !payload) return null;
+  const tier = TIER_BASES.find((t) => t.lp === payload.value);
+  if (!tier) return null;
+  return (
+    <image
+      href={`${EMBLEM_BASE}/${tier.name}_tft.svg`}
+      x={x - EMBLEM_SIZE - 2}
+      y={y - EMBLEM_SIZE / 2}
+      width={EMBLEM_SIZE}
+      height={EMBLEM_SIZE}
+    />
+  );
+}
 
 const PROFILE_ICON_BASE = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons";
 
@@ -163,20 +221,9 @@ function makeTooltip(hoveredPlayerRef: React.RefObject<string | null>) {
     if (!active || !payload?.length) return null;
 
     const hp = hoveredPlayerRef.current;
-    let entries: TooltipEntry[];
-    let truncated = false;
-
-    if (hp) {
-      entries = payload.filter((item) => item.name === hp);
-    } else {
-      const sorted = [...payload].sort((a, b) => b.value - a.value);
-      if (sorted.length > 3) {
-        entries = sorted.slice(0, 3);
-        truncated = true;
-      } else {
-        entries = sorted;
-      }
-    }
+    const entries: TooltipEntry[] = hp
+      ? payload.filter((item) => item.name === hp)
+      : [...payload].sort((a, b) => b.value - a.value);
 
     return (
       <div
@@ -200,11 +247,6 @@ function makeTooltip(hoveredPlayerRef: React.RefObject<string | null>) {
             </p>
           );
         })}
-        {truncated && (
-          <p style={{ color: CHART.tooltip.labelColor, margin: "2px 0", opacity: 0.5 }}>
-            …
-          </p>
-        )}
       </div>
     );
   };
@@ -291,6 +333,11 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
   const toggleHidden = (name: string) => {
     setHiddenPlayers((prev) => {
+      // All visible: solo this player (hide everyone else)
+      if (prev.size === 0) {
+        return new Set(players.filter((p) => p.gameName !== name).map((p) => p.gameName));
+      }
+      // Normal toggle
       const next = new Set(prev);
       if (next.has(name)) next.delete(name);
       else next.add(name);
@@ -374,11 +421,6 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
   const hasData = chartData.length > 0;
 
-  const tierTickFormatter = (value: number) => {
-    const tier = TIER_BASES.find((t) => t.lp === value);
-    return tier ? tier.short : "";
-  };
-
   return (
     <GlassCard title="Rank Over Time" icon={TrendingUp} prominent>
       <ChartContainer>
@@ -412,11 +454,10 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
               <YAxis
                 domain={yDomain}
                 ticks={yTicks}
-                tickFormatter={tierTickFormatter}
                 axisLine={false}
                 tickLine={false}
-                tick={CHART.tick}
-                width={56}
+                tick={TierTick as Parameters<typeof YAxis>[0]["tick"]}
+                width={24}
               />
 
               {/* Shade the selected week */}
@@ -432,8 +473,10 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
               <Tooltip content={<TooltipContent />} />
 
-              {visiblePlayers.map((p, i) => {
-                const color = LINE_COLORS[players.indexOf(p) % LINE_COLORS.length];
+              {visiblePlayers.map((p) => {
+                const globalIdx = players.indexOf(p);
+                const color = LINE_COLORS[globalIdx % LINE_COLORS.length];
+                const dash = DASH_PATTERNS[globalIdx % DASH_PATTERNS.length];
                 const lastIdx = lastValidIndices[p.gameName] ?? -1;
                 const isHovered = hoveredPlayer === p.gameName;
                 const anyHovered = hoveredPlayer !== null;
@@ -447,6 +490,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                     stroke={color}
                     strokeWidth={strokeW}
                     strokeOpacity={opacity}
+                    strokeDasharray={dash}
                     dot={makeProfileDot(p, color, lastIdx)}
                     activeDot={{ r: 4, stroke: color, strokeWidth: 2 }}
                     connectNulls
@@ -471,6 +515,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
         <LegendRow>
           {players.map((p, i) => {
             const color = LINE_COLORS[i % LINE_COLORS.length];
+            const dash = DASH_PATTERNS[i % DASH_PATTERNS.length];
             const isHidden = hiddenPlayers.has(p.gameName);
             return (
               <LegendChip
@@ -481,11 +526,27 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                 aria-label={`${isHidden ? "Show" : "Hide"} ${p.gameName}`}
                 onClick={() => toggleHidden(p.gameName)}
               >
-                <LegendSwatch $color={color} />
+                <svg width={18} height={10} style={{ flexShrink: 0 }}>
+                  <line
+                    x1={0} y1={5} x2={18} y2={5}
+                    stroke={color}
+                    strokeWidth={2}
+                    strokeDasharray={dash}
+                  />
+                </svg>
                 {p.gameName}
               </LegendChip>
             );
           })}
+          {hiddenPlayers.size > 0 && (
+            <ClearChip
+              type="button"
+              onClick={() => setHiddenPlayers(new Set())}
+              aria-label="Show all players"
+            >
+              Show all
+            </ClearChip>
+          )}
         </LegendRow>
       )}
     </GlassCard>

@@ -112,6 +112,7 @@ const BackLink = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
+  align-self: flex-start;
   transition: color 0.2s, background 0.2s;
 
   &:hover {

@@ -48,6 +48,7 @@ const BackLink = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
+  align-self: flex-start;
   transition: color 0.2s, background 0.2s;
 
   &:hover {
@@ -258,7 +259,7 @@ const RankBadge = styled.span<{ $isLead?: boolean }>`
   align-items: center;
   justify-content: center;
   min-width: 20px;
-  padding: 2px 4px;
+  padding: 4px;
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   font-family: ${({ theme }) => theme.semantic.font.display};

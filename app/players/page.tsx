@@ -41,7 +41,7 @@ const LockInput = styled.input`
   border: none;
   border-bottom: 2px solid ${({ theme }) => theme.component.input.borderColor};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
-  padding: ${({ theme }) => theme.primitive.spacing.sm} 0;
+  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.sm};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   text-align: center;
@@ -153,7 +153,7 @@ const Input = styled.input`
   border: none;
   border-bottom: 1px solid ${({ theme }) => theme.component.input.borderColor};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} 0;
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
   font-family: ${({ theme }) => theme.semantic.font.display};
   transition: border-color 0.2s;
   outline: none;
