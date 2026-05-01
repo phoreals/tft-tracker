@@ -90,8 +90,7 @@ const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean 
   margin: 0;
   font-family: ${({ $isError, theme }) =>
     $isError ? "monospace" : theme.semantic.font.display};
-  font-size: ${({ $isError, theme }) =>
-    $isError ? theme.primitive.fontSize.xs : theme.primitive.fontSize.sm};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   line-height: 1.5;
   color: ${({ $tone, theme }) =>
     $tone === "error"
