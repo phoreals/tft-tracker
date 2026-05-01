@@ -25,16 +25,21 @@ const Card = styled(Link)`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
-  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
+  padding: ${({ theme }) => theme.primitive.spacing.xs};
   background: ${({ theme }) => theme.semantic.color.borderDim};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    padding: ${({ theme }) => theme.primitive.spacing.md};
+  }
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   text-decoration: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 
   &:hover {
     border-color: ${({ theme }) => theme.semantic.color.borderHover};
     background: ${({ theme }) => theme.component.table.rowHoverBg};
+    box-shadow: ${({ theme }) => theme.semantic.shadow.glowGold};
   }
 `;
 
@@ -134,7 +139,6 @@ const SortBar = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  margin-bottom: ${({ theme }) => theme.primitive.spacing.sm};
 `;
 
 const SortPill = styled.button<{ $active: boolean }>`
@@ -145,11 +149,11 @@ const SortPill = styled.button<{ $active: boolean }>`
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
-  background: ${({ $active }) => $active ? "${({ theme }) => theme.semantic.color.accentBgHover}" : "transparent"};
+  background: ${({ $active, theme }) => $active ? theme.semantic.color.accentBgHover : "transparent"};
   color: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
   letter-spacing: 0.04em;
   cursor: pointer;

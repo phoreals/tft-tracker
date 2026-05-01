@@ -75,12 +75,12 @@ Accessed by clicking a summary stat card on the home page. Categories: `games`, 
 - Same sticky tab bar (Set 17 / Week 1–N)
 
 ### Content
-Two-column layout at `md`+: chart on the left, ranked player table on the right.
+Single-column stacked layout. The chart sits above the ranked table at 50% width.
 
-- **Games / Playtime**: donut chart showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
-- **Top 4 Rate / Win Rate**: squad average gauge (value + 4px progress bar with 50% reference mark).
+- **Games / Playtime**: donut chart (50% width) showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
+- **Top 4 Rate / Win Rate**: gauge section (50% width) showing squad average — large value + label + 4px progress bar with 50% reference mark.
 
-**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat + inline bar). Leader row has a subtle gold background. Bar fill = share of total (games/playtime) or ratio of max (rates).
+**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat + inline bar). Leader row has a subtle gold background. Bar fill = share of total (games/playtime) or ratio of max (rates). All values are non-negative so bars extend left-to-right.
 
 ### Player Performance Table
 
@@ -101,7 +101,7 @@ A `GlassCard` with a **view toggle** (table / card) in the header. Data and sort
 | 1st% | Scoped `(placements == 1) / total * 100` | Cyan text |
 | Time Played | Scoped playtime | |
 
-**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab.
+**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab. Cards have a `borderDim` background, `xs` padding mobile / `md` desktop, and a gold glow (`glowGold`) on hover.
 
 Empty state: centered message "No players tracked yet. Add players to get started." in both views.
 
@@ -109,10 +109,11 @@ Empty state: centered message "No players tracked yet. Add players to get starte
 
 A Recharts `LineChart` inside a `GlassCard`. Mode is driven entirely by the page-level tab — no internal controls on the chart. Plots **daily LP** (converted from tier + rank + lp) for all tracked players on a shared timeline.
 
-- Y-axis: tier names (Iron → Challenger) at 400 LP boundaries, domain auto-snapped to data range ± one tier
+- Y-axis: tier emblems at 400 LP boundaries + division labels (IV/III/II/I) at 100 LP intervals within each tier; domain auto-snapped to data range
 - X-axis: date (M/D), up to ~6 ticks, epoch timestamp scale
 - Selected week is shaded as a `ReferenceArea` (gold tint)
-- Each player's last valid data point shows their circular **profile picture** (24px, clipped to circle) with their `gameName` label to the right — no legend
+- **Legend** below the chart — one chip per player with colored circle swatch; click to solo/toggle; "Show all" button when any hidden
+- Hovering a line dims all others; tooltip follows cursor and portals to `document.body` for correct blur
 - Line colors avoid rank-tier hues; 10-color palette (pink, blue, orange, lime, fuchsia, sky, amber, mint, rose, indigo)
 
 Empty state: "No rank history yet. Sync to start tracking."
@@ -167,7 +168,9 @@ Accessed by clicking a superlative card on the Weekly Stats page. Category slugs
 - Same sticky tab bar as other pages (Set 17 / Week 1–N)
 
 ### Rankings Table
-Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline progress bar relative to leader). The leader's row has a subtle gold background highlight. All rank numbers are pill badges — gold for the leader, dim/muted for the rest — with a fixed `min-width` so they align vertically.
+Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. All rank numbers are pill badges — gold for the leader, dim/muted for the rest — with a fixed `min-width` so they align vertically.
+
+**Inline bar behavior**: For categories where values are always non-negative (most-games, best-top4, most-wins, most-time), the bar fills left-to-right proportional to the leader. For categories that can produce negative values (highest-lp, best-lp-per-game), a **centered bar** is used: a vertical center line divides the track, positive values extend gold to the right, negative values extend red to the left. The bar switches to centered mode automatically if any value in the current dataset is negative.
 
 ## Interaction States
 

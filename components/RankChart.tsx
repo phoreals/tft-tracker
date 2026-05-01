@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   LineChart,
   Line,
@@ -14,7 +15,7 @@ import {
 import styled from "styled-components";
 import { GlassCard } from "./GlassCard";
 import { TrendingUp } from "lucide-react";
-import { rankToLP, formatRank } from "@/lib/utils";
+import { rankToLP, formatRankAbbr, getRankColor } from "@/lib/utils";
 import type { HistorySnapshot } from "@/lib/kv";
 import { theme } from "@/styles/theme";
 
@@ -31,13 +32,18 @@ const CHART = {
     fontFamily: "Space Grotesk",
   },
   tooltip: {
-    bg:         theme.primitive.color.neutral850,
-    border:     `1px solid ${theme.semantic.color.borderDefault}`,
-    radius:     theme.primitive.radius.sm,
-    padding:    `${theme.primitive.spacing.xs} ${theme.primitive.spacing.sm}`,
-    fontFamily: "Space Grotesk",
-    fontSize:   theme.semantic.typography.label.fontSize,
-    labelColor: theme.primitive.color.neutral200,
+    bg:               "rgba(12, 20, 30, 0.6)",
+    backdropBlur:     "16px",
+    border:           `1px solid ${theme.semantic.color.borderDefault}`,
+    radius:           theme.primitive.radius.lg,
+    shadow:           theme.semantic.shadow.glassInset,
+    padding:          `${theme.primitive.spacing.sm} ${theme.primitive.spacing.md}`,
+    fontFamily:       "Space Grotesk",
+    fontSize:         theme.semantic.typography.label.fontSize,
+    labelColor:       theme.semantic.color.textMuted,
+    labelFontSize:    theme.semantic.typography.label.fontSize,
+    labelFontWeight:  String(theme.semantic.typography.label.fontWeight),
+    labelLetterSpacing: theme.semantic.typography.label.letterSpacing,
   },
 } as const;
 
@@ -80,14 +86,13 @@ const LegendRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  margin-top: ${({ theme }) => theme.primitive.spacing.xs};
 `;
 
 const LegendChip = styled.button<{ $hidden: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px ${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.xs};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   background: transparent;
@@ -113,14 +118,13 @@ const LegendChip = styled.button<{ $hidden: boolean }>`
   }
 `;
 
-const LegendSwatch = styled.span<{ $color: string; $dash?: string }>`
+const LegendSwatch = styled.span<{ $color: string }>`
   display: inline-block;
-  width: 18px;
-  height: 2px;
-  border-radius: 1px;
+  width: 8px;
+  height: 8px;
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
   background: ${({ $color }) => $color};
   flex-shrink: 0;
-  position: relative;
 `;
 
 const ClearChip = styled.button`
@@ -166,139 +170,164 @@ const EMBLEM_BASE = "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-s
 
 const EMBLEM_SIZE = 16;
 
-function TierTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: number } }) {
+const AXIS_EMBLEM = 14;
+const DIV_LABELS: Record<number, string> = { 0: "IV", 100: "III", 200: "II", 300: "I" };
+
+function RankTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: number } }) {
   if (x === undefined || y === undefined || !payload) return null;
-  const tier = TIER_BASES.find((t) => t.lp === payload.value);
-  if (!tier) return null;
+  const lp = payload.value;
+  const withinTier = lp % 400;
+  const tierBase = lp - withinTier;
+  const isHighTier = tierBase >= 2800; // Master/GM/Chal — no divisions
+  const tier = TIER_BASES.find((t) => t.lp === tierBase);
+
+  if (withinTier === 0) {
+    if (!tier) return null;
+    return (
+      <g>
+        <image
+          href={`${EMBLEM_BASE}/${tier.name}_tft.svg`}
+          x={x - AXIS_EMBLEM - 18}
+          y={y - AXIS_EMBLEM / 2}
+          width={AXIS_EMBLEM}
+          height={AXIS_EMBLEM}
+        />
+        {!isHighTier && (
+          <text
+            x={x - 2}
+            y={y}
+            textAnchor="end"
+            dominantBaseline="middle"
+            fill={CHART.tick.fill}
+            fontSize={CHART.tick.fontSize}
+            fontFamily={CHART.tick.fontFamily}
+            opacity={0.4}
+          >
+            IV
+          </text>
+        )}
+      </g>
+    );
+  }
+
+  if (isHighTier) return null;
   return (
-    <image
-      href={`${EMBLEM_BASE}/${tier.name}_tft.svg`}
-      x={x - EMBLEM_SIZE - 2}
-      y={y - EMBLEM_SIZE / 2}
-      width={EMBLEM_SIZE}
-      height={EMBLEM_SIZE}
-    />
+    <text
+      x={x - 2}
+      y={y}
+      textAnchor="end"
+      dominantBaseline="middle"
+      fill={CHART.tick.fill}
+      fontSize={CHART.tick.fontSize}
+      fontFamily={CHART.tick.fontFamily}
+      opacity={0.5}
+    >
+      {DIV_LABELS[withinTier]}
+    </text>
   );
 }
-
-const PROFILE_ICON_BASE = "https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons";
 
 function formatDateTick(ts: number): string {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-// ── Custom Tooltip ───────────────────────────────────────────────
+// ── Tooltip ───────────────────────────────────────────────────────
 
 interface TooltipEntry {
   color: string;
   name: string;
-  value: number;
+  value: number | undefined;
   payload: Record<string, unknown>;
 }
 
-function makeTooltip(hoveredPlayerRef: React.RefObject<string | null>) {
-  return function RankTooltip({ active, payload, label }: {
+function makePortalTooltip(
+  mousePos: React.RefObject<{ x: number; y: number }>,
+  hoveredPlayerRef: React.RefObject<string | null>,
+) {
+  return function PortalTooltip({ active, payload, label }: {
     active?: boolean;
     payload?: TooltipEntry[];
     label?: number;
   }) {
-    if (!active || !payload?.length) return null;
+    if (!active || !payload?.length || typeof document === "undefined") return null;
 
     const hp = hoveredPlayerRef.current;
-    const entries: TooltipEntry[] = hp
-      ? payload.filter((item) => item.name === hp)
-      : [...payload].sort((a, b) => b.value - a.value);
+    const entries = (hp
+      ? payload.filter((e) => e.name === hp)
+      : [...payload].sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
+    ).filter((e) => e.value != null);
 
-    return (
+    if (!entries.length) return null;
+
+    const { x, y } = mousePos.current;
+    const TOOLTIP_W = 200;
+    const flipLeft = x + 16 + TOOLTIP_W > window.innerWidth;
+    const leftPos  = flipLeft ? x - TOOLTIP_W - 8 : x + 16;
+
+    return createPortal(
       <div
         style={{
-          background:   CHART.tooltip.bg,
-          border:       CHART.tooltip.border,
-          borderRadius: CHART.tooltip.radius,
-          padding:      CHART.tooltip.padding,
-          fontFamily:   CHART.tooltip.fontFamily,
-          fontSize:     CHART.tooltip.fontSize,
+          position:             "fixed",
+          left:                 leftPos,
+          top:                  y - 20,
+          zIndex:               9999,
+          pointerEvents:        "none",
+          background:           CHART.tooltip.bg,
+          backdropFilter:       `blur(${CHART.tooltip.backdropBlur})`,
+          WebkitBackdropFilter: `blur(${CHART.tooltip.backdropBlur})`,
+          border:               CHART.tooltip.border,
+          borderRadius:         CHART.tooltip.radius,
+          boxShadow:            CHART.tooltip.shadow,
+          padding:              CHART.tooltip.padding,
+          fontFamily:           CHART.tooltip.fontFamily,
+          fontSize:             CHART.tooltip.fontSize,
+          minWidth:             160,
         }}
       >
-        <p style={{ color: CHART.tooltip.labelColor, marginBottom: 4 }}>
+        <p style={{
+          color:         CHART.tooltip.labelColor,
+          fontSize:      CHART.tooltip.labelFontSize,
+          fontWeight:    700,
+          letterSpacing: CHART.tooltip.labelLetterSpacing,
+          marginBottom:  10,
+        }}>
           {label != null ? formatDateTick(label) : ""}
         </p>
         {entries.map((item) => {
-          const rankLabel = item.payload[`${item.name}__label`];
+          const rankLabel = String(item.payload[`${item.name}__label`] ?? item.value);
+          const tier      = String(item.payload[`${item.name}__tier`] ?? "");
+          const rankColor = getRankColor(tier);
           return (
-            <p key={item.name} style={{ color: item.color, margin: "2px 0" }}>
-              {item.name}: {String(rankLabel ?? item.value)}
-            </p>
+            <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 6, margin: "3px 0" }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+              <span style={{ color: CHART.tick.fill, flex: 1 }}>{item.name}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto", paddingLeft: 16, flexShrink: 0 }}>
+                {tier && (
+                  <img
+                    src={`${EMBLEM_BASE}/${tier.toLowerCase()}_tft.svg`}
+                    width={EMBLEM_SIZE}
+                    height={EMBLEM_SIZE}
+                    alt={tier}
+                  />
+                )}
+                <span style={{ color: rankColor, fontWeight: 600 }}>{rankLabel}</span>
+              </span>
+            </div>
           );
         })}
-      </div>
+      </div>,
+      document.body,
     );
   };
 }
 
-// ── Profile dot ──────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────
 
 interface PlayerData {
   gameName: string;
   profileIconId?: number;
   history: HistorySnapshot[];
-}
-
-const DOT_R = 12; // radius of the profile pic circle
-
-function makeProfileDot(player: PlayerData, color: string, lastIdx: number) {
-  const uid = `pdot_${player.gameName.replace(/[^a-z0-9]/gi, "_")}`;
-  return function ProfileDot(props: {
-    cx?: number;
-    cy?: number;
-    index?: number;
-    payload?: Record<string, unknown>;
-  }) {
-    const { cx, cy, index, payload } = props;
-    if (cx === undefined || cy === undefined || index === undefined) return <g />;
-    if (payload?.[player.gameName] === undefined) return <g />;
-
-    // Last valid data point — render profile pic + name label.
-    if (index === lastIdx) {
-      return (
-        <g>
-          <defs>
-            <clipPath id={uid}>
-              <circle cx={cx} cy={cy} r={DOT_R} />
-            </clipPath>
-          </defs>
-          {player.profileIconId ? (
-            <image
-              href={`${PROFILE_ICON_BASE}/${player.profileIconId}.jpg`}
-              x={cx - DOT_R}
-              y={cy - DOT_R}
-              width={DOT_R * 2}
-              height={DOT_R * 2}
-              clipPath={`url(#${uid})`}
-              preserveAspectRatio="xMidYMid slice"
-            />
-          ) : (
-            <circle cx={cx} cy={cy} r={DOT_R} fill={color} opacity={0.25} />
-          )}
-          <circle cx={cx} cy={cy} r={DOT_R} fill="none" stroke={color} strokeWidth={1.5} />
-          <text
-            x={cx + DOT_R + 5}
-            y={cy + 4}
-            fill={color}
-            fontSize={10}
-            fontFamily="Space Grotesk"
-            fontWeight={600}
-          >
-            {player.gameName}
-          </text>
-        </g>
-      );
-    }
-
-    // All other data points — small dot.
-    return <circle cx={cx} cy={cy} r={2.5} fill={color} />;
-  };
 }
 
 // ── Component ────────────────────────────────────────────────────
@@ -313,8 +342,10 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
   const [hiddenPlayers, setHiddenPlayers] = useState<Set<string>>(new Set());
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
   const hoveredPlayerRef = useRef<string | null>(null);
-
-  const TooltipContent = useMemo(() => makeTooltip(hoveredPlayerRef), []);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mousePos = useRef({ x: 0, y: 0 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const TooltipContent = useMemo(() => makePortalTooltip(mousePos, hoveredPlayerRef), []);
 
   const toggleHidden = (name: string) => {
     setHiddenPlayers((prev) => {
@@ -339,7 +370,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
 
   // Build a unified daily timeline from all players' history snapshots.
-  const { chartData, yTicks, yDomain, lastValidIndices } = useMemo(() => {
+  const { chartData, yTicks, yDomain } = useMemo(() => {
     // Collect all unique date timestamps.
     const tsSet = new Set<number>();
     visiblePlayers.forEach((p) => {
@@ -363,20 +394,11 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
         const snap = p.history.find((h) => new Date(h.date).getTime() === ts);
         if (snap) {
           point[p.gameName] = rankToLP(snap.tier, snap.rank, snap.lp);
-          point[`${p.gameName}__label`] = formatRank(snap.tier, snap.rank, snap.lp);
+          point[`${p.gameName}__label`] = formatRankAbbr(snap.tier, snap.rank, snap.lp);
+          point[`${p.gameName}__tier`] = snap.tier;
         }
       });
       return point;
-    });
-
-    // Last index where each player has data.
-    const lastValidIndices: Record<string, number> = {};
-    visiblePlayers.forEach((p) => {
-      let last = -1;
-      data.forEach((pt, i) => {
-        if (pt[p.gameName] !== undefined) last = i;
-      });
-      lastValidIndices[p.gameName] = last;
     });
 
     // Compute Y-axis range from actual data, snapped to tier boundaries.
@@ -387,19 +409,22 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
     const rawMin = Math.min(...allLPValues);
     const rawMax = Math.max(...allLPValues);
 
-    // Snap to tier boundaries with one tier of padding on each side.
-    const minBase = Math.max(0, Math.floor(rawMin / 400) * 400 - 400);
-    const maxBase = Math.ceil(rawMax / 400) * 400 + 400;
+    // Snap to the tier boundaries that contain the actual data range.
+    const minBase = Math.max(0, Math.floor(rawMin / 400) * 400);
+    const maxBase = Math.min(3600, Math.ceil(rawMax / 400) * 400);
 
-    const ticks = TIER_BASES
-      .filter((t) => t.lp >= minBase && t.lp <= maxBase)
-      .map((t) => t.lp);
+    const ticks: number[] = [];
+    for (let lp = minBase; lp <= maxBase; lp += 100) {
+      const withinTier = lp % 400;
+      const tierBase = lp - withinTier;
+      if (tierBase >= 2800 && withinTier !== 0) continue; // no divisions in Master+
+      ticks.push(lp);
+    }
 
     return {
       chartData: data,
       yTicks: ticks,
       yDomain: [Math.max(0, minBase), maxBase] as [number, number],
-      lastValidIndices,
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [players, hiddenPlayers]);
@@ -408,14 +433,19 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
   return (
     <GlassCard title="Rank Over Time" icon={TrendingUp} prominent>
-      <ChartContainer>
+      <ChartContainer
+        ref={containerRef}
+        onMouseMove={(e) => { mousePos.current = { x: e.clientX, y: e.clientY }; }}
+        onTouchStart={(e) => { const t = e.touches[0]; if (t) mousePos.current = { x: t.clientX, y: t.clientY }; }}
+        onTouchMove={(e) => { const t = e.touches[0]; if (t) mousePos.current = { x: t.clientX, y: t.clientY }; }}
+      >
         {!hasData ? (
           <EmptyState>No rank history yet. Sync to start tracking.</EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={chartData}
-              margin={{ top: 16, right: 8, bottom: 0, left: 0 }}
+              margin={{ top: 16, right: 16, bottom: 0, left: 4 }}
               onMouseLeave={() => {
                 hoveredPlayerRef.current = null;
                 setHoveredPlayer(null);
@@ -441,8 +471,8 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                 ticks={yTicks}
                 axisLine={false}
                 tickLine={false}
-                tick={TierTick as Parameters<typeof YAxis>[0]["tick"]}
-                width={24}
+                tick={RankTick as Parameters<typeof YAxis>[0]["tick"]}
+                width={36}
               />
 
               {/* Shade the selected week */}
@@ -456,12 +486,15 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                 />
               )}
 
-              <Tooltip content={<TooltipContent />} />
+              <Tooltip
+                content={<TooltipContent />}
+                cursor={{ stroke: CHART.grid, strokeWidth: 1 }}
+                wrapperStyle={{ background: "none", border: "none", boxShadow: "none", padding: 0, pointerEvents: "none" }}
+              />
 
               {visiblePlayers.map((p) => {
                 const globalIdx = players.indexOf(p);
                 const color = LINE_COLORS[globalIdx % LINE_COLORS.length];
-                const lastIdx = lastValidIndices[p.gameName] ?? -1;
                 const isHovered = hoveredPlayer === p.gameName;
                 const anyHovered = hoveredPlayer !== null;
                 const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
@@ -474,7 +507,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                     stroke={color}
                     strokeWidth={strokeW}
                     strokeOpacity={opacity}
-                    dot={makeProfileDot(p, color, lastIdx)}
+                    dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
                     activeDot={{ r: 4, stroke: color, strokeWidth: 2 }}
                     connectNulls
                     isAnimationActive={false}
