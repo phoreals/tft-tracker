@@ -115,10 +115,20 @@ const Tbody = styled.tbody`
   }
 `;
 
-const SummonerCell = styled.div`
-  display: flex;
+const SummonerChip = styled(Link)`
+  display: inline-flex;
   align-items: center;
-  gap: ${({ theme }) => theme.primitive.spacing.sm};
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
+  margin-left: -${({ theme }) => theme.primitive.spacing.xs};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  text-decoration: none;
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  transition: background 0.2s;
+
+  &:hover {
+    background: rgba(229, 197, 135, 0.08);
+  }
 `;
 
 const SummonerIcon = styled.div`
@@ -136,21 +146,14 @@ const SummonerIcon = styled.div`
   color: ${({ theme }) => theme.semantic.color.accent};
 `;
 
-const SummonerName = styled(Link)`
+const SummonerName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  color: ${({ theme }) => theme.semantic.color.textPrimary};
   letter-spacing: 0.05em;
-  text-decoration: none;
-  transition: color 0.2s;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.md};
-  }
-
-  &:hover {
-    color: ${({ theme }) => theme.semantic.color.accent};
   }
 `;
 
@@ -261,16 +264,16 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
               {renderSortLabel("rankLP", "Rank")}
             </SortTh>
             <SortTh $active={sortKey === "games"} style={{ textAlign: "center" }} onClick={() => toggleSort("games")}>
-              {renderSortLabel("games", isSet ? "Total Games" : "Games This Week")}
+              {renderSortLabel("games", "Games")}
             </SortTh>
             <SortTh $active={sortKey === "top4Rate"} style={{ textAlign: "center" }} onClick={() => toggleSort("top4Rate")}>
               {renderSortLabel("top4Rate", "Top 4%")}
             </SortTh>
             <SortTh $active={sortKey === "firstRate"} style={{ textAlign: "center" }} onClick={() => toggleSort("firstRate")}>
-              {renderSortLabel("firstRate", "1st%")}
+              {renderSortLabel("firstRate", "Win%")}
             </SortTh>
             <SortTh $active={sortKey === "time"} style={{ textAlign: "right" }} onClick={() => toggleSort("time")}>
-              {renderSortLabel("time", "Time Played")}
+              {renderSortLabel("time", "Playtime")}
             </SortTh>
           </tr>
         </Thead>
@@ -283,7 +286,7 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
             rows.map((row) => (
               <tr key={row.puuid}>
                 <td>
-                  <SummonerCell>
+                  <SummonerChip href={`/player/${row.puuid}`}>
                     <SummonerIcon>
                       {row.profileIconId ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -298,8 +301,8 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
                         <User size={ICON_SIZE.md} />
                       )}
                     </SummonerIcon>
-                    <SummonerName href={`/player/${row.puuid}`}>{row.name}</SummonerName>
-                  </SummonerCell>
+                    <SummonerName>{row.name}</SummonerName>
+                  </SummonerChip>
                 </td>
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>

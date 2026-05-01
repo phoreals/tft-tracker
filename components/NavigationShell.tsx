@@ -27,6 +27,8 @@ const Main = styled.main<{ $sidebarOpen: boolean }>`
 
 const Content = styled.div`
   flex: 1;
+  display: flex;
+  flex-direction: column;
   padding: 0 ${({ theme }) => theme.primitive.spacing.sm};
   padding-bottom: calc(${({ theme }) => theme.component.bottomNav.height} + ${({ theme }) => theme.primitive.spacing.md});
   max-width: 1440px;

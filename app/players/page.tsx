@@ -78,7 +78,11 @@ const Page = styled.div`
   }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
-    min-height: calc(100dvh - 2 * ${({ theme }) => theme.primitive.spacing.xl});
+    /* border-box includes Page's own padding in the height.
+       Only subtract Content's padding-bottom so the total stack = 100dvh. */
+    box-sizing: border-box;
+    height: calc(100dvh - ${({ theme }) => theme.primitive.spacing.xl});
+    overflow: hidden;
   }
 `;
 
@@ -107,14 +111,14 @@ const PageDescription = styled.p`
 `;
 
 const Grid = styled.div`
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
-    grid-template-columns: 4fr 8fr;
-    grid-template-rows: 1fr;
+    flex-direction: row;
     flex: 1;
+    min-height: 0;
   }
 `;
 
@@ -122,7 +126,11 @@ const LeftColumn = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
-  align-self: start;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+    flex: 4;
+    align-self: flex-start;
+  }
 `;
 
 const FormGroup = styled.div`
@@ -432,6 +440,38 @@ const EmptyState = styled.div`
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
 `;
 
+// ── RankEmblem ───────────────────────────────────────────────────
+
+function RankEmblem({ tier, size, color }: { tier: string; size: number; color: string }) {
+  const [failed, setFailed] = React.useState(false);
+  if (failed) {
+    return (
+      <span
+        style={{
+          display: "inline-block",
+          width: size,
+          height: size,
+          borderRadius: 2,
+          background: color,
+          opacity: 0.85,
+          flexShrink: 0,
+        }}
+      />
+    );
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
+      alt=""
+      width={size}
+      height={size}
+      style={{ display: "block", flexShrink: 0 }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 // ── Types & Constants ────────────────────────────────────────────
 
 interface PlayerData {
@@ -646,7 +686,7 @@ export default function ManagePlayersPage() {
         <GlassCard
           title="Tracked Players"
           icon={Users}
-          style={{ minHeight: 0 }}
+          style={{ flex: 8, minHeight: 0 }}
           headerAction={
             <SyncBadge onClick={handleSync} disabled={syncing}>
               <RefreshCw
@@ -687,6 +727,9 @@ export default function ManagePlayersPage() {
                           <PlayerTag>#{player.tagLine}</PlayerTag>
                         </div>
                         <PlayerMeta>
+                          {player.current?.tier && (
+                            <RankEmblem tier={player.current.tier} size={14} color={rankColor} />
+                          )}
                           <TierLabel $color={rankColor}>
                             {player.current ? (
                               <>

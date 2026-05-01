@@ -626,12 +626,12 @@ export default function WeeklyStatsPage() {
         <div>
           <PageTitle>The Asylum TFT Tracker</PageTitle>
           <PageSubtitle>
-            {isSet
-              ? `${SET_LABEL} · ${formatShortDate(SET_START)}\u2009\u2013\u2009${formatShortDate(SET_END)}`
-              : (() => {
-                  const w = weeks[selectedTab as number];
-                  return w ? `${w.label} · ${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)}` : "";
-                })()}
+            {isSet ? (
+              <><strong>{SET_LABEL}</strong>{"\u2002·\u2002"}{formatShortDate(SET_START)}{"\u2009\u2013\u2009"}{formatShortDate(SET_END)}</>
+            ) : (() => {
+              const w = weeks[selectedTab as number];
+              return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
+            })()}
           </PageSubtitle>
         </div>
         <SyncWrap>
@@ -744,7 +744,7 @@ export default function WeeklyStatsPage() {
       <StatsGrid>
         <GlassCard>
           <StatRow>
-            <StatLabel>Games {summaryStats.label}</StatLabel>
+            <StatLabel>Games</StatLabel>
             <Gamepad2 size={ICON_SIZE.md} color={theme.semantic.color.accent} />
           </StatRow>
           <StatValue>{loading ? "..." : summaryStats.games}</StatValue>

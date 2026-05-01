@@ -44,9 +44,15 @@ const BackLink = styled(Link)`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textMuted};
   text-decoration: none;
-  transition: color 0.2s;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  transition: color 0.2s, background 0.2s;
 
-  &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.accent};
+    background: rgba(229, 197, 135, 0.08);
+  }
 `;
 
 const PageTitle = styled.h1`
@@ -171,7 +177,6 @@ const Tab = styled.button<{ $active: boolean }>`
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  margin-top: ${({ theme }) => theme.primitive.spacing.md};
 `;
 
 const Thead = styled.thead`
@@ -182,6 +187,10 @@ const Thead = styled.thead`
     text-align: left;
     padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.sm};
     border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
+  }
+  th:first-child {
+    padding-left: ${({ theme }) => theme.primitive.spacing.xs};
+    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
   }
 `;
 
@@ -240,14 +249,18 @@ const Tbody = styled.tbody`
     font-size: ${({ theme }) => theme.primitive.fontSize.sm};
     color: ${({ theme }) => theme.semantic.color.textPrimary};
   }
+  td:first-child {
+    padding-left: ${({ theme }) => theme.primitive.spacing.xs};
+    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
+  }
 `;
 
 const RankBadge = styled.span<{ $isLead?: boolean }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  padding: 2px 8px;
+  min-width: 20px;
+  padding: 2px 4px;
   border-radius: ${({ theme }) => theme.primitive.radius.full};
   background: ${({ $isLead }) => $isLead ? "rgba(229, 197, 135, 0.12)" : "rgba(208, 197, 181, 0.06)"};
   font-family: ${({ theme }) => theme.semantic.font.display};
@@ -284,12 +297,20 @@ const SummonerLink = styled(Link)`
   &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
 `;
 
-const BarFill = styled.div<{ $pct: number }>`
+const BarTrack = styled.div`
   height: 4px;
+  width: 100%;
+  background: ${({ theme }) => theme.component.table.borderColor};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  margin-top: 4px;
+  overflow: hidden;
+`;
+
+const BarFill = styled.div<{ $pct: number }>`
+  height: 100%;
   width: ${({ $pct }) => $pct}%;
   background: ${({ theme }) => theme.semantic.color.accent};
   border-radius: ${({ theme }) => theme.primitive.radius.full};
-  margin-top: 4px;
 `;
 
 const LeaderRow = styled.tr`
@@ -482,12 +503,12 @@ export default function SuperlativeDrilldownPage() {
       <div>
         <PageTitle>{cat.title}</PageTitle>
         <PageSubtitle>
-          {isSet
-            ? `Leaderboard · ${SET_LABEL} · ${formatShortDate(SET_START)}\u2009\u2013\u2009${formatShortDate(SET_END)}`
-            : (() => {
-                const w = weeks[selectedTab as number];
-                return w ? `Leaderboard · ${w.label} · ${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)}` : "Leaderboard";
-              })()}
+          {isSet ? (
+            <><strong>{SET_LABEL}</strong>{"\u2002·\u2002"}{formatShortDate(SET_START)}{"\u2009\u2013\u2009"}{formatShortDate(SET_END)}</>
+          ) : (() => {
+            const w = weeks[selectedTab as number];
+            return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
+          })()}
         </PageSubtitle>
       </div>
 
@@ -538,7 +559,7 @@ export default function SuperlativeDrilldownPage() {
             <Table>
               <Thead>
                 <tr>
-                  <th style={{ width: 28 }}>#</th>
+                  <th style={{ width: 28 }} />
                   <SortTh $active={sortCol === "name"} onClick={() => toggleSort("name")}>
                     <SortThInner>
                       Summoner
@@ -590,7 +611,7 @@ export default function SuperlativeDrilldownPage() {
                       </td>
                       <td style={{ textAlign: "right" }}>
                         <div>{cat.format(val)}</div>
-                        <BarFill $pct={maxVal > 0 ? (Math.abs(val) / maxVal) * 100 : 0} />
+                        <BarTrack><BarFill $pct={maxVal > 0 ? (Math.abs(val) / maxVal) * 100 : 0} /></BarTrack>
                       </td>
                     </Row>
                   );

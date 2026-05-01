@@ -108,10 +108,14 @@ const BackLink = styled(Link)`
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textMuted};
   text-decoration: none;
-  transition: color 0.2s;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  transition: color 0.2s, background 0.2s;
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.accent};
+    background: rgba(229, 197, 135, 0.08);
   }
 `;
 
@@ -874,12 +878,12 @@ export default function PlayerDrilldownPage() {
       </PlayerHeader>
 
       <PageSubtitle>
-        {isSet
-          ? `${SET_LABEL} · ${formatDisplayDate(SET_START)}\u2009\u2013\u2009${formatDisplayDate(SET_END)}`
-          : (() => {
-              const w = weeks[selectedTab as number];
-              return w ? `${w.label} · ${formatDisplayDate(w.start)}\u2009\u2013\u2009${formatDisplayDate(w.end)}` : "";
-            })()}
+        {isSet ? (
+          <><strong>{SET_LABEL}</strong>{"\u2002·\u2002"}{formatDisplayDate(SET_START)}{"\u2009\u2013\u2009"}{formatDisplayDate(SET_END)}</>
+        ) : (() => {
+          const w = weeks[selectedTab as number];
+          return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(w.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(w.end)}</> : null;
+        })()}
       </PageSubtitle>
 
       <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
@@ -922,7 +926,7 @@ export default function PlayerDrilldownPage() {
       <StatsGrid>
         <GlassCard>
           <StatRow>
-            <StatLabel>Games {isSet ? SET_LABEL : weeks[selectedTab as number]?.weekNumber ? `Week ${weeks[selectedTab as number].weekNumber}` : "This Week"}</StatLabel>
+            <StatLabel>Games</StatLabel>
             <Gamepad2 size={ICON_SIZE.sm} color={CHART.gold} />
           </StatRow>
           <StatValue>

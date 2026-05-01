@@ -14,11 +14,13 @@ const Card = styled(motion.div)`
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   display: flex;
   flex-direction: column;
+  gap: ${({ theme }) => theme.primitive.spacing.md};
   position: relative;
   overflow: hidden;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     padding: ${({ theme }) => theme.component.glassCard.padding};
+    gap: ${({ theme }) => theme.primitive.spacing.lg};
   }
 `;
 
@@ -28,11 +30,6 @@ const Header = styled.div`
   justify-content: space-between;
   flex-wrap: wrap;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
-  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    margin-bottom: ${({ theme }) => theme.primitive.spacing.lg};
-  }
 `;
 
 const Title = styled.h3<{ $prominent?: boolean }>`
