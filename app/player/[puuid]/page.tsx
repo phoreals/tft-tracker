@@ -45,12 +45,13 @@ const CHART = {
     fontFamily: "Space Grotesk",
   },
   tooltip: {
-    bg:         theme.primitive.color.neutral850,
+    bg:         "rgba(12, 20, 30, 0.92)",
     border:     `1px solid ${theme.semantic.color.borderDefault}`,
-    radius:     theme.primitive.radius.sm,
+    radius:     theme.primitive.radius.lg,
+    shadow:     theme.semantic.shadow.glassInset,
     fontFamily: "Space Grotesk",
     fontSize:   theme.semantic.typography.label.fontSize,
-    labelColor: theme.primitive.color.neutral200,
+    labelColor: theme.semantic.color.textMuted,
   },
   gold:    theme.primitive.color.gold300,
   cyan:    theme.primitive.color.cyan500,
@@ -214,8 +215,8 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   position: sticky;
   top: 0;
   z-index: 20;
-  transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
-  backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
+  transition: box-shadow 0.2s, border-color 0.2s;
+  ${({ $isSticky }) => $isSticky ? "-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);" : ""}
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   box-shadow: ${({ $isSticky, theme }) => $isSticky ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}` : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
@@ -355,7 +356,6 @@ const StatRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
 `;
 
 const StatLabel = styled.span`
@@ -463,7 +463,7 @@ const SyncButton = styled.button`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
@@ -1007,6 +1007,7 @@ export default function PlayerDrilldownPage() {
                     backgroundColor: CHART.tooltip.bg,
                     border: CHART.tooltip.border,
                     borderRadius: CHART.tooltip.radius,
+                    boxShadow: CHART.tooltip.shadow,
                     fontFamily: CHART.tooltip.fontFamily,
                     fontSize: CHART.tooltip.fontSize,
                   }}
@@ -1063,6 +1064,7 @@ export default function PlayerDrilldownPage() {
                     backgroundColor: CHART.tooltip.bg,
                     border: CHART.tooltip.border,
                     borderRadius: CHART.tooltip.radius,
+                    boxShadow: CHART.tooltip.shadow,
                     fontFamily: CHART.tooltip.fontFamily,
                     fontSize: CHART.tooltip.fontSize,
                   }}
