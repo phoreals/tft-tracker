@@ -72,11 +72,8 @@ const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
         : $tone === "warn"
           ? theme.semantic.shadow.glowGold
           : "none"};
-  /* icon is 14px inside a 28px button → 7px inset per side;
-     subtract that from the base padding so the icon's visual edge
-     aligns with the text's left edge */
-  padding: ${({ theme }) => theme.primitive.spacing.md};
-  padding-right: calc(${({ theme }) => theme.primitive.spacing.md} - (28px - 14px) / 2);
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
+  padding-right: calc(${({ theme }) => theme.primitive.spacing.sm} - (28px - 14px) / 2);
   min-height: 36px;
   display: flex;
   align-items: flex-start;
