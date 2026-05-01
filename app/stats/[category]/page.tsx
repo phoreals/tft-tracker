@@ -204,7 +204,6 @@ const DonutTotal = styled.span`
 const DonutLabel = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: clamp(8px, 1.5dvw, 11px);
-  letter-spacing: 0.06em;
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   margin-top: 3px;
   text-align: center;
@@ -229,7 +228,6 @@ const GaugeLabel = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
-  letter-spacing: 0.06em;
 `;
 
 const GaugeTrack = styled.div`

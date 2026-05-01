@@ -43,7 +43,6 @@ const CHART = {
     labelColor:       theme.semantic.color.textMuted,
     labelFontSize:    theme.semantic.typography.label.fontSize,
     labelFontWeight:  String(theme.semantic.typography.label.fontWeight),
-    labelLetterSpacing: theme.semantic.typography.label.letterSpacing,
   },
 } as const;
 
@@ -334,7 +333,6 @@ function makePortalTooltip(
           color:         CHART.tooltip.labelColor,
           fontSize:      CHART.tooltip.labelFontSize,
           fontWeight:    700,
-          letterSpacing: CHART.tooltip.labelLetterSpacing,
           marginBottom:  10,
         }}>
           {label != null ? formatDateTick(label) : ""}

@@ -74,7 +74,6 @@ const PlayerName = styled.div`
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
-  letter-spacing: 0.04em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -122,7 +121,6 @@ const StatValue = styled.span`
 const StatLabel = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: 8px;
-  letter-spacing: 0.05em;
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   white-space: nowrap;
 `;
@@ -156,7 +154,6 @@ const SortPill = styled.button<{ $active: boolean }>`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
-  letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 0.15s;
 

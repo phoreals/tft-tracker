@@ -179,7 +179,6 @@ const StatUnit = styled.span`
   font-size: 0.55em;
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
-  letter-spacing: 0.03em;
 `;
 
 const SuperlativesGrid = styled.div`

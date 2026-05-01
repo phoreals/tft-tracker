@@ -193,7 +193,6 @@ const PlayerTag = styled.span`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   text-transform: none;
-  letter-spacing: 0;
 `;
 
 const PageSubtitle = styled.p`
@@ -362,7 +361,6 @@ const QueueBadge = styled.span<{ $ranked: boolean | undefined }>`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: 9px;
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  letter-spacing: 0.06em;
   padding: 1px 5px;
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $ranked, theme }) =>

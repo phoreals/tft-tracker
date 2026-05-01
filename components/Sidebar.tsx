@@ -82,7 +82,6 @@ const BrandTitle = styled.span`
   font-weight: ${({ theme }) => theme.primitive.fontWeight.black};
   color: ${({ theme }) => theme.semantic.color.accent};
   text-transform: uppercase;
-  letter-spacing: -0.025em;
   line-height: 1.1;
 `;
 

@@ -145,20 +145,17 @@ export const semantic = {
     heading: {
       fontFamily: primitive.font.display,
       fontWeight: primitive.fontWeight.bold,
-      letterSpacing: "-0.05em",
     },
     label: {
       fontFamily: primitive.font.display,
       fontSize: "12px",
       fontWeight: primitive.fontWeight.bold,
-      letterSpacing: "0.05em",
       lineHeight: 1,
     },
     data: {
       fontFamily: primitive.font.display,
       fontSize: "14px",
       fontWeight: primitive.fontWeight.medium,
-      letterSpacing: "0.02em",
       lineHeight: 1,
     },
     body: {

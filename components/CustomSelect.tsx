@@ -31,7 +31,6 @@ const Trigger = styled.button<{ $open: boolean }>`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
-  letter-spacing: 0.05em;
   cursor: pointer;
   text-align: left;
   transition: border-color 0.15s, background 0.15s;
@@ -99,7 +98,6 @@ const OptionItem = styled.li<{ $selected: boolean; $focused: boolean }>`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
-  letter-spacing: 0.05em;
 
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgHover};

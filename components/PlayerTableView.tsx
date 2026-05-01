@@ -33,7 +33,6 @@ const Table = styled.table`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
-  letter-spacing: 0.02em;
   border-collapse: collapse;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -49,7 +48,6 @@ const Thead = styled.thead`
     padding: ${({ theme }) => theme.primitive.spacing.xs};
     font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
     font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
-    letter-spacing: 0.05em;
     color: ${({ theme }) => theme.semantic.color.textDisabled};
 
     @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -168,7 +166,6 @@ const SummonerName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  letter-spacing: 0.05em;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.md};
