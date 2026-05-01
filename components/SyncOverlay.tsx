@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { X, Copy, Check, RefreshCw } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
 
@@ -19,6 +19,19 @@ interface SyncOverlayProps {
   onDismiss: () => void;
 }
 
+// ── Animations ──────────────────────────────────────────────────
+
+const slideIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
 // ── Styled ──────────────────────────────────────────────────────
 
 const Backdrop = styled.div`
@@ -28,6 +41,7 @@ const Backdrop = styled.div`
   z-index: 9000;
   max-width: 420px;
   width: calc(100% - ${({ theme }) => theme.primitive.spacing.lg} * 2);
+  animation: ${slideIn} 0.2s ease-out;
 
   @media (max-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     left: ${({ theme }) => theme.primitive.spacing.md};
@@ -35,21 +49,24 @@ const Backdrop = styled.div`
     width: auto;
     max-width: none;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
 `;
 
 const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
-  background: rgba(12, 20, 30, 0.85);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ $tone, theme }) =>
     $tone === "error"
       ? theme.semantic.color.danger
       : $tone === "warn"
-        ? theme.semantic.color.borderHover
+        ? theme.semantic.color.accent
         : theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.lg};
-  box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset},
-    0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset};
   padding: ${({ theme }) => theme.primitive.spacing.md};
   display: flex;
   align-items: flex-start;
@@ -63,12 +80,20 @@ const SpinnerIcon = styled(RefreshCw)`
   margin-top: 2px;
 `;
 
-const Message = styled.p<{ $tone: "muted" | "warn" | "error" }>`
+const MessageWrap = styled.div`
   flex: 1;
+  min-width: 0;
+  max-height: 200px;
+  overflow-y: auto;
+`;
+
+const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean }>`
   margin: 0;
-  font-family: ${({ theme }) => theme.semantic.font.body};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  line-height: 1.4;
+  font-family: ${({ $isError, theme }) =>
+    $isError ? "monospace" : theme.semantic.font.display};
+  font-size: ${({ $isError, theme }) =>
+    $isError ? theme.primitive.fontSize.xs : theme.primitive.fontSize.sm};
+  line-height: 1.5;
   color: ${({ $tone, theme }) =>
     $tone === "error"
       ? theme.semantic.color.danger
@@ -93,6 +118,8 @@ const IconButton = styled.button`
   justify-content: center;
   width: 28px;
   height: 28px;
+  min-height: 44px;
+  min-width: 44px;
   border: none;
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   background: transparent;
@@ -103,6 +130,11 @@ const IconButton = styled.button`
   &:hover {
     background: ${({ theme }) => theme.semantic.color.borderDim};
     color: ${({ theme }) => theme.semantic.color.textPrimary};
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    min-height: 28px;
+    min-width: 28px;
   }
 `;
 
@@ -116,7 +148,7 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
   // Auto-dismiss success messages after 5s
   useEffect(() => {
     if (!status || syncing) return;
-    if (status.tone === "error") return; // errors persist
+    if (status.tone === "error") return;
     const id = setTimeout(onDismiss, AUTO_DISMISS_MS);
     return () => clearTimeout(id);
   }, [status, syncing, onDismiss]);
@@ -138,12 +170,17 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
 
   const showDismiss = !syncing;
   const showCopy = status.tone === "error";
+  const isError = status.tone === "error";
 
   return createPortal(
     <Backdrop>
       <Card $tone={status.tone}>
         {syncing && <SpinnerIcon size={ICON_SIZE.sm} />}
-        <Message $tone={status.tone}>{status.message}</Message>
+        <MessageWrap>
+          <Message $tone={status.tone} $isError={isError}>
+            {status.message}
+          </Message>
+        </MessageWrap>
         <Actions>
           {showCopy && (
             <IconButton
