@@ -497,7 +497,8 @@ function PortalTooltip({ text, children }: { text: string; children: React.React
   let style: { left: number; top: number } | null = null;
   if (hovered && elRef.current) {
     const rect = elRef.current.getBoundingClientRect();
-    let left = rect.right - TOOLTIP_W;
+    // Center tooltip horizontally on the element
+    let left = rect.left + rect.width / 2 - TOOLTIP_W / 2;
     let top = rect.top - TOOLTIP_H - GAP;
     if (top < 4) top = rect.bottom + GAP;
     left = Math.max(4, Math.min(left, window.innerWidth - TOOLTIP_W - 4));
