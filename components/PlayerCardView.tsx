@@ -6,7 +6,8 @@ import Link from "next/link";
 import { User } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
 import { getRankColor } from "@/lib/utils";
-import type { PlayerRowData } from "@/hooks/usePlayerRows";
+import { SortChevron } from "./SortChevron";
+import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -129,6 +130,51 @@ const EmptyState = styled.div`
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
 `;
 
+const SortBar = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  margin-bottom: ${({ theme }) => theme.primitive.spacing.sm};
+`;
+
+const SortPill = styled.button<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border: 1px solid ${({ $active, theme }) =>
+    $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+  background: ${({ $active }) => $active ? "rgba(229, 197, 135, 0.08)" : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+    color: ${({ $active, theme }) =>
+      $active ? theme.semantic.color.accent : theme.semantic.color.textPrimary};
+  }
+
+  @media (hover: none) {
+    &:hover {
+      border-color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+      color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+    }
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.06);
+  }
+`;
+
 // ── RankEmblem ───────────────────────────────────────────────────
 
 function RankEmblem({ tier, color }: { tier: string; color: string }) {
@@ -167,11 +213,42 @@ function RankEmblem({ tier, color }: { tier: string; color: string }) {
 interface PlayerCardViewProps {
   rows: PlayerRowData[];
   isSet: boolean;
+  sortKey: SortKey | null;
+  sortDir: "asc" | "desc";
+  toggleSort: (key: SortKey) => void;
 }
 
-export function PlayerCardView({ rows, isSet }: PlayerCardViewProps) {
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "rankLP",    label: "Rank"    },
+  { key: "games",     label: "Games"   },
+  { key: "top4Rate",  label: "Top 4%"  },
+  { key: "firstRate", label: "Win%"    },
+  { key: "time",      label: "Playtime" },
+];
+
+export function PlayerCardView({ rows, isSet, sortKey, sortDir, toggleSort }: PlayerCardViewProps) {
   return (
-    <Grid>
+    <>
+      <SortBar role="group" aria-label="Sort players">
+        {SORT_OPTIONS.map(({ key, label }) => {
+          const isActive = sortKey === key;
+          const dir = isActive ? sortDir : "desc";
+          return (
+            <SortPill
+              key={key}
+              type="button"
+              $active={isActive}
+              aria-pressed={isActive}
+              aria-label={`Sort by ${label} ${dir === "desc" ? "descending" : "ascending"}`}
+              onClick={() => toggleSort(key)}
+            >
+              {label}
+              <SortChevron direction={dir} />
+            </SortPill>
+          );
+        })}
+      </SortBar>
+      <Grid>
       {rows.length === 0 ? (
         <EmptyState>No players tracked yet. Add players to get started.</EmptyState>
       ) : (
@@ -232,5 +309,6 @@ export function PlayerCardView({ rows, isSet }: PlayerCardViewProps) {
         ))
       )}
     </Grid>
+    </>
   );
 }

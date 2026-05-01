@@ -49,7 +49,13 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
           isSet={isSet}
         />
       ) : (
-        <PlayerCardView rows={sortedRows} isSet={isSet} />
+        <PlayerCardView
+          rows={sortedRows}
+          isSet={isSet}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          toggleSort={toggleSort}
+        />
       )}
     </GlassCard>
   );
