@@ -109,6 +109,7 @@ const Actions = styled.div`
   align-items: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   flex-shrink: 0;
+  padding: ${({ theme }) => theme.primitive.spacing.xs} 0;
 `;
 
 const IconButton = styled.button`
