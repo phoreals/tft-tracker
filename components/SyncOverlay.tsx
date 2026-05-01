@@ -85,6 +85,7 @@ const MessageWrap = styled.div`
   min-width: 0;
   max-height: 200px;
   overflow-y: auto;
+  padding: ${({ theme }) => theme.primitive.spacing.xs} 0;
 `;
 
 const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean }>`
