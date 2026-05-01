@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   LineChart,
   Line,
@@ -42,7 +42,7 @@ const CHART = {
 } as const;
 
 // Distinct line colors — chosen to avoid rank-tier hues (no gold/green/teal/purple).
-const LINE_COLORS = [
+export const LINE_COLORS = [
   "#f472b6", // pink
   "#60a5fa", // blue
   "#fb923c", // orange
@@ -58,11 +58,11 @@ const LINE_COLORS = [
 // ── Styled ───────────────────────────────────────────────────────
 
 const ChartContainer = styled.div`
-  height: 220px;
+  height: 260px;
   width: 100%;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    height: 288px;
+    height: 360px;
   }
 `;
 
@@ -74,6 +74,52 @@ const EmptyState = styled.div`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
+`;
+
+const LegendRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  margin-top: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const LegendChip = styled.button<{ $hidden: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px ${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  background: transparent;
+  color: ${({ theme }) => theme.semantic.color.textSecondary};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  cursor: pointer;
+  opacity: ${({ $hidden }) => ($hidden ? 0.35 : 1)};
+  transition: opacity 0.15s, border-color 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+
+  @media (hover: none) {
+    &:hover {
+      border-color: ${({ theme }) => theme.semantic.color.borderDefault};
+    }
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.06);
+  }
+`;
+
+const LegendSwatch = styled.span<{ $color: string }>`
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: ${({ $color }) => $color};
+  flex-shrink: 0;
 `;
 
 // ── Constants ────────────────────────────────────────────────────
@@ -108,36 +154,60 @@ interface TooltipEntry {
   payload: Record<string, unknown>;
 }
 
-function RankTooltip({ active, payload, label }: {
-  active?: boolean;
-  payload?: TooltipEntry[];
-  label?: number;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div
-      style={{
-        background:   CHART.tooltip.bg,
-        border:       CHART.tooltip.border,
-        borderRadius: CHART.tooltip.radius,
-        padding:      CHART.tooltip.padding,
-        fontFamily:   CHART.tooltip.fontFamily,
-        fontSize:     CHART.tooltip.fontSize,
-      }}
-    >
-      <p style={{ color: CHART.tooltip.labelColor, marginBottom: 4 }}>
-        {label != null ? formatDateTick(label) : ""}
-      </p>
-      {payload.map((item) => {
-        const rankLabel = item.payload[`${item.name}__label`];
-        return (
-          <p key={item.name} style={{ color: item.color, margin: "2px 0" }}>
-            {item.name}: {String(rankLabel ?? item.value)}
+function makeTooltip(hoveredPlayerRef: React.RefObject<string | null>) {
+  return function RankTooltip({ active, payload, label }: {
+    active?: boolean;
+    payload?: TooltipEntry[];
+    label?: number;
+  }) {
+    if (!active || !payload?.length) return null;
+
+    const hp = hoveredPlayerRef.current;
+    let entries: TooltipEntry[];
+    let truncated = false;
+
+    if (hp) {
+      entries = payload.filter((item) => item.name === hp);
+    } else {
+      const sorted = [...payload].sort((a, b) => b.value - a.value);
+      if (sorted.length > 3) {
+        entries = sorted.slice(0, 3);
+        truncated = true;
+      } else {
+        entries = sorted;
+      }
+    }
+
+    return (
+      <div
+        style={{
+          background:   CHART.tooltip.bg,
+          border:       CHART.tooltip.border,
+          borderRadius: CHART.tooltip.radius,
+          padding:      CHART.tooltip.padding,
+          fontFamily:   CHART.tooltip.fontFamily,
+          fontSize:     CHART.tooltip.fontSize,
+        }}
+      >
+        <p style={{ color: CHART.tooltip.labelColor, marginBottom: 4 }}>
+          {label != null ? formatDateTick(label) : ""}
+        </p>
+        {entries.map((item) => {
+          const rankLabel = item.payload[`${item.name}__label`];
+          return (
+            <p key={item.name} style={{ color: item.color, margin: "2px 0" }}>
+              {item.name}: {String(rankLabel ?? item.value)}
+            </p>
+          );
+        })}
+        {truncated && (
+          <p style={{ color: CHART.tooltip.labelColor, margin: "2px 0", opacity: 0.5 }}>
+            …
           </p>
-        );
-      })}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 }
 
 // ── Profile dot ──────────────────────────────────────────────────
@@ -213,6 +283,23 @@ interface RankChartProps {
 }
 
 export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
+  const [hiddenPlayers, setHiddenPlayers] = useState<Set<string>>(new Set());
+  const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
+  const hoveredPlayerRef = useRef<string | null>(null);
+
+  const TooltipContent = useMemo(() => makeTooltip(hoveredPlayerRef), []);
+
+  const toggleHidden = (name: string) => {
+    setHiddenPlayers((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  };
+
+  const visiblePlayers = players.filter((p) => !hiddenPlayers.has(p.gameName));
+
   // The highlighted week — always the selected week, or the latest week for "This Set".
   const highlightWeek =
     selectedTab === "set"
@@ -223,7 +310,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
   const { chartData, yTicks, yDomain, lastValidIndices } = useMemo(() => {
     // Collect all unique date timestamps.
     const tsSet = new Set<number>();
-    players.forEach((p) => {
+    visiblePlayers.forEach((p) => {
       p.history.forEach((h) => tsSet.add(new Date(h.date).getTime()));
     });
     const allTs = [...tsSet].sort((a, b) => a - b);
@@ -240,7 +327,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
     // Build data points: one per day, one LP value per player.
     const data = allTs.map((ts) => {
       const point: Record<string, number | string> = { ts };
-      players.forEach((p) => {
+      visiblePlayers.forEach((p) => {
         const snap = p.history.find((h) => new Date(h.date).getTime() === ts);
         if (snap) {
           point[p.gameName] = rankToLP(snap.tier, snap.rank, snap.lp);
@@ -252,7 +339,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
     // Last index where each player has data.
     const lastValidIndices: Record<string, number> = {};
-    players.forEach((p) => {
+    visiblePlayers.forEach((p) => {
       let last = -1;
       data.forEach((pt, i) => {
         if (pt[p.gameName] !== undefined) last = i;
@@ -262,7 +349,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
     // Compute Y-axis range from actual data, snapped to tier boundaries.
     const allLPValues: number[] = [];
-    players.forEach((p) => {
+    visiblePlayers.forEach((p) => {
       p.history.forEach((h) => allLPValues.push(rankToLP(h.tier, h.rank, h.lp)));
     });
     const rawMin = Math.min(...allLPValues);
@@ -282,7 +369,8 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
       yDomain: [Math.max(0, minBase), maxBase] as [number, number],
       lastValidIndices,
     };
-  }, [players]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players, hiddenPlayers]);
 
   const hasData = chartData.length > 0;
 
@@ -298,7 +386,14 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
           <EmptyState>No rank history yet. Sync to start tracking.</EmptyState>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 16, right: 8, bottom: 0, left: 0 }}>
+            <LineChart
+              data={chartData}
+              margin={{ top: 16, right: 8, bottom: 0, left: 0 }}
+              onMouseLeave={() => {
+                hoveredPlayerRef.current = null;
+                setHoveredPlayer(null);
+              }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
 
               <XAxis
@@ -311,7 +406,6 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                 tick={CHART.tick}
                 tickFormatter={formatDateTick}
                 dy={10}
-                // Show ~6 ticks max to avoid crowding.
                 tickCount={6}
               />
 
@@ -322,7 +416,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                 axisLine={false}
                 tickLine={false}
                 tick={CHART.tick}
-                width={48}
+                width={56}
               />
 
               {/* Shade the selected week */}
@@ -336,22 +430,35 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                 />
               )}
 
-              <Tooltip content={<RankTooltip />} />
+              <Tooltip content={<TooltipContent />} />
 
-              {players.map((p, i) => {
-                const color = LINE_COLORS[i % LINE_COLORS.length];
+              {visiblePlayers.map((p, i) => {
+                const color = LINE_COLORS[players.indexOf(p) % LINE_COLORS.length];
                 const lastIdx = lastValidIndices[p.gameName] ?? -1;
+                const isHovered = hoveredPlayer === p.gameName;
+                const anyHovered = hoveredPlayer !== null;
+                const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
+                const strokeW = anyHovered ? (isHovered ? 2.5 : 1) : 2;
                 return (
                   <Line
                     key={p.gameName}
                     type="monotone"
                     dataKey={p.gameName}
                     stroke={color}
-                    strokeWidth={2}
+                    strokeWidth={strokeW}
+                    strokeOpacity={opacity}
                     dot={makeProfileDot(p, color, lastIdx)}
                     activeDot={{ r: 4, stroke: color, strokeWidth: 2 }}
                     connectNulls
                     isAnimationActive={false}
+                    onMouseEnter={() => {
+                      hoveredPlayerRef.current = p.gameName;
+                      setHoveredPlayer(p.gameName);
+                    }}
+                    onMouseLeave={() => {
+                      hoveredPlayerRef.current = null;
+                      setHoveredPlayer(null);
+                    }}
                   />
                 );
               })}
@@ -359,6 +466,28 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
           </ResponsiveContainer>
         )}
       </ChartContainer>
+
+      {players.length > 0 && (
+        <LegendRow>
+          {players.map((p, i) => {
+            const color = LINE_COLORS[i % LINE_COLORS.length];
+            const isHidden = hiddenPlayers.has(p.gameName);
+            return (
+              <LegendChip
+                key={p.gameName}
+                type="button"
+                $hidden={isHidden}
+                aria-pressed={!isHidden}
+                aria-label={`${isHidden ? "Show" : "Hide"} ${p.gameName}`}
+                onClick={() => toggleHidden(p.gameName)}
+              >
+                <LegendSwatch $color={color} />
+                {p.gameName}
+              </LegendChip>
+            );
+          })}
+        </LegendRow>
+      )}
     </GlassCard>
   );
 }
