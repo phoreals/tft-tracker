@@ -72,7 +72,11 @@ const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
         : $tone === "warn"
           ? theme.semantic.shadow.glowGold
           : "none"};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
+  /* icon is 14px inside a 28px button → 7px inset per side;
+     subtract that from the base padding so the icon's visual edge
+     aligns with the text's left edge */
+  padding: ${({ theme }) => theme.primitive.spacing.md};
+  padding-right: calc(${({ theme }) => theme.primitive.spacing.md} - (28px - 14px) / 2);
   min-height: 36px;
   display: flex;
   align-items: flex-start;
@@ -84,7 +88,6 @@ const MessageWrap = styled.div`
   min-width: 0;
   max-height: 200px;
   overflow-y: auto;
-  padding: ${({ theme }) => theme.primitive.spacing.xs} 0;
 `;
 
 const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean }>`
