@@ -37,10 +37,13 @@ components/
 ├── PlayerTableView.tsx     Table view for player stats — <table> with sortable headers.
 ├── PlayerCardView.tsx      Card view for player stats — CSS Grid, auto-fill columns, each player a card.
 ├── PlaytimeDisplay.tsx     Reusable playtime formatter with portal tooltip. Three variants: full, hours, short.
+├── TabNavigation.tsx       Shared sticky tab bar + mobile dropdown. Props: selectedTab, onTabChange, weeks.
 └── RankChart.tsx           Recharts LineChart. Y-axis tick tooltips via portal. Props: hideLegend, lineColors.
 
 hooks/
-└── usePlayerRows.ts        Data + sort logic for player stats. Returns sortedRows, sortKey, sortDir, toggleSort.
+├── usePlayerRows.ts        Data + sort logic for player stats. Returns sortedRows, sortKey, sortDir, toggleSort.
+├── useSelectedTab.ts       URL-aware tab state. Reads ?tab= param, falls back to current week.
+└── useTabNavigation.ts     useFullBleedSticky + useScrollFade hooks for the sticky tab bar.
 
 styles/
 ├── tokens.ts              Three-layer design token system (primitive → semantic → component).

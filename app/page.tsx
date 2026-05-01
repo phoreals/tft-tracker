@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import styled from "styled-components";
 import { RefreshCw, Clock, Trophy, Gamepad2, User } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
-import { CustomSelect } from "@/components/CustomSelect";
+import { TabNavigation } from "@/components/TabNavigation";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
 import { getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
+import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
@@ -118,101 +119,6 @@ const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
         : theme.semantic.color.textMuted};
   margin: 0;
   white-space: pre-line;
-`;
-
-const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  transition: box-shadow 0.2s, border-color 0.2s;
-  ${({ $isSticky }) => $isSticky ? "-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);" : ""}
-  border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  box-shadow: ${({ $isSticky, theme }) => $isSticky ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}` : "none"};
-  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
-  margin-right: -${({ theme }) => theme.primitive.spacing.sm};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    margin-left: calc(-${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px));
-    margin-right: calc(-${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px));
-    padding: ${({ theme }) => theme.primitive.spacing.xs} calc(${({ theme }) => theme.primitive.spacing.xl} + var(--bleed-extra, 0px));
-  }
-`;
-
-const PageTabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
-  display: none;
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: flex;
-    align-items: stretch;
-    gap: ${({ theme }) => theme.primitive.spacing.xs};
-    overflow-x: auto;
-    mask-image: ${({ $fadeLeft, $fadeRight }) => {
-      if ($fadeLeft && $fadeRight)
-        return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
-      if ($fadeLeft)
-        return "linear-gradient(to right, transparent, black 48px)";
-      if ($fadeRight)
-        return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
-      return "none";
-    }};
-    -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
-      if ($fadeLeft && $fadeRight)
-        return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
-      if ($fadeLeft)
-        return "linear-gradient(to right, transparent, black 48px)";
-      if ($fadeRight)
-        return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
-      return "none";
-    }};
-
-    &::-webkit-scrollbar {
-      height: 3px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: transparent;
-      border-radius: ${({ theme }) => theme.primitive.radius.full};
-      transition: background 0.2s;
-    }
-    &:hover::-webkit-scrollbar-thumb {
-      background: ${({ theme }) => theme.semantic.color.borderDefault};
-    }
-  }
-`;
-
-const MobileSelectWrap = styled.div`
-  display: block;
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: none;
-  }
-`;
-
-const PageTab = styled.button<{ $active: boolean }>`
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.md};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  border: 1px solid ${({ $active, theme }) =>
-    $active ? theme.semantic.color.borderHover : "transparent"};
-  background: ${({ $active, theme }) =>
-    $active ? theme.semantic.color.accentHover : "transparent"};
-  color: ${({ $active, theme }) =>
-    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-  flex-shrink: 0;
-
-  &:hover {
-    color: ${({ theme }) => theme.semantic.color.textPrimary};
-    background: ${({ $active, theme }) =>
-      $active ? theme.semantic.color.accentHover : theme.semantic.color.borderDim};
-  }
-
-  &:active {
-    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
-  }
 `;
 
 const StatsGrid = styled.div`
@@ -446,58 +352,6 @@ function renderStatValue(s: string): React.ReactNode {
   return s;
 }
 
-function useFullBleedSticky() {
-  const [stickyEl, setStickyEl] = useState<HTMLDivElement | null>(null);
-  const [isSticky, setIsSticky] = useState(false);
-
-  const stickyRef = useCallback((node: HTMLDivElement | null) => setStickyEl(node), []);
-
-  useEffect(() => {
-    if (!stickyEl) return;
-    const check = () => setIsSticky(stickyEl.getBoundingClientRect().top <= 1);
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    return () => window.removeEventListener("scroll", check);
-  }, [stickyEl]);
-
-  useEffect(() => {
-    if (!stickyEl) return;
-    const main = stickyEl.closest("main");
-    if (!main) return;
-    const update = () => {
-      const extra = Math.max(0, (main.getBoundingClientRect().width - 1440) / 2);
-      stickyEl.style.setProperty("--bleed-extra", `${extra}px`);
-    };
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(main);
-    return () => ro.disconnect();
-  }, [stickyEl]);
-
-  return { stickyRef, isSticky };
-}
-
-function useScrollFade(ref: React.RefObject<HTMLDivElement | null>) {
-  const [fadeLeft, setFadeLeft] = useState(false);
-  const [fadeRight, setFadeRight] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const update = () => {
-      setFadeLeft(el.scrollLeft > 2);
-      setFadeRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
-    };
-    update();
-    el.addEventListener("scroll", update, { passive: true });
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
-  }, [ref]);
-
-  return { fadeLeft, fadeRight };
-}
-
 // ── Component ────────────────────────────────────────────────────
 
 export default function WeeklyStatsPage() {
@@ -507,33 +361,7 @@ export default function WeeklyStatsPage() {
   const [syncStatus, setSyncStatus] = useState<{ tone: "muted" | "warn" | "error"; message: string } | null>(null);
 
   const weeks = useMemo(() => getSetWeeks(), []);
-
-  const [selectedTab, setSelectedTab] = useState<"set" | number>(() => {
-    const tabParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tab") : null;
-    if (tabParam === "set") return "set";
-    if (tabParam !== null) {
-      const n = parseInt(tabParam, 10);
-      if (!isNaN(n)) return n;
-    }
-    const now = Date.now();
-    const ws = getSetWeeks();
-    let idx = 0;
-    for (let i = 0; i < ws.length; i++) {
-      if (ws[i].start <= now) idx = i;
-    }
-    return idx;
-  });
-
-  const tabBarRef = useRef<HTMLDivElement>(null);
-  const { stickyRef, isSticky } = useFullBleedSticky();
-  const { fadeLeft, fadeRight } = useScrollFade(tabBarRef);
-
-  useEffect(() => {
-    const bar = tabBarRef.current;
-    if (!bar) return;
-    const active = bar.querySelector("[data-active='true']") as HTMLElement | null;
-    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [selectedTab]);
+  const [selectedTab, setSelectedTab] = useSelectedTab();
 
   const fetchPlayers = useCallback(async () => {
     try {
@@ -688,43 +516,7 @@ export default function WeeklyStatsPage() {
         </SyncWrap>
       </PageHeader>
 
-      <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
-        {/* Mobile: dropdown */}
-        <MobileSelectWrap>
-          <CustomSelect
-            value={selectedTab === "set" ? "set" : String(selectedTab)}
-            onChange={(v) => setSelectedTab(v === "set" ? "set" : parseInt(v, 10))}
-            options={[
-              { value: "set", label: SET_LABEL },
-              ...weeks.map((w, i) => ({
-                value: String(i),
-                label: `${w.label} (${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)})`,
-              })),
-            ]}
-          />
-        </MobileSelectWrap>
-
-        {/* Desktop: tab bar */}
-        <PageTabBar ref={tabBarRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
-          <PageTab
-            $active={selectedTab === "set"}
-            data-active={selectedTab === "set" ? "true" : undefined}
-            onClick={() => setSelectedTab("set")}
-          >
-            Set 17
-          </PageTab>
-          {weeks.map((w, i) => (
-            <PageTab
-              key={i}
-              $active={selectedTab === i}
-              data-active={selectedTab === i ? "true" : undefined}
-              onClick={() => setSelectedTab(i)}
-            >
-              {w.label}
-            </PageTab>
-          ))}
-        </PageTabBar>
-      </StickyTabWrap>
+      <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 
       <SuperlativesGrid>
         {(loading || superlatives.length === 0
