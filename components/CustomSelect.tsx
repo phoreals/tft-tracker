@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import styled from "styled-components";
 import { Check, ChevronDown } from "lucide-react";
 
@@ -11,6 +12,8 @@ const Wrapper = styled.div`
   width: 100%;
 `;
 
+// Trigger: transparent enough to show the StickyTabWrap's blur through it.
+// backdrop-filter intentionally omitted — the parent StickyTabWrap handles it.
 const Trigger = styled.button<{ $open: boolean }>`
   display: flex;
   align-items: center;
@@ -19,7 +22,8 @@ const Trigger = styled.button<{ $open: boolean }>`
   width: 100%;
   min-height: 44px;
   padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
-  background: ${({ theme }) => theme.component.glassCard.bg};
+  background: ${({ $open, theme }) =>
+    $open ? theme.semantic.color.accentBgHover : "rgba(12, 20, 30, 0.4)"};
   border: 1px solid ${({ $open, theme }) =>
     $open ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
@@ -30,7 +34,7 @@ const Trigger = styled.button<{ $open: boolean }>`
   letter-spacing: 0.05em;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 
   &:focus {
     outline: none;
@@ -38,7 +42,7 @@ const Trigger = styled.button<{ $open: boolean }>`
   }
 
   &:active {
-    background: rgba(229, 197, 135, 0.04);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 `;
 
@@ -50,16 +54,19 @@ const ChevronIcon = styled.span<{ $open: boolean }>`
   transform: ${({ $open }) => ($open ? "rotate(180deg)" : "rotate(0deg)")};
 `;
 
-const OptionList = styled.ul`
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 50;
+// OptionList renders via portal to document.body so it escapes any parent
+// stacking context (sticky + backdrop-filter), allowing its own blur to work.
+const OptionList = styled.ul<{ $top: number; $left: number; $width: number }>`
+  position: fixed;
+  top: ${({ $top }) => $top}px;
+  left: ${({ $left }) => $left}px;
+  width: ${({ $width }) => $width}px;
+  z-index: 9999;
   margin: 0;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} 0;
   list-style: none;
-  background: ${({ theme }) => theme.component.glassCard.bg};
+  background: rgba(12, 20, 30, 0.6);
+  -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
@@ -122,23 +129,50 @@ interface CustomSelectProps {
 export function CustomSelect({ options, value, onChange, className }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const [listRect, setListRect] = useState({ top: 0, left: 0, width: 0 });
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   const selectedIndex = options.findIndex((o) => o.value === value);
   const selectedLabel = options[selectedIndex]?.label ?? value;
 
+  // Measure trigger position for the fixed-position portal
+  const measureTrigger = () => {
+    if (!triggerRef.current) return;
+    const r = triggerRef.current.getBoundingClientRect();
+    setListRect({ top: r.bottom + 4, left: r.left, width: r.width });
+  };
+
+  const handleOpen = () => {
+    measureTrigger();
+    setOpen((o) => !o);
+  };
+
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      const inWrapper = wrapperRef.current?.contains(target);
+      const inList = listRef.current?.contains(target);
+      if (!inWrapper && !inList) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // Re-measure on scroll/resize so the portal stays aligned
+  useEffect(() => {
+    if (!open) return;
+    const update = () => measureTrigger();
+    window.addEventListener("scroll", update, { passive: true, capture: true });
+    window.addEventListener("resize", update, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", update, { capture: true });
+      window.removeEventListener("resize", update);
+    };
+  }, [open]);
 
   // Scroll selected into view on open
   useEffect(() => {
@@ -153,6 +187,7 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
   const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
       e.preventDefault();
+      measureTrigger();
       setOpen(true);
       setFocusedIndex(selectedIndex >= 0 ? selectedIndex : 0);
     }
@@ -185,14 +220,55 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
     }
   }, [focusedIndex, open]);
 
+  const list = open ? (
+    <OptionList
+      ref={listRef}
+      role="listbox"
+      aria-label="Select option"
+      $top={listRect.top}
+      $left={listRect.left}
+      $width={listRect.width}
+      onKeyDown={handleListKeyDown}
+    >
+      {options.map((opt, i) => {
+        const isSelected = opt.value === value;
+        const isFocused = i === focusedIndex;
+        return (
+          <OptionItem
+            key={opt.value}
+            role="option"
+            aria-selected={isSelected}
+            $selected={isSelected}
+            $focused={isFocused}
+            tabIndex={isFocused ? 0 : -1}
+            ref={(el) => { itemRefs.current[i] = el; }}
+            onMouseEnter={() => setFocusedIndex(i)}
+            onClick={() => {
+              onChange(opt.value);
+              setOpen(false);
+            }}
+          >
+            <span>{opt.label}</span>
+            {isSelected && (
+              <CheckIcon>
+                <Check size={14} />
+              </CheckIcon>
+            )}
+          </OptionItem>
+        );
+      })}
+    </OptionList>
+  ) : null;
+
   return (
     <Wrapper ref={wrapperRef} className={className}>
       <Trigger
+        ref={triggerRef}
         type="button"
         $open={open}
         aria-haspopup="listbox"
         aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleOpen}
         onKeyDown={handleTriggerKeyDown}
       >
         <span>{selectedLabel}</span>
@@ -201,42 +277,7 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
         </ChevronIcon>
       </Trigger>
 
-      {open && (
-        <OptionList
-          ref={listRef}
-          role="listbox"
-          aria-label="Select option"
-          onKeyDown={handleListKeyDown}
-        >
-          {options.map((opt, i) => {
-            const isSelected = opt.value === value;
-            const isFocused = i === focusedIndex;
-            return (
-              <OptionItem
-                key={opt.value}
-                role="option"
-                aria-selected={isSelected}
-                $selected={isSelected}
-                $focused={isFocused}
-                tabIndex={isFocused ? 0 : -1}
-                ref={(el) => { itemRefs.current[i] = el; }}
-                onMouseEnter={() => setFocusedIndex(i)}
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                }}
-              >
-                <span>{opt.label}</span>
-                {isSelected && (
-                  <CheckIcon>
-                    <Check size={14} />
-                  </CheckIcon>
-                )}
-              </OptionItem>
-            );
-          })}
-        </OptionList>
-      )}
+      {typeof document !== "undefined" && createPortal(list, document.body)}
     </Wrapper>
   );
 }

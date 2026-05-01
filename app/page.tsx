@@ -65,7 +65,7 @@ const SyncButton = styled.button`
   align-items: center;
   align-self: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.lg};
+  padding: ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
@@ -123,8 +123,8 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   position: sticky;
   top: 0;
   z-index: 20;
-  transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
-  backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
+  transition: box-shadow 0.2s, border-color 0.2s;
+  ${({ $isSticky }) => $isSticky ? "-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);" : ""}
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   box-shadow: ${({ $isSticky, theme }) => $isSticky ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}` : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
@@ -230,15 +230,19 @@ const StatsGrid = styled.div`
 
 const StatRow = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
+  flex-direction: column;
+  align-items: flex-start;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
 `;
 
 const StatLabel = styled.span`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textMuted};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: 12px;
+  }
 `;
 
 const DurationPill = styled.span`
@@ -279,7 +283,6 @@ const PlayerChip = styled(Link)`
   align-self: flex-start;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  margin-top: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
   margin-left: -${({ theme }) => theme.primitive.spacing.xs};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
@@ -322,12 +325,17 @@ const ChipName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textSecondary};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 `;
 
 const SuperlativeCardLink = styled(Link)`
   text-decoration: none;
   color: inherit;
   display: flex;
+  min-width: 0;
   border-radius: ${({ theme }) => theme.component.glassCard.radius};
   transition: transform 0.15s;
 

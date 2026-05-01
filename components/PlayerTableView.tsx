@@ -47,13 +47,13 @@ const Thead = styled.thead`
   th {
     padding: ${({ theme }) => theme.primitive.spacing.xs};
     font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-    font-size: 8px;
+    font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
     letter-spacing: 0.05em;
     color: ${({ theme }) => theme.semantic.color.textDisabled};
 
     @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
       padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
-      font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+      font-size: 12px;
     }
   }
 `;

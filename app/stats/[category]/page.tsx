@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
 import { ArrowLeft, Gamepad2, Clock, Trophy, User } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { CustomSelect } from "@/components/CustomSelect";
 import { GlassCard } from "@/components/GlassCard";
 import { LINE_COLORS } from "@/components/RankChart";
@@ -164,8 +164,8 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   position: sticky;
   top: 0;
   z-index: 20;
-  transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
-  backdrop-filter: ${({ $isSticky }) => ($isSticky ? "blur(16px)" : "none")};
+  transition: box-shadow 0.2s, border-color 0.2s;
+  ${({ $isSticky }) => $isSticky ? "-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);" : ""}
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   box-shadow: ${({ $isSticky, theme }) => ($isSticky ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}` : "none")};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
@@ -244,14 +244,9 @@ const Tab = styled.button<{ $active: boolean }>`
 `;
 
 const ContentGrid = styled.div`
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.lg};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    grid-template-columns: auto 1fr;
-    align-items: start;
-    gap: ${({ theme }) => theme.primitive.spacing.xl};
-  }
 `;
 
 const DonutSection = styled.div`
@@ -259,12 +254,13 @@ const DonutSection = styled.div`
   flex-direction: column;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
+  width: 100%;
 `;
 
 const DonutWrap = styled.div`
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: clamp(200px, 80dvw, 460px);
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -281,7 +277,7 @@ const DonutCenter = styled.div`
 
 const DonutTotal = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xl};
+  font-size: clamp(18px, 5dvw, 32px);
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   line-height: 1;
@@ -289,7 +285,7 @@ const DonutTotal = styled.span`
 
 const DonutLabel = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: 8px;
+  font-size: clamp(8px, 1.5dvw, 11px);
   letter-spacing: 0.06em;
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   margin-top: 3px;
@@ -300,7 +296,7 @@ const GaugeSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  min-width: 160px;
+  width: 50%;
 `;
 
 const GaugeValue = styled.span`
@@ -671,15 +667,16 @@ export default function StatsDrilldownPage() {
             {cat.isShare ? (
               <DonutSection>
                 <DonutWrap>
-                  <PieChart width={160} height={160}>
+                  <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
                     <Pie
                       data={rows.filter((r) => r.value > 0)}
                       dataKey="value"
                       nameKey="gameName"
                       cx="50%"
                       cy="50%"
-                      innerRadius={48}
-                      outerRadius={72}
+                      innerRadius="55%"
+                      outerRadius="80%"
                       strokeWidth={0}
                       isAnimationActive={false}
                     >
@@ -693,14 +690,16 @@ export default function StatsDrilldownPage() {
                         name as string,
                       ]}
                       contentStyle={{
-                        background: theme.primitive.color.neutral850,
+                        background: "rgba(12, 20, 30, 0.92)",
                         border: `1px solid ${theme.semantic.color.borderDefault}`,
-                        borderRadius: theme.primitive.radius.sm,
+                        borderRadius: theme.primitive.radius.lg,
+                        boxShadow: theme.semantic.shadow.glassInset,
                         fontFamily: "Space Grotesk",
-                        fontSize: 11,
+                        fontSize: theme.semantic.typography.label.fontSize,
                       }}
                     />
                   </PieChart>
+                  </ResponsiveContainer>
                   <DonutCenter>
                     <DonutTotal>{aggregateLabel}</DonutTotal>
                     <DonutLabel>TOTAL</DonutLabel>

@@ -35,8 +35,13 @@ const Header = styled.div`
 const Title = styled.h3<{ $prominent?: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ $prominent, theme }) =>
-    $prominent ? theme.primitive.fontSize.md : "12px"};
+    $prominent ? theme.primitive.fontSize.md : theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ $prominent, theme }) =>
+      $prominent ? theme.primitive.fontSize.md : "12px"};
+  }
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};

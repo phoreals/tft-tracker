@@ -89,8 +89,8 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   position: sticky;
   top: 0;
   z-index: 20;
-  transition: backdrop-filter 0.2s, box-shadow 0.2s, border-color 0.2s;
-  backdrop-filter: ${({ $isSticky }) => $isSticky ? "blur(16px)" : "none"};
+  transition: box-shadow 0.2s, border-color 0.2s;
+  ${({ $isSticky }) => $isSticky ? "-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);" : ""}
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   box-shadow: ${({ $isSticky, theme }) => $isSticky ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}` : "none"};
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
@@ -314,6 +314,37 @@ const BarFill = styled.div<{ $pct: number }>`
   border-radius: ${({ theme }) => theme.primitive.radius.full};
 `;
 
+// Centered bar for categories where values can be negative (LP gain, LP/game)
+const BiBarTrack = styled.div`
+  position: relative;
+  height: 4px;
+  width: 100%;
+  background: ${({ theme }) => theme.component.table.borderColor};
+  margin-top: 4px;
+`;
+
+const BiBarCenter = styled.div`
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: ${({ theme }) => theme.semantic.color.borderHover};
+  z-index: 1;
+`;
+
+const BiBarFill = styled.div<{ $pct: number; $positive: boolean }>`
+  position: absolute;
+  height: 100%;
+  top: 0;
+  background: ${({ $positive, theme }) =>
+    $positive ? theme.semantic.color.accent : theme.semantic.color.danger};
+  ${({ $positive, $pct }) =>
+    $positive
+      ? `left: 50%; width: ${$pct / 2}%;`
+      : `right: 50%; width: ${$pct / 2}%;`}
+`;
+
 const LeaderRow = styled.tr`
   background: ${({ theme }) => theme.semantic.color.accentBgSubtle} !important;
 `;
@@ -491,6 +522,7 @@ export default function SuperlativeDrilldownPage() {
 
   const leader = cat ? findLeader(stats, cat) : null;
   const maxVal = ranked.length > 0 ? Math.max(...ranked.map((r) => Math.abs((r[cat!.key] as number) ?? 0))) : 1;
+  const hasNegative = ranked.some((r) => ((r[cat!.key] as number) ?? 0) < 0);
 
   if (!cat) return <LoadingText>Category not found.</LoadingText>;
 
@@ -611,7 +643,17 @@ export default function SuperlativeDrilldownPage() {
                       </td>
                       <td style={{ textAlign: "right" }}>
                         <div>{cat.format(val)}</div>
-                        <BarTrack><BarFill $pct={maxVal > 0 ? (Math.abs(val) / maxVal) * 100 : 0} /></BarTrack>
+                        {hasNegative ? (
+                          <BiBarTrack>
+                            <BiBarCenter />
+                            <BiBarFill
+                              $pct={maxVal > 0 ? (Math.abs(val) / maxVal) * 100 : 0}
+                              $positive={val >= 0}
+                            />
+                          </BiBarTrack>
+                        ) : (
+                          <BarTrack><BarFill $pct={maxVal > 0 ? (Math.abs(val) / maxVal) * 100 : 0} /></BarTrack>
+                        )}
                       </td>
                     </Row>
                   );
