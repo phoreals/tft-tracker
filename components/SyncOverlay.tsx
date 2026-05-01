@@ -77,7 +77,7 @@ const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
   min-height: 36px;
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.primitive.spacing.sm};
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
 `;
 
 const MessageWrap = styled.div`
