@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "WebSearch",
+      "Bash(npx next:*)",
+      "Bash(xargs -I{} ls /Users/dvu40/test-dev/{}/)",
+      "Bash(ls /Users/dvu40/test-dev/package*)",
+      "Bash(NEXT_TURBOPACK=0 npx next build)",
+      "WebFetch(domain:developer.riotgames.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)"
     ]
   }
 }
