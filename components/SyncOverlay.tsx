@@ -60,16 +60,22 @@ const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ $tone, theme }) =>
     $tone === "error"
-      ? theme.semantic.color.danger
+      ? `${theme.semantic.color.danger}66`
       : $tone === "warn"
         ? theme.semantic.color.accent
         : theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.lg};
-  box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset};
+  box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset},
+    ${({ $tone, theme }) =>
+      $tone === "error"
+        ? `0 0 15px ${theme.semantic.color.danger}26`
+        : $tone === "warn"
+          ? theme.semantic.shadow.glowGold
+          : "none"};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
   min-height: 36px;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 `;
 
@@ -99,7 +105,7 @@ const Message = styled.p<{ $tone: "muted" | "warn" | "error"; $isError: boolean 
 
 const Actions = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   flex-shrink: 0;
 `;
