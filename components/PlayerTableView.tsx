@@ -175,6 +175,16 @@ const SummonerName = styled.span`
   }
 `;
 
+const SummonerTag = styled.span`
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  }
+`;
+
 const RankFull = styled.span`
   display: none;
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -354,7 +364,7 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
                         <User size={ICON_SIZE.md} />
                       )}
                     </SummonerIcon>
-                    <SummonerName>{row.name}</SummonerName>
+                    <SummonerName>{row.gameName}<SummonerTag>#{row.tagLine}</SummonerTag></SummonerName>
                   </SummonerChip>
                 </td>
                 <td>

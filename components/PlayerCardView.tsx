@@ -82,7 +82,7 @@ const PlayerName = styled.div`
 
 const PlayerTag = styled.span`
   font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-  color: ${({ theme }) => theme.semantic.color.textMuted};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 `;
 

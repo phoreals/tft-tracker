@@ -190,7 +190,7 @@ const MobileSelectWrap = styled.div`
 
 const PageTab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-size: ${({ theme }) => theme.primitive.fontSize.md};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $active, theme }) =>
@@ -269,6 +269,13 @@ const StatValue = styled.span`
   }
 `;
 
+const StatUnit = styled.span`
+  font-size: 0.55em;
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  letter-spacing: 0.03em;
+`;
+
 const SuperlativesGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -310,8 +317,8 @@ const PlayerChip = styled(Link)`
 `;
 
 const ChipIcon = styled.div`
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   overflow: hidden;
@@ -330,6 +337,12 @@ const ChipName = styled.span`
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+`;
+
+const ChipTag = styled.span`
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
 `;
 
 const SuperlativeCardLink = styled(Link)`
@@ -397,6 +410,40 @@ function formatShortDate(ts: number): string {
     month: "short",
     day: "numeric",
   });
+}
+
+function renderStatValue(s: string): React.ReactNode {
+  if (!s || s === "—" || s === "...") return s;
+  // Plain integer (game count, win count)
+  if (/^\d+$/.test(s)) return s;
+  // Time format: "1d 23h 24m" — dim the unit letters
+  if (/\d+[dhm]/.test(s)) {
+    const segments: React.ReactNode[] = [];
+    const regex = /(\d+)([dhm])\s*/g;
+    let last = 0;
+    let match: RegExpExecArray | null;
+    while ((match = regex.exec(s)) !== null) {
+      if (match.index > last) segments.push(s.slice(last, match.index));
+      segments.push(match[1]);
+      segments.push(<StatUnit key={match.index}>{match[2]} </StatUnit>);
+      last = match.index + match[0].length;
+    }
+    if (last < s.length) segments.push(s.slice(last));
+    return <>{segments}</>;
+  }
+  // LP/game: "4.3 LP/game"
+  if (s.endsWith(" LP/game")) return <>{s.slice(0, -8)}<StatUnit> LP/game</StatUnit></>;
+  // LP with optional sign: "+45 LP" or "-20 LP"
+  if (s.endsWith(" LP")) {
+    const num = s.slice(0, -3);
+    if (num[0] === "+" || num[0] === "-") {
+      return <><StatUnit>{num[0]}</StatUnit>{num.slice(1)}<StatUnit> LP</StatUnit></>;
+    }
+    return <>{num}<StatUnit> LP</StatUnit></>;
+  }
+  // Percentage: "62.5%"
+  if (s.endsWith("%")) return <>{s.slice(0, -1)}<StatUnit>%</StatUnit></>;
+  return s;
 }
 
 function useFullBleedSticky() {
@@ -690,7 +737,7 @@ export default function WeeklyStatsPage() {
                 <StatLabel>{s.label}</StatLabel>
                 <DurationPill>{s.period}</DurationPill>
               </StatRow>
-              <StatValue>{s.value}</StatValue>
+              <StatValue>{renderStatValue(s.value)}</StatValue>
               {s.player && (
                 <PlayerChip href={`/player/${s.player.puuid}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                   <ChipIcon>
@@ -698,15 +745,15 @@ export default function WeeklyStatsPage() {
                       <img
                         src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${s.player.profileIconId}.jpg`}
                         alt=""
-                        width={24}
-                        height={24}
+                        width={18}
+                        height={18}
                         style={{ display: "block" }}
                       />
                     ) : (
-                      <User size={ICON_SIZE.sm} />
+                      <User size={14} />
                     )}
                   </ChipIcon>
-                  <ChipName>{s.player.gameName}#{s.player.tagLine}</ChipName>
+                  <ChipName>{s.player.gameName}<ChipTag>#{s.player.tagLine}</ChipTag></ChipName>
                 </PlayerChip>
               )}
             </GlassCard>
@@ -765,7 +812,7 @@ export default function WeeklyStatsPage() {
               <Trophy size={ICON_SIZE.md} color={theme.semantic.color.accent} />
             </StatRow>
             <StatValue>
-              {loading ? "..." : `${summaryStats.total > 0 ? ((summaryStats.top4 / summaryStats.total) * 100).toFixed(1) : "0.0"}%`}
+              {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.top4 / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}
             </StatValue>
           </GlassCard>
         </SuperlativeCardLink>
@@ -777,7 +824,7 @@ export default function WeeklyStatsPage() {
               <Trophy size={ICON_SIZE.md} color={theme.semantic.color.info} />
             </StatRow>
             <StatValue>
-              {loading ? "..." : `${summaryStats.total > 0 ? ((summaryStats.firsts / summaryStats.total) * 100).toFixed(1) : "0.0"}%`}
+              {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.firsts / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}
             </StatValue>
           </GlassCard>
         </SuperlativeCardLink>

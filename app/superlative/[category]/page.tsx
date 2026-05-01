@@ -147,7 +147,7 @@ const MobileSelectWrap = styled.div`
 
 const Tab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-size: ${({ theme }) => theme.primitive.fontSize.md};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $active, theme }) => $active ? theme.semantic.color.borderHover : "transparent"};
@@ -296,6 +296,12 @@ const SummonerLink = styled(Link)`
   &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
 
   &:active { opacity: 0.7; }
+`;
+
+const TagSpan = styled.span`
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
 `;
 
 const BarTrack = styled.div`
@@ -637,7 +643,7 @@ export default function SuperlativeDrilldownPage() {
                             )}
                           </SummonerIcon>
                           <SummonerLink href={`/player/${r.player.puuid}`}>
-                            {r.player.gameName}#{r.player.tagLine}
+                            {r.player.gameName}<TagSpan>#{r.player.tagLine}</TagSpan>
                           </SummonerLink>
                         </SummonerCell>
                       </td>

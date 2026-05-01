@@ -222,7 +222,7 @@ const MobileSelectWrap = styled.div`
 
 const Tab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-size: ${({ theme }) => theme.primitive.fontSize.md};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ $active, theme }) => ($active ? theme.semantic.color.borderHover : "transparent")};
@@ -772,7 +772,7 @@ export default function StatsDrilldownPage() {
                           </SummonerIcon>
                           <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <ColorDot $color={r.color} />
-                            {r.gameName}#{r.tagLine}
+                            <span>{r.gameName}<span style={{ color: theme.semantic.color.textDisabled, fontSize: "0.85em", fontWeight: 400 }}>#{r.tagLine}</span></span>
                           </span>
                         </SummonerCell>
                       </td>
