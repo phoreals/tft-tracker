@@ -337,21 +337,10 @@ function renderStatValue(s: string): React.ReactNode {
     return <>{segments}</>;
   }
   // LP/game: "+4.3 LP/game" or "-2.1 LP/game"
-  if (s.endsWith(" LP/game")) {
-    const num = s.slice(0, -8);
-    if (num[0] === "+" || num[0] === "-") {
-      return <><StatUnit>{num[0]}</StatUnit>{num.slice(1)}<StatUnit> LP/game</StatUnit></>;
-    }
-    return <>{num}<StatUnit> LP/game</StatUnit></>;
-  }
+  if (s.endsWith(" LP/game")) return <>{s.slice(0, -8)}<StatUnit> LP/game</StatUnit></>;
   // LP with optional sign: "+45 LP" or "-20 LP"
-  if (s.endsWith(" LP")) {
-    const num = s.slice(0, -3);
-    if (num[0] === "+" || num[0] === "-") {
-      return <><StatUnit>{num[0]}</StatUnit>{num.slice(1)}<StatUnit> LP</StatUnit></>;
-    }
-    return <>{num}<StatUnit> LP</StatUnit></>;
-  }
+  if (s.endsWith(" LP")) return <>{s.slice(0, -3)}<StatUnit> LP</StatUnit></>;
+
   // Percentage: "62.5%"
   if (s.endsWith("%")) return <>{s.slice(0, -1)}<StatUnit>%</StatUnit></>;
   return s;
