@@ -175,10 +175,9 @@ const StatValue = styled.span`
   }
 `;
 
-const StatUnit = styled.span`
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-  color: ${({ theme }) => theme.semantic.color.textDisabled};
-`;
+// Wraps unit indicators (%, LP, d/h/m, LP/game) in stat values.
+// Currently unstyled — kept as a semantic marker for future visual treatment.
+const StatUnit = styled.span``;
 
 const SuperlativesGrid = styled.div`
   display: grid;
