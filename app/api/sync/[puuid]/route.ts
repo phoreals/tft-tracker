@@ -105,6 +105,9 @@ export async function POST(
               placement: participant.placement,
               duration: Math.round(match.info.game_length),
               timestamp: match.info.game_datetime,
+              ranked: match.info.queue_id === 1100,
+              lastRound: participant.last_round,
+              gameType: match.info.tft_game_type,
             });
           }
         } catch (err) {

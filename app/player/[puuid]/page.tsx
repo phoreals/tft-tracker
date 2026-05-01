@@ -5,18 +5,20 @@ import { useParams } from "next/navigation";
 import styled from "styled-components";
 import Link from "next/link";
 import {
-  LineChart,
-  Line,
+  ScatterChart,
+  Scatter,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
-  ReferenceArea,
+  Cell,
+  type ScatterShapeProps,
 } from "recharts";
 import { ArrowLeft, Trophy, Gamepad2, Clock, TrendingUp, RefreshCw } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
+import { RankChart } from "@/components/RankChart";
 import { CustomSelect } from "@/components/CustomSelect";
 import {
   formatPlaytime,
@@ -77,6 +79,9 @@ interface PlayerData {
     placement: number;
     duration: number;
     timestamp: number;
+    ranked?: boolean;
+    lastRound?: number;
+    gameType?: string;
   }[];
   history: {
     date: string;
@@ -139,12 +144,12 @@ const PlayerHeader = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.md};
 `;
 
-const ProfileIcon = styled.div<{ $color: string }>`
+const ProfileIcon = styled.div`
   width: 64px;
   height: 64px;
   flex-shrink: 0;
   border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 2px solid ${({ $color }) => $color}66;
+  border: 2px solid ${({ theme }) => theme.semantic.color.borderHover};
   overflow: hidden;
   background: ${({ theme }) => theme.component.glassCard.bg};
   display: flex;
@@ -441,6 +446,58 @@ const MatchMeta = styled.span`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
 `;
 
+const TooltipWrap = styled.span`
+  position: relative;
+  cursor: default;
+
+  &::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 5px);
+    right: 0;
+    white-space: nowrap;
+    background: rgba(12, 20, 30, 0.92);
+    border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+    border-radius: ${({ theme }) => theme.primitive.radius.sm};
+    padding: 3px 8px;
+    font-family: ${({ theme }) => theme.semantic.font.display};
+    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+    color: ${({ theme }) => theme.semantic.color.textMuted};
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.08s;
+    z-index: 100;
+  }
+
+  &:hover::after {
+    opacity: 1;
+  }
+`;
+
+const QueueBadge = styled.span<{ $ranked: boolean | undefined }>`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: 9px;
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  letter-spacing: 0.06em;
+  padding: 1px 5px;
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border: 1px solid ${({ $ranked, theme }) =>
+    $ranked === true
+      ? theme.semantic.color.borderHover
+      : $ranked === false
+        ? theme.semantic.color.borderDefault
+        : "transparent"};
+  color: ${({ $ranked, theme }) =>
+    $ranked === true
+      ? theme.semantic.color.accent
+      : theme.semantic.color.textDisabled};
+  background: ${({ $ranked, theme }) =>
+    $ranked === true
+      ? theme.semantic.color.accentBgSubtle
+      : "transparent"};
+  flex-shrink: 0;
+`;
+
 const LoadingText = styled.div`
   display: flex;
   align-items: center;
@@ -536,23 +593,10 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
   );
 }
 
-// Tier label for Y-axis tick at tier base LP value
-const TIER_BASES: { lp: number; short: string }[] = [
-  { lp: 0,    short: "Iron"    },
-  { lp: 400,  short: "Bronze"  },
-  { lp: 800,  short: "Silver"  },
-  { lp: 1200, short: "Gold"    },
-  { lp: 1600, short: "Plat"    },
-  { lp: 2000, short: "Em"      },
-  { lp: 2400, short: "Diamond" },
-  { lp: 2800, short: "Master"  },
-  { lp: 3200, short: "GM"      },
-  { lp: 3600, short: "Chal"    },
-];
-
-function formatDateTick(ts: number): string {
-  const d = new Date(ts);
-  return `${d.getMonth() + 1}/${d.getDate()}`;
+function toOrdinal(n: number): string {
+  const v = n % 100;
+  const suffix = v >= 11 && v <= 13 ? "th" : ["th", "st", "nd", "rd"][v % 10] ?? "th";
+  return `${n}${suffix}`;
 }
 
 function formatShortDate(ts: number): string {
@@ -571,6 +615,48 @@ function formatDisplayDate(ts: number): string {
 function formatDateTime(ts: number): string {
   const d = new Date(ts);
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+// TFT stage/round layout (standard): S1=4rds, then each stage=7rds (5 PvP + carousel + wolves)
+// Approximate: stage = floor((round - 1) / 7) + 1 for rounds > 4, else stage 1
+function formatRound(round: number): string {
+  if (round <= 0) return "";
+  if (round <= 3) return `${round}-${round}`;      // S1 PvE
+  if (round === 4) return "1-4";                    // S1 carousel
+  const r = round - 4;
+  const stage = Math.floor((r - 1) / 7) + 2;
+  const stageRound = ((r - 1) % 7) + 1;
+  return `${stage}-${stageRound}`;
+}
+
+const GAME_TYPE_LABEL: Record<string, string> = {
+  standard: "",
+  turbo:    "HYPER ROLL",
+  pairs:    "DOUBLE UP",
+  choncc:   "CHONCC",
+};
+
+function queueLabel(gameType: string | undefined, ranked: boolean | undefined): string {
+  if (gameType && gameType !== "standard") return GAME_TYPE_LABEL[gameType] ?? gameType.toUpperCase();
+  if (ranked === true) return "RANKED";
+  if (ranked === false) return "NORMAL";
+  return "";
+}
+
+function formatMatchDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function formatRelativeTime(ts: number): string {
+  const diffMs = Date.now() - ts;
+  const diffMins = Math.floor(diffMs / 60_000);
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  return `${diffDays}d ago`;
 }
 
 function useFullBleedSticky() {
@@ -730,11 +816,6 @@ export default function PlayerDrilldownPage() {
     ? { start: SET_START, end: SET_END }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
 
-  // The highlighted week on the rank chart — selected week, or latest for "Set 17"
-  const highlightWeek = isSet
-    ? (weeks[weeks.length - 1] ?? null)
-    : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
-
   // Matches filtered to the active window
   const scopedMatches = useMemo(() => {
     if (!player) return [];
@@ -743,37 +824,20 @@ export default function PlayerDrilldownPage() {
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [player, activeWindow]);
 
-  // Rank history chart — always all history, epoch ms X-axis
-  const rankChartData = useMemo(() => {
+  // All matches sorted chronologically — used for placement chart and match history
+  const allMatchesSorted = useMemo(() => {
     if (!player) return [];
-    return [...player.history]
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map((h) => ({
-        ts: new Date(h.date).getTime(),
-        rank: rankToLP(h.tier, h.rank, h.lp),
-        label: formatRank(h.tier, h.rank, h.lp),
-      }));
+    return [...player.matches].sort((a, b) => a.timestamp - b.timestamp);
   }, [player]);
 
-  const { yTicks, yDomain } = useMemo(() => {
-    if (rankChartData.length === 0) return { yTicks: [], yDomain: [0, 3700] as [number, number] };
-    const values = rankChartData.map((d) => d.rank);
-    const rawMin = Math.min(...values);
-    const rawMax = Math.max(...values);
-    const minBase = Math.max(0, Math.floor(rawMin / 400) * 400 - 400);
-    const maxBase = Math.ceil(rawMax / 400) * 400 + 400;
-    const ticks = TIER_BASES.filter((t) => t.lp >= minBase && t.lp <= maxBase).map((t) => t.lp);
-    return { yTicks: ticks, yDomain: [Math.max(0, minBase), maxBase] as [number, number] };
-  }, [rankChartData]);
-
-  // Placement per game chart — scoped to active window
+  // Placement per game chart — all games, not filtered by tab
   const placementChartData = useMemo(() => {
-    return scopedMatches.map((m, i) => ({
+    return allMatchesSorted.map((m, i) => ({
       game: i + 1,
       placement: m.placement,
       date: formatShortDate(m.timestamp),
     }));
-  }, [scopedMatches]);
+  }, [allMatchesSorted]);
 
   // Stats scoped to active window
   const totalGames = scopedMatches.length;
@@ -811,11 +875,6 @@ export default function PlayerDrilldownPage() {
   if (loading) return <LoadingText>Loading...</LoadingText>;
   if (!player) return <LoadingText>Player not found.</LoadingText>;
 
-  const tierTickFormatter = (value: number) => {
-    const tier = TIER_BASES.find((t) => t.lp === value);
-    return tier ? tier.short : "";
-  };
-
   return (
     <Page>
       <BackLink href="/">
@@ -824,7 +883,7 @@ export default function PlayerDrilldownPage() {
       </BackLink>
 
       <PlayerHeader>
-        <ProfileIcon $color={player.current ? getRankColor(player.current.tier) : theme.semantic.color.accent}>
+        <ProfileIcon>
           {player.profileIconId ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -963,86 +1022,28 @@ export default function PlayerDrilldownPage() {
         </BadgeRow>
       )}
 
-      {/* Rank over time — always full history, selected week highlighted */}
-      <GlassCard title="Rank Over Time" icon={TrendingUp} prominent>
-        <ChartContainer>
-          {rankChartData.length === 0 ? (
-            <EmptyState>Rank history builds daily with each sync.</EmptyState>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rankChartData} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
-                <XAxis
-                  dataKey="ts"
-                  type="number"
-                  scale="time"
-                  domain={["dataMin", "dataMax"]}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={CHART.tick}
-                  tickFormatter={formatDateTick}
-                  tickCount={6}
-                  dy={10}
-                />
-                <YAxis
-                  domain={yDomain}
-                  ticks={yTicks}
-                  tickFormatter={tierTickFormatter}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={CHART.tick}
-                  width={48}
-                />
-                {highlightWeek && (
-                  <ReferenceArea
-                    x1={highlightWeek.start}
-                    x2={highlightWeek.end}
-                    fill={CHART.refFill}
-                    stroke={CHART.refStroke}
-                    strokeWidth={1}
-                  />
-                )}
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: CHART.tooltip.bg,
-                    border: CHART.tooltip.border,
-                    borderRadius: CHART.tooltip.radius,
-                    boxShadow: CHART.tooltip.shadow,
-                    fontFamily: CHART.tooltip.fontFamily,
-                    fontSize: CHART.tooltip.fontSize,
-                  }}
-                  labelStyle={{ color: CHART.tooltip.labelColor }}
-                  labelFormatter={(label) => formatDateTick(Number(label))}
-                  formatter={(value, name, props) => [
-                    (props.payload as { label?: string }).label ?? String(value),
-                    "Rank",
-                  ]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="rank"
-                  stroke={CHART.gold}
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: CHART.gold }}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
-        </ChartContainer>
-      </GlassCard>
+      {/* Rank over time — shared component, single player, gold line, no legend */}
+      <RankChart
+        players={[{ gameName: player.gameName, profileIconId: player.profileIconId, history: player.history }]}
+        selectedTab={selectedTab}
+        weeks={weeks}
+        hideLegend
+        lineColors={[theme.primitive.color.gold300]}
+      />
 
-      {/* Placement per game — scoped to selected tab */}
-      <GlassCard title={`Placement Per Game${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`} prominent>
+      {/* Placement per game — all games */}
+      <GlassCard title="Placement Per Game" prominent>
         <ChartContainer>
           {placementChartData.length === 0 ? (
-            <EmptyState>No games {isSet ? "this set" : "this week"}.</EmptyState>
+            <EmptyState>No games recorded yet.</EmptyState>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={placementChartData}>
+              <ScatterChart margin={{ top: 16, right: 16, bottom: 0, left: 4 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
                 <XAxis
                   dataKey="game"
+                  type="number"
+                  domain={[0, placementChartData.length + 1]}
                   axisLine={false}
                   tickLine={false}
                   tick={CHART.tick}
@@ -1050,16 +1051,20 @@ export default function PlayerDrilldownPage() {
                   label={{ value: "Game #", position: "insideBottomRight", offset: -5, fill: CHART.tooltip.labelColor + "66", fontSize: CHART.tick.fontSize, fontFamily: "Space Grotesk" }}
                 />
                 <YAxis
+                  dataKey="placement"
+                  type="number"
                   reversed
-                  domain={[1, 8]}
+                  domain={[0.5, 8.5]}
                   ticks={[1, 2, 3, 4, 5, 6, 7, 8]}
+                  tickFormatter={toOrdinal}
                   axisLine={false}
                   tickLine={false}
                   tick={CHART.tick}
-                  width={30}
+                  width={36}
                 />
                 <ReferenceLine y={4.5} stroke={CHART.refStroke} strokeDasharray="6 4" />
                 <Tooltip
+                  cursor={{ strokeDasharray: "3 3", stroke: CHART.grid }}
                   contentStyle={{
                     backgroundColor: CHART.tooltip.bg,
                     border: CHART.tooltip.border,
@@ -1069,41 +1074,87 @@ export default function PlayerDrilldownPage() {
                     fontSize: CHART.tooltip.fontSize,
                   }}
                   labelStyle={{ color: CHART.tooltip.labelColor }}
-                  labelFormatter={(label) => {
-                    const d = placementChartData[Number(label) - 1];
-                    return d ? `Game ${label} (${d.date})` : `Game ${label}`;
+                  formatter={(value, name) => {
+                    if (name === "placement") return [toOrdinal(Number(value)), "Placement"];
+                    return [value, name];
                   }}
-                  formatter={(value) => [value, "Placement"]}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0]?.payload as typeof placementChartData[0];
+                    return (
+                      <div style={{
+                        background: CHART.tooltip.bg,
+                        border: CHART.tooltip.border,
+                        borderRadius: CHART.tooltip.radius,
+                        padding: "8px 12px",
+                        fontFamily: "Space Grotesk",
+                        fontSize: CHART.tooltip.fontSize,
+                      }}>
+                        <div style={{ color: CHART.tooltip.labelColor, marginBottom: 4 }}>
+                          Game {d.game} &middot; {d.date}
+                        </div>
+                        <div style={{ color: d.placement <= 4 ? CHART.gold : CHART.tick.fill, fontWeight: 600 }}>
+                          {toOrdinal(d.placement)}
+                        </div>
+                      </div>
+                    );
+                  }}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="placement"
-                  stroke={CHART.gold}
-                  strokeWidth={1.5}
-                  dot={{ r: 2, fill: CHART.gold }}
-                />
-              </LineChart>
+                <Scatter
+                  data={placementChartData}
+                  isAnimationActive={false}
+                  shape={(props: ScatterShapeProps) => {
+                    const { cx, cy } = props;
+                    const d = (props as ScatterShapeProps & { payload: typeof placementChartData[0] }).payload;
+                    const top4 = d.placement <= 4;
+                    return (
+                      <circle
+                        cx={cx}
+                        cy={cy}
+                        r={5}
+                        fill={top4 ? CHART.gold : CHART.grid}
+                        fillOpacity={top4 ? 0.9 : 0.6}
+                        stroke={top4 ? CHART.gold : "none"}
+                        strokeOpacity={0.4}
+                        strokeWidth={1}
+                      />
+                    );
+                  }}
+                >
+                  {placementChartData.map((d, i) => (
+                    <Cell key={i} fill={d.placement <= 4 ? CHART.gold : CHART.grid} />
+                  ))}
+                </Scatter>
+              </ScatterChart>
             </ResponsiveContainer>
           )}
         </ChartContainer>
       </GlassCard>
 
-      {/* Match history — scoped to selected tab */}
-      <GlassCard title={`Match History${isSet ? "" : ` — ${weeks[selectedTab as number]?.label ?? ""}`}`} prominent>
+      {/* Match history — all games */}
+      <GlassCard title="Match History" prominent>
         <MatchList>
-          {[...scopedMatches].reverse().map((m) => (
+          {[...allMatchesSorted].reverse().map((m) => (
             <MatchRow key={m.matchId} $top4={m.placement <= 4}>
               <MatchPlacement $place={m.placement}>
-                #{m.placement}
+                {toOrdinal(m.placement)}
               </MatchPlacement>
-              <MatchMeta>{formatPlaytime(m.duration)}</MatchMeta>
-              <MatchMeta>{formatDateTime(m.timestamp)}</MatchMeta>
+              <QueueBadge $ranked={m.gameType && m.gameType !== "standard" ? undefined : m.ranked}>
+                {queueLabel(m.gameType, m.ranked)}
+              </QueueBadge>
+              {m.lastRound != null && (
+                <MatchMeta>R{formatRound(m.lastRound)}</MatchMeta>
+              )}
+              <MatchMeta>{formatMatchDuration(m.duration)}</MatchMeta>
+              <TooltipWrap data-tip={formatDateTime(m.timestamp)}>
+                <MatchMeta>{formatRelativeTime(m.timestamp)}</MatchMeta>
+              </TooltipWrap>
             </MatchRow>
           ))}
-          {scopedMatches.length === 0 && (
+          {allMatchesSorted.length === 0 && (
             <MatchRow $top4={false}>
               <MatchMeta style={{ color: CHART.tooltip.labelColor, padding: `${theme.primitive.spacing.sm} 0` }}>
-                No games {isSet ? "this set" : "this week"}.
+                No games recorded yet.
               </MatchMeta>
             </MatchRow>
           )}

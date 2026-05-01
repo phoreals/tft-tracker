@@ -141,6 +141,7 @@ interface MatchParticipant {
   puuid: string;
   placement: number;
   time_eliminated: number;
+  last_round: number;
 }
 
 interface MatchInfo {
@@ -148,6 +149,8 @@ interface MatchInfo {
   game_length: number;
   participants: MatchParticipant[];
   tft_set_number: number;
+  queue_id?: number;     // 1100 = Ranked, 1090 = Normal, 1130 = Hyper Roll, 1160 = Double Up
+  tft_game_type?: string; // "standard" | "turbo" (Hyper Roll) | "pairs" (Double Up) | "choncc"
 }
 
 export interface MatchDetail {

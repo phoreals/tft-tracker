@@ -24,8 +24,8 @@ export function SortChevron({ direction, size = 9 }: SortChevronProps) {
     viewBox: "0 0 6 9",
     fill: "none" as const,
     stroke: "currentColor",
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
+    strokeLinecap: "butt" as const,
+    strokeLinejoin: "miter" as const,
     display: "block" as const,
   };
 

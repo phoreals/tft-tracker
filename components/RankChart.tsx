@@ -187,8 +187,8 @@ function RankTick({ x, y, payload }: { x?: number; y?: number; payload?: { value
       <g>
         <image
           href={`${EMBLEM_BASE}/${tier.name}_tft.svg`}
-          x={x - AXIS_EMBLEM - 18}
-          y={y - AXIS_EMBLEM / 2}
+          x={x - AXIS_EMBLEM - 15}
+          y={y - AXIS_EMBLEM / 2 - 1}
           width={AXIS_EMBLEM}
           height={AXIS_EMBLEM}
         />
@@ -336,9 +336,11 @@ interface RankChartProps {
   players: PlayerData[];
   selectedTab: "set" | number;
   weeks: { label: string; start: number; end: number }[];
+  hideLegend?: boolean;
+  lineColors?: string[];
 }
 
-export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
+export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors }: RankChartProps) {
   const [hiddenPlayers, setHiddenPlayers] = useState<Set<string>>(new Set());
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
   const hoveredPlayerRef = useRef<string | null>(null);
@@ -363,12 +365,6 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
   const visiblePlayers = players.filter((p) => !hiddenPlayers.has(p.gameName));
 
-  // The highlighted week — always the selected week, or the latest week for "This Set".
-  const highlightWeek =
-    selectedTab === "set"
-      ? (weeks[weeks.length - 1] ?? null)
-      : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
-
   // Build a unified daily timeline from all players' history snapshots.
   const { chartData, yTicks, yDomain } = useMemo(() => {
     // Collect all unique date timestamps.
@@ -383,7 +379,6 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
         chartData: [],
         yTicks: [],
         yDomain: [0, 3700] as [number, number],
-        lastValidIndices: {} as Record<string, number>,
       };
     }
 
@@ -430,6 +425,11 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
   }, [players, hiddenPlayers]);
 
   const hasData = chartData.length > 0;
+
+  // The highlighted week — always the selected week, or the latest week for "This Set".
+  const highlightWeek = selectedTab === "set"
+    ? (weeks[weeks.length - 1] ?? null)
+    : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
 
   return (
     <GlassCard title="Rank Over Time" icon={TrendingUp} prominent>
@@ -483,6 +483,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                   fill={CHART.refFill}
                   stroke={CHART.refStroke}
                   strokeWidth={1}
+                  ifOverflow="hidden"
                 />
               )}
 
@@ -494,7 +495,8 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
 
               {visiblePlayers.map((p) => {
                 const globalIdx = players.indexOf(p);
-                const color = LINE_COLORS[globalIdx % LINE_COLORS.length];
+                const colors = lineColors ?? LINE_COLORS;
+                const color = colors[globalIdx % colors.length];
                 const isHovered = hoveredPlayer === p.gameName;
                 const anyHovered = hoveredPlayer !== null;
                 const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
@@ -527,10 +529,11 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
         )}
       </ChartContainer>
 
-      {players.length > 0 && (
+      {!hideLegend && players.length > 0 && (
         <LegendRow>
           {players.map((p, i) => {
-            const color = LINE_COLORS[i % LINE_COLORS.length];
+            const colors = lineColors ?? LINE_COLORS;
+            const color = colors[i % colors.length];
             const isHidden = hiddenPlayers.has(p.gameName);
             return (
               <LegendChip

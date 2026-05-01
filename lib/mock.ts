@@ -44,6 +44,15 @@ function buildHistoryFromLP(lpByDay: number[]) {
   });
 }
 
+// Approximate last_round from placement + duration: top placements survive longer.
+function estimateLastRound(placement: number, duration: number): number {
+  // Stage boundaries (cumulative rounds): S1=4, S2=11, S3=17, S4=23, S5=29
+  const mins = duration / 60;
+  if (mins < 15) return Math.round(8 + (placement / 8) * 3);
+  if (mins < 22) return Math.round(14 + ((8 - placement) / 7) * 4);
+  return Math.round(20 + ((8 - placement) / 7) * 6);
+}
+
 function buildMatches(
   puuid: string,
   entries: { daysAgo: number; h: number; placement: number; duration: number }[]
@@ -53,6 +62,9 @@ function buildMatches(
     placement: e.placement,
     duration: e.duration,
     timestamp: daysAgo(e.daysAgo) + e.h * HOUR,
+    ranked: true,
+    lastRound: estimateLastRound(e.placement, e.duration),
+    gameType: "standard",
   }));
 }
 
@@ -81,15 +93,39 @@ export const MOCK_PLAYERS = [
     profileIconId: 4892,
     current: { tier: "EMERALD", rank: "II", lp: 10, wins: 14, losses: 8, lastUpdated: new Date().toISOString() },
     matches: buildMatches("mock-puuid-richardpression", [
+      { daysAgo: 15, h: 1, placement: 2, duration: 2800 },
+      { daysAgo: 15, h: 4, placement: 1, duration: 2900 },
+      { daysAgo: 14, h: 2, placement: 3, duration: 2600 },
+      { daysAgo: 14, h: 5, placement: 1, duration: 2800 },
       { daysAgo: 13, h: 1, placement: 1, duration: 2700 },
+      { daysAgo: 13, h: 4, placement: 2, duration: 2700 },
+      { daysAgo: 12, h: 1, placement: 1, duration: 2850 },
+      { daysAgo: 12, h: 4, placement: 2, duration: 2650 },
       { daysAgo: 11, h: 2, placement: 2, duration: 2500 },
+      { daysAgo: 11, h: 5, placement: 3, duration: 2500 },
+      { daysAgo: 10, h: 1, placement: 1, duration: 2800 },
       { daysAgo: 10, h: 3, placement: 1, duration: 2800 },
+      { daysAgo: 10, h: 6, placement: 2, duration: 2700 },
+      { daysAgo: 9,  h: 1, placement: 1, duration: 2850 },
+      { daysAgo: 9,  h: 4, placement: 2, duration: 2600 },
+      { daysAgo: 8,  h: 2, placement: 1, duration: 2900 },
+      { daysAgo: 8,  h: 5, placement: 3, duration: 2550 },
       { daysAgo: 7,  h: 1, placement: 1, duration: 2850 },
+      { daysAgo: 7,  h: 4, placement: 2, duration: 2700 },
       { daysAgo: 6,  h: 2, placement: 1, duration: 2700 },
+      { daysAgo: 6,  h: 5, placement: 1, duration: 2800 },
+      { daysAgo: 5,  h: 1, placement: 2, duration: 2650 },
       { daysAgo: 5,  h: 3, placement: 2, duration: 2600 },
+      { daysAgo: 4,  h: 2, placement: 1, duration: 2800 },
+      { daysAgo: 4,  h: 5, placement: 2, duration: 2700 },
       { daysAgo: 3,  h: 1, placement: 1, duration: 2900 },
+      { daysAgo: 3,  h: 4, placement: 1, duration: 2850 },
+      { daysAgo: 2,  h: 1, placement: 2, duration: 2750 },
+      { daysAgo: 2,  h: 4, placement: 1, duration: 2800 },
       { daysAgo: 1,  h: 2, placement: 1, duration: 2750 },
+      { daysAgo: 1,  h: 5, placement: 2, duration: 2700 },
       { daysAgo: 0,  h: 1, placement: 3, duration: 2400 },
+      { daysAgo: 0,  h: 4, placement: 1, duration: 2850 },
     ]),
     history: buildHistoryFromLP(
       [1720, 1780, 1840, 1910, 1970, 2000, 2020, 2040, 2120, 2200, 2250, 2290, 2330, 2330, 2210]
@@ -247,15 +283,38 @@ export const MOCK_PLAYERS = [
     profileIconId: 2569,
     current: { tier: "EMERALD", rank: "III", lp: 50, wins: 12, losses: 10, lastUpdated: new Date().toISOString() },
     matches: buildMatches("mock-puuid-nisca", [
+      { daysAgo: 15, h: 2, placement: 1, duration: 2750 },
+      { daysAgo: 15, h: 5, placement: 2, duration: 2600 },
+      { daysAgo: 14, h: 1, placement: 1, duration: 2800 },
+      { daysAgo: 14, h: 4, placement: 3, duration: 2500 },
       { daysAgo: 13, h: 2, placement: 2, duration: 2500 },
+      { daysAgo: 13, h: 5, placement: 1, duration: 2750 },
+      { daysAgo: 12, h: 2, placement: 2, duration: 2600 },
+      { daysAgo: 12, h: 5, placement: 1, duration: 2800 },
       { daysAgo: 11, h: 1, placement: 1, duration: 2750 },
+      { daysAgo: 11, h: 4, placement: 2, duration: 2600 },
+      { daysAgo: 10, h: 2, placement: 1, duration: 2700 },
+      { daysAgo: 10, h: 5, placement: 2, duration: 2550 },
+      { daysAgo: 9,  h: 1, placement: 1, duration: 2800 },
       { daysAgo: 9,  h: 3, placement: 2, duration: 2600 },
+      { daysAgo: 8,  h: 2, placement: 1, duration: 2750 },
+      { daysAgo: 8,  h: 5, placement: 3, duration: 2500 },
       { daysAgo: 7,  h: 2, placement: 1, duration: 2850 },
+      { daysAgo: 7,  h: 5, placement: 2, duration: 2650 },
+      { daysAgo: 6,  h: 1, placement: 1, duration: 2800 },
+      { daysAgo: 6,  h: 4, placement: 2, duration: 2600 },
       { daysAgo: 5,  h: 1, placement: 3, duration: 2300 },
+      { daysAgo: 5,  h: 4, placement: 1, duration: 2750 },
       { daysAgo: 4,  h: 2, placement: 2, duration: 2450 },
+      { daysAgo: 4,  h: 5, placement: 1, duration: 2700 },
+      { daysAgo: 3,  h: 1, placement: 1, duration: 2800 },
+      { daysAgo: 3,  h: 4, placement: 2, duration: 2600 },
       { daysAgo: 2,  h: 3, placement: 1, duration: 2700 },
+      { daysAgo: 2,  h: 6, placement: 2, duration: 2550 },
       { daysAgo: 1,  h: 1, placement: 2, duration: 2550 },
+      { daysAgo: 1,  h: 4, placement: 1, duration: 2750 },
       { daysAgo: 0,  h: 2, placement: 1, duration: 2800 },
+      { daysAgo: 0,  h: 5, placement: 2, duration: 2650 },
     ]),
     history: buildHistoryFromLP(
       [1780, 1790, 1820, 1840, 1850, 1870, 1900, 1920, 1940, 1960, 1990, 2020, 2050, 2080, 2150]
@@ -307,6 +366,30 @@ export const MOCK_PLAYERS = [
     ]),
     history: buildHistoryFromLP(
       [2300, 2280, 2260, 2230, 2200, 2170, 2140, 2100, 2070, 2040, 2000, 2050, 2100, 2150, 2200]
+    ),
+  },
+
+  {
+    puuid: "mock-puuid-konaries",
+    gameName: "KoN Aries",
+    tagLine: "Liar",
+    summonerId: "",
+    region: "na1",
+    profileIconId: 4007,
+    current: { tier: "PLATINUM", rank: "II", lp: 55, wins: 8, losses: 14, lastUpdated: new Date().toISOString() },
+    matches: buildMatches("mock-puuid-konaries", [
+      { daysAgo: 13, h: 2, placement: 6, duration: 1800 },
+      { daysAgo: 11, h: 1, placement: 7, duration: 1600 },
+      { daysAgo: 9,  h: 3, placement: 5, duration: 1850 },
+      { daysAgo: 7,  h: 2, placement: 4, duration: 2100 },
+      { daysAgo: 5,  h: 1, placement: 8, duration: 1400 },
+      { daysAgo: 4,  h: 2, placement: 3, duration: 2300 },
+      { daysAgo: 2,  h: 3, placement: 6, duration: 1750 },
+      { daysAgo: 1,  h: 1, placement: 2, duration: 2550 },
+      { daysAgo: 0,  h: 2, placement: 5, duration: 1900 },
+    ]),
+    history: buildHistoryFromLP(
+      [1820, 1800, 1780, 1760, 1750, 1730, 1710, 1690, 1720, 1750, 1780, 1800, 1820, 1810, 1855]
     ),
   },
 ];

@@ -37,8 +37,11 @@ export interface HistorySnapshot {
 export interface MatchRecord {
   matchId: string;
   placement: number;
-  duration: number; // seconds
-  timestamp: number; // epoch ms
+  duration: number;   // seconds
+  timestamp: number;  // epoch ms
+  ranked?: boolean;   // undefined = unknown (pre-migration records)
+  lastRound?: number; // round number when player was eliminated / game ended
+  gameType?: string;  // "standard" | "turbo" | "pairs" | "choncc"
 }
 
 // --- Players ---

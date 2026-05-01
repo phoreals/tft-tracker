@@ -145,7 +145,7 @@ const SortPill = styled.button<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};

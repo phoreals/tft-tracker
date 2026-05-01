@@ -685,17 +685,34 @@ export default function StatsDrilldownPage() {
                       ))}
                     </Pie>
                     <RechartsTooltip
-                      formatter={(value, name) => [
-                        `${cat.formatValue(value as number)} (${percentOf(value as number, total)}%)`,
-                        name as string,
-                      ]}
-                      contentStyle={{
-                        background: "rgba(12, 20, 30, 0.92)",
-                        border: `1px solid ${theme.semantic.color.borderDefault}`,
-                        borderRadius: theme.primitive.radius.lg,
-                        boxShadow: theme.semantic.shadow.glassInset,
-                        fontFamily: "Space Grotesk",
-                        fontSize: theme.semantic.typography.label.fontSize,
+                      wrapperStyle={{ zIndex: 10 }}
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const item = payload[0] as { name: string; value: number; fill: string };
+                        const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : "0";
+                        return (
+                          <div style={{
+                            background: "rgba(12, 20, 30, 0.6)",
+                            backdropFilter: "blur(16px)",
+                            WebkitBackdropFilter: "blur(16px)",
+                            border: `1px solid ${theme.semantic.color.borderDefault}`,
+                            borderRadius: theme.primitive.radius.lg,
+                            boxShadow: theme.semantic.shadow.glassInset,
+                            padding: `${theme.primitive.spacing.sm} ${theme.primitive.spacing.md}`,
+                            fontFamily: "Space Grotesk",
+                            fontSize: theme.semantic.typography.label.fontSize,
+                            pointerEvents: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}>
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: item.fill, flexShrink: 0, display: "inline-block" }} />
+                            <span style={{ color: theme.primitive.color.neutral200 }}>{item.name}</span>
+                            <span style={{ color: theme.semantic.color.textMuted, marginLeft: "auto", paddingLeft: 12, flexShrink: 0 }}>
+                              {cat.formatValue(item.value)} · {pct}%
+                            </span>
+                          </div>
+                        );
                       }}
                     />
                   </PieChart>
