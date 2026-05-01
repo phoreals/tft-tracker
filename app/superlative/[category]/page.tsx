@@ -161,6 +161,10 @@ const Tab = styled.button<{ $active: boolean }>`
     color: ${({ theme }) => theme.semantic.color.textPrimary};
     background: ${({ $active, theme }) => $active ? theme.semantic.color.accentHover : theme.semantic.color.borderDim};
   }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.06);
+  }
 `;
 
 
@@ -213,6 +217,10 @@ const SortTh = styled.th<{ $active: boolean }>`
 
   &:hover ${SortIcon}[data-active="true"] {
     opacity: 1;
+  }
+
+  &:active {
+    opacity: 0.7;
   }
 `;
 
@@ -285,6 +293,8 @@ const SummonerLink = styled(Link)`
   transition: color 0.15s;
 
   &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
+
+  &:active { opacity: 0.7; }
 `;
 
 const BarTrack = styled.div`

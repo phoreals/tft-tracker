@@ -81,6 +81,10 @@ const SyncButton = styled.button`
     border-color: ${({ theme }) => theme.semantic.color.borderHover};
   }
 
+  &:active:not(:disabled) {
+    filter: brightness(0.85);
+  }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -204,6 +208,10 @@ const PageTab = styled.button<{ $active: boolean }>`
     color: ${({ theme }) => theme.semantic.color.textPrimary};
     background: ${({ $active, theme }) =>
       $active ? theme.semantic.color.accentHover : theme.semantic.color.borderDim};
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.06);
   }
 `;
 
@@ -399,6 +407,11 @@ const SuperlativeCardLink = styled(Link)`
 
   &:hover ${ChipName} {
     color: ${({ theme }) => theme.semantic.color.accent};
+  }
+
+  &:active {
+    transform: translateY(0);
+    background: rgba(229, 197, 135, 0.04);
   }
 `;
 

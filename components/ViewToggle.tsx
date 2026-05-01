@@ -33,6 +33,10 @@ const Btn = styled.button<{ $active: boolean }>`
     color: ${({ $active, theme }) =>
       $active ? theme.semantic.color.accent : theme.semantic.color.textPrimary};
   }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.06);
+  }
 `;
 
 // ── Component ────────────────────────────────────────────────────

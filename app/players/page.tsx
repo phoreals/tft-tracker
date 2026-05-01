@@ -189,6 +189,10 @@ const PrimaryButton = styled.button`
     filter: brightness(1.1);
   }
 
+  &:active:not(:disabled) {
+    filter: brightness(0.85);
+  }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -224,6 +228,10 @@ const SeedButton = styled.button`
     border-color: ${({ theme }) => theme.semantic.color.borderInfo};
   }
 
+  &:active:not(:disabled) {
+    background: rgba(229, 197, 135, 0.06);
+  }
+
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -248,6 +256,10 @@ const SyncBadge = styled.button`
 
   &:hover {
     border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+
+  &:active:not(:disabled) {
+    background: rgba(229, 197, 135, 0.06);
   }
 
   &:disabled {
@@ -429,6 +441,10 @@ const DeleteButton = styled.button`
 
   &:hover {
     color: ${({ theme }) => theme.semantic.color.danger};
+  }
+
+  &:active {
+    background: rgba(229, 197, 135, 0.06);
   }
 `;
 

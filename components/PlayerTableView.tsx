@@ -90,6 +90,10 @@ const SortTh = styled.th<{ $active: boolean }>`
   &:hover ${SortIcon}[data-active="true"] {
     opacity: 1;
   }
+
+  &:active {
+    opacity: 0.7;
+  }
 `;
 
 // Layout only — no hover logic here.
