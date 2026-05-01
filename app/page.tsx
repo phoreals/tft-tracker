@@ -7,7 +7,8 @@ import { RefreshCw, Clock, Trophy, Gamepad2, User } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { CustomSelect } from "@/components/CustomSelect";
 import { PlayerTable } from "@/components/PlayerTable";
-import { RankChart } from "@/components/RankChart";
+import { RankChart, LINE_COLORS } from "@/components/RankChart";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip } from "recharts";
 import { formatPlaytime, percentOf, getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
@@ -212,8 +213,77 @@ const StatsGrid = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
   @media (min-width: 640px) {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+`;
+
+const DonutWrap = styled.div`
+  position: relative;
+  width: 100%;
+  height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const DonutCenter = styled.div`
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+`;
+
+const DonutTotal = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.lg};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  line-height: 1;
+`;
+
+const DonutLabel = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  margin-top: 2px;
+`;
+
+const GaugeWrap = styled.div`
+  margin-top: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const GaugeTrack = styled.div`
+  position: relative;
+  height: 4px;
+  width: 100%;
+  background: ${({ theme }) => theme.component.table.borderColor};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  overflow: visible;
+`;
+
+const GaugeFill = styled.div<{ $pct: number }>`
+  height: 100%;
+  width: ${({ $pct }) => $pct}%;
+  background: ${({ theme }) => theme.semantic.color.accent};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+`;
+
+const GaugeRef = styled.div`
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 12px;
+  background: ${({ theme }) => theme.semantic.color.textDisabled};
+  opacity: 0.5;
 `;
 
 const StatRow = styled.div`
@@ -552,7 +622,6 @@ export default function WeeklyStatsPage() {
   };
 
   const summaryStats = useMemo(() => {
-    const all = players.flatMap((p) => p.matches);
     let start: number, end: number, label: string;
     if (selectedTab === "set") {
       start = SET_START;
@@ -564,13 +633,28 @@ export default function WeeklyStatsPage() {
       end = w.end;
       label = w.label;
     }
-    const ms = all.filter((m) => m.timestamp >= start && m.timestamp < end);
+
+    const perPlayer = players.map((p, i) => {
+      const ms = p.matches.filter((m) => m.timestamp >= start && m.timestamp < end);
+      return {
+        name: p.gameName,
+        color: LINE_COLORS[i % LINE_COLORS.length],
+        games: ms.length,
+        playtime: ms.reduce((s, m) => s + m.duration, 0),
+        top4: ms.filter((m) => m.placement <= 4).length,
+        firsts: ms.filter((m) => m.placement === 1).length,
+      };
+    });
+
+    const all = players.flatMap((p) => p.matches).filter((m) => m.timestamp >= start && m.timestamp < end);
     return {
       label,
-      games: ms.length,
-      playtime: ms.reduce((s, m) => s + m.duration, 0),
-      top4: ms.filter((m) => m.placement <= 4).length,
-      total: ms.length,
+      games: all.length,
+      playtime: all.reduce((s, m) => s + m.duration, 0),
+      top4: all.filter((m) => m.placement <= 4).length,
+      firsts: all.filter((m) => m.placement === 1).length,
+      total: all.length,
+      perPlayer,
     };
   }, [players, selectedTab, weeks]);
 
@@ -721,22 +805,103 @@ export default function WeeklyStatsPage() {
       />
 
       <StatsGrid>
+        {/* Games — mini donut per player */}
         <GlassCard>
           <StatRow>
             <StatLabel>Games</StatLabel>
             <Gamepad2 size={ICON_SIZE.md} color={theme.semantic.color.accent} />
           </StatRow>
-          <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
+          {loading ? (
+            <StatValue>...</StatValue>
+          ) : (
+            <DonutWrap>
+              <PieChart width={100} height={100}>
+                <Pie
+                  data={summaryStats.perPlayer.filter((p) => p.games > 0)}
+                  dataKey="games"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={30}
+                  outerRadius={46}
+                  strokeWidth={0}
+                  isAnimationActive={false}
+                >
+                  {summaryStats.perPlayer.filter((p) => p.games > 0).map((p) => (
+                    <Cell key={p.name} fill={p.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip
+                  formatter={(value, name) => [
+                    `${value as number} (${percentOf(value as number, summaryStats.games)}%)`,
+                    name as string,
+                  ]}
+                  contentStyle={{
+                    background: theme.primitive.color.neutral850,
+                    border: `1px solid ${theme.semantic.color.borderDefault}`,
+                    borderRadius: theme.primitive.radius.sm,
+                    fontFamily: "Space Grotesk",
+                    fontSize: 11,
+                  }}
+                />
+              </PieChart>
+              <DonutCenter>
+                <DonutTotal>{summaryStats.games}</DonutTotal>
+                <DonutLabel>GAMES</DonutLabel>
+              </DonutCenter>
+            </DonutWrap>
+          )}
         </GlassCard>
 
+        {/* Squad Playtime — mini donut per player */}
         <GlassCard>
           <StatRow>
             <StatLabel>Squad Playtime</StatLabel>
             <Clock size={ICON_SIZE.md} color={theme.semantic.color.info} />
           </StatRow>
-          <StatValue>{loading ? "..." : formatPlaytime(summaryStats.playtime)}</StatValue>
+          {loading ? (
+            <StatValue>...</StatValue>
+          ) : (
+            <DonutWrap>
+              <PieChart width={100} height={100}>
+                <Pie
+                  data={summaryStats.perPlayer.filter((p) => p.playtime > 0)}
+                  dataKey="playtime"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={30}
+                  outerRadius={46}
+                  strokeWidth={0}
+                  isAnimationActive={false}
+                >
+                  {summaryStats.perPlayer.filter((p) => p.playtime > 0).map((p) => (
+                    <Cell key={p.name} fill={p.color} />
+                  ))}
+                </Pie>
+                <RechartsTooltip
+                  formatter={(value, name) => [
+                    `${formatPlaytime(value as number)} (${percentOf(value as number, summaryStats.playtime)}%)`,
+                    name as string,
+                  ]}
+                  contentStyle={{
+                    background: theme.primitive.color.neutral850,
+                    border: `1px solid ${theme.semantic.color.borderDefault}`,
+                    borderRadius: theme.primitive.radius.sm,
+                    fontFamily: "Space Grotesk",
+                    fontSize: 11,
+                  }}
+                />
+              </PieChart>
+              <DonutCenter>
+                <DonutTotal style={{ fontSize: 13 }}>{formatPlaytime(summaryStats.playtime)}</DonutTotal>
+                <DonutLabel>PLAYTIME</DonutLabel>
+              </DonutCenter>
+            </DonutWrap>
+          )}
         </GlassCard>
 
+        {/* Avg Top 4 Rate — gauge bar */}
         <GlassCard>
           <StatRow>
             <StatLabel>Avg Top 4 Rate</StatLabel>
@@ -745,6 +910,33 @@ export default function WeeklyStatsPage() {
           <StatValue>
             {loading ? "..." : `${percentOf(summaryStats.top4, summaryStats.total)}%`}
           </StatValue>
+          {!loading && (
+            <GaugeWrap>
+              <GaugeTrack>
+                <GaugeFill $pct={summaryStats.total > 0 ? (summaryStats.top4 / summaryStats.total) * 100 : 0} />
+                <GaugeRef title="50% reference" />
+              </GaugeTrack>
+            </GaugeWrap>
+          )}
+        </GlassCard>
+
+        {/* Squad Win Rate — gauge bar */}
+        <GlassCard>
+          <StatRow>
+            <StatLabel>Squad Win Rate</StatLabel>
+            <Trophy size={ICON_SIZE.md} color={theme.semantic.color.info} />
+          </StatRow>
+          <StatValue>
+            {loading ? "..." : `${percentOf(summaryStats.firsts, summaryStats.total)}%`}
+          </StatValue>
+          {!loading && (
+            <GaugeWrap>
+              <GaugeTrack>
+                <GaugeFill $pct={summaryStats.total > 0 ? (summaryStats.firsts / summaryStats.total) * 100 : 0} />
+                <GaugeRef title="50% reference" />
+              </GaugeTrack>
+            </GaugeWrap>
+          )}
         </GlassCard>
       </StatsGrid>
     </Page>
