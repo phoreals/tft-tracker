@@ -41,18 +41,19 @@ const CHART = {
   },
 } as const;
 
-// Distinct line colors — chosen to avoid rank-tier hues (no gold/green/teal/purple).
+// Gold-family palette — patterns are the primary differentiator; color provides secondary cues.
+// Anchored to brand gold #e5c587, ranging from deep bronze → pale cream.
 export const LINE_COLORS = [
-  "#f472b6", // pink
-  "#60a5fa", // blue
-  "#fb923c", // orange
-  "#a3e635", // lime
-  "#e879f9", // fuchsia
-  "#38bdf8", // sky
-  "#fbbf24", // amber
-  "#4ade80", // mint
-  "#f87171", // rose
-  "#818cf8", // indigo
+  "#e5c587", // brand gold        (solid)
+  "#a07830", // dark amber        (dashed)
+  "#f5e0a8", // pale gold         (dotted)
+  "#c09040", // medium amber      (dash-dot)
+  "#7a5818", // deep bronze       (long-dash)
+  "#f0cc70", // bright warm gold  (solid)
+  "#b89050", // medium-dark gold  (dashed)
+  "#fdedc0", // cream gold        (dotted)
+  "#d4a840", // warm mid-gold     (dash-dot)
+  "#8c6820", // rich bronze       (long-dash)
 ];
 
 // Dash patterns — paired with colors for an extra visual dimension.
