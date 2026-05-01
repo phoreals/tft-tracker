@@ -41,34 +41,18 @@ const CHART = {
   },
 } as const;
 
-// Gold-family palette — patterns are the primary differentiator; color provides secondary cues.
-// Anchored to brand gold #e5c587, ranging from deep bronze → pale cream.
+// Distinct line colors — chosen to avoid rank-tier hues (no gold/green/teal/purple).
 export const LINE_COLORS = [
-  "#e5c587", // brand gold        (solid)
-  "#a07830", // dark amber        (dashed)
-  "#f5e0a8", // pale gold         (dotted)
-  "#c09040", // medium amber      (dash-dot)
-  "#7a5818", // deep bronze       (long-dash)
-  "#f0cc70", // bright warm gold  (solid)
-  "#b89050", // medium-dark gold  (dashed)
-  "#fdedc0", // cream gold        (dotted)
-  "#d4a840", // warm mid-gold     (dash-dot)
-  "#8c6820", // rich bronze       (long-dash)
-];
-
-// Dash patterns — paired with colors for an extra visual dimension.
-// 5 patterns cycle through the 10 colors (each pattern used twice, with different colors).
-const DASH_PATTERNS: (string | undefined)[] = [
-  undefined,  // solid
-  "6 3",      // dashed
-  "2 3",      // dotted
-  "8 3 2 3",  // dash-dot
-  "12 4",     // long dash
-  undefined,
-  "6 3",
-  "2 3",
-  "8 3 2 3",
-  "12 4",
+  "#f472b6", // pink
+  "#60a5fa", // blue
+  "#fb923c", // orange
+  "#a3e635", // lime
+  "#e879f9", // fuchsia
+  "#38bdf8", // sky
+  "#fbbf24", // amber
+  "#4ade80", // mint
+  "#f87171", // rose
+  "#818cf8", // indigo
 ];
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -477,7 +461,6 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
               {visiblePlayers.map((p) => {
                 const globalIdx = players.indexOf(p);
                 const color = LINE_COLORS[globalIdx % LINE_COLORS.length];
-                const dash = DASH_PATTERNS[globalIdx % DASH_PATTERNS.length];
                 const lastIdx = lastValidIndices[p.gameName] ?? -1;
                 const isHovered = hoveredPlayer === p.gameName;
                 const anyHovered = hoveredPlayer !== null;
@@ -491,7 +474,6 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                     stroke={color}
                     strokeWidth={strokeW}
                     strokeOpacity={opacity}
-                    strokeDasharray={dash}
                     dot={makeProfileDot(p, color, lastIdx)}
                     activeDot={{ r: 4, stroke: color, strokeWidth: 2 }}
                     connectNulls
@@ -516,7 +498,6 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
         <LegendRow>
           {players.map((p, i) => {
             const color = LINE_COLORS[i % LINE_COLORS.length];
-            const dash = DASH_PATTERNS[i % DASH_PATTERNS.length];
             const isHidden = hiddenPlayers.has(p.gameName);
             return (
               <LegendChip
@@ -527,14 +508,7 @@ export function RankChart({ players, selectedTab, weeks }: RankChartProps) {
                 aria-label={`${isHidden ? "Show" : "Hide"} ${p.gameName}`}
                 onClick={() => toggleHidden(p.gameName)}
               >
-                <svg width={18} height={10} style={{ flexShrink: 0 }}>
-                  <line
-                    x1={0} y1={5} x2={18} y2={5}
-                    stroke={color}
-                    strokeWidth={2}
-                    strokeDasharray={dash}
-                  />
-                </svg>
+                <LegendSwatch $color={color} />
                 {p.gameName}
               </LegendChip>
             );
