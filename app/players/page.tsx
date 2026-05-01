@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
-import { UserPlus, Users, Trash2, RefreshCw, DatabaseZap, Lock } from "lucide-react";
+import { UserPlus, Users, Trash2, DatabaseZap, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { GlassCard } from "@/components/GlassCard";
 import { formatRank, formatRankAbbr, getRankColor } from "@/lib/utils";
@@ -238,35 +238,6 @@ const SeedButton = styled.button`
   }
 `;
 
-const SyncBadge = styled.button`
-  display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
-  background: ${({ theme }) => theme.component.glassCard.bg};
-  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
-  box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  color: ${({ theme }) => theme.semantic.color.textPrimary};
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: ${({ theme }) => theme.semantic.color.borderHover};
-  }
-
-  &:active:not(:disabled) {
-    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
 
 const PlayerList = styled.div<{ $scrolled: boolean }>`
   display: flex;
@@ -518,7 +489,6 @@ export default function ManagePlayersPage() {
   const [gameName, setGameName] = useState("");
   const [tagLine, setTagLine] = useState("");
   const [adding, setAdding] = useState(false);
-  const [syncing, setSyncing] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [seedProgress, setSeedProgress] = useState("");
   const [listScrolled, setListScrolled] = useState(false);
@@ -573,13 +543,6 @@ export default function ManagePlayersPage() {
       await fetch(`/api/players/${puuid}`, { method: "DELETE" });
       setPlayers((prev) => prev.filter((p) => p.puuid !== puuid));
     } catch { /* silent */ }
-  };
-
-  const handleSync = async () => {
-    setSyncing(true);
-    try { await fetch("/api/sync", { method: "POST" }); await fetchPlayers(); }
-    catch { /* silent */ }
-    finally { setSyncing(false); }
   };
 
   const handleSeed = async () => {
@@ -703,16 +666,6 @@ export default function ManagePlayersPage() {
           title="Tracked Players"
           icon={Users}
           style={{ flex: 8, minHeight: 0 }}
-          headerAction={
-            <SyncBadge onClick={handleSync} disabled={syncing}>
-              <RefreshCw
-                size={ICON_SIZE.sm}
-                color={theme.semantic.color.accent}
-                style={syncing ? { animation: "spin 1s linear infinite" } : undefined}
-              />
-              <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
-            </SyncBadge>
-          }
         >
           <PlayerList
             $scrolled={listScrolled}

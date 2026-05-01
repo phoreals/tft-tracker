@@ -142,8 +142,21 @@ const BackLink = styled(Link)`
 
 const PlayerHeader = styled.div`
   display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+`;
+
+const PlayerIdentity = styled.div`
+  display: flex;
   align-items: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing.md};
+  min-width: 0;
 `;
 
 const ProfileIcon = styled.div`
@@ -392,30 +405,36 @@ const LoadingText = styled.div`
 const SyncWrap = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  margin-left: auto;
-  flex-shrink: 0;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    align-items: flex-end;
+  }
 `;
 
 const SyncButton = styled.button`
   display: flex;
   align-items: center;
+  align-self: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
     border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+
+  &:active:not(:disabled) {
+    filter: brightness(0.85);
   }
 
   &:disabled {
@@ -434,12 +453,11 @@ const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme, $tone }) =>
     $tone === "error"
-      ? theme.semantic.color.info
+      ? theme.semantic.color.danger
       : $tone === "warn"
         ? theme.semantic.color.accent
         : theme.semantic.color.textMuted};
   margin: 0;
-  text-align: right;
   white-space: pre-line;
 `;
 
@@ -744,40 +762,42 @@ export default function PlayerDrilldownPage() {
       </BackLink>
 
       <PlayerHeader>
-        <ProfileIcon>
-          {player.profileIconId ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${player.profileIconId}.jpg`}
-              alt=""
-              width={80}
-              height={80}
-              style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
-            />
-          ) : (
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-            </svg>
-          )}
-        </ProfileIcon>
-        <PlayerInfo>
-          <PlayerName>
-            {player.gameName}
-            <PlayerTag> #{player.tagLine}</PlayerTag>
-          </PlayerName>
-          {player.current && (
-            <RankBadge $color={getRankColor(player.current.tier)}>
-              <RankEmblem tier={player.current.tier} size={ICON_SIZE.nav} color={getRankColor(player.current.tier)} />
-              {formatRank(player.current.tier, player.current.rank, player.current.lp)}
-              &nbsp;&middot;&nbsp;{player.current.wins}W {player.current.losses}L
-            </RankBadge>
-          )}
-        </PlayerInfo>
+        <PlayerIdentity>
+          <ProfileIcon>
+            {player.profileIconId ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${player.profileIconId}.jpg`}
+                alt=""
+                width={80}
+                height={80}
+                style={{ display: "block", width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <circle cx="12" cy="8" r="4"/>
+                <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+              </svg>
+            )}
+          </ProfileIcon>
+          <PlayerInfo>
+            <PlayerName>
+              {player.gameName}
+              <PlayerTag> #{player.tagLine}</PlayerTag>
+            </PlayerName>
+            {player.current && (
+              <RankBadge $color={getRankColor(player.current.tier)}>
+                <RankEmblem tier={player.current.tier} size={ICON_SIZE.nav} color={getRankColor(player.current.tier)} />
+                {formatRank(player.current.tier, player.current.rank, player.current.lp)}
+                &nbsp;&middot;&nbsp;{player.current.wins}W {player.current.losses}L
+              </RankBadge>
+            )}
+          </PlayerInfo>
+        </PlayerIdentity>
         <SyncWrap>
           <SyncButton onClick={handleSync} disabled={syncing}>
-            <SpinningRefresh size={ICON_SIZE.sm} $spinning={syncing} />
-            <span>{syncing ? "SYNCING..." : "SYNC"}</span>
+            <SpinningRefresh size={ICON_SIZE.md} $spinning={syncing} />
+            <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
           </SyncButton>
           {syncStatus && <SyncStatus $tone={syncStatus.tone}>{syncStatus.message}</SyncStatus>}
         </SyncWrap>

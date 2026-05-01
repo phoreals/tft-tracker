@@ -113,7 +113,7 @@ const SyncStatus = styled.p<{ $tone: "muted" | "warn" | "error" }>`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme, $tone }) =>
     $tone === "error"
-      ? theme.semantic.color.info
+      ? theme.semantic.color.danger
       : $tone === "warn"
         ? theme.semantic.color.accent
         : theme.semantic.color.textMuted};
