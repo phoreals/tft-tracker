@@ -121,7 +121,13 @@ Empty state: "No rank history yet. Sync to start tracking."
 See `docs/DATA_VIZ.md` for full chart spec.
 
 ### Sync Button
-Top-right of the page header. Runs a multi-pass loop: calls `POST /api/sync` repeatedly until `matchesRemaining === 0` across all players. Shows a spinning icon and live status text ("Syncing…", "Pass 2 — 45 matches remaining, continuing…"). If a pass returns `maxRateLimitMs > 0`, counts down the rate-limit wait second-by-second before the next pass.
+Top-right of the page header. Runs a multi-pass loop: calls `POST /api/sync` repeatedly until `matchesRemaining === 0` across all players. Shows a spinning icon while in flight. On completion, a `SyncOverlay` toast appears in the bottom-right (bottom-center on mobile) showing the result:
+- **Success**: "Synced 11 players — 5 matches added (Banh +2, Demure +3)". Auto-dismisses after 5s.
+- **No changes**: "All 11 players up to date". Auto-dismisses after 5s.
+- **Error**: Red-bordered card with monospace error text. Persists until dismissed. Copy button copies the raw error for debugging.
+- **Warn**: Gold-bordered card for match fetch errors. Auto-dismisses after 5s.
+
+If a pass returns `maxRateLimitMs > 0`, counts down the rate-limit wait second-by-second before the next pass (no overlay during sync — only the spinning button icon).
 
 ## Manage Players (`/players`)
 
@@ -156,7 +162,6 @@ Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
 
 **Rank abbreviation on mobile**: Rank strings are abbreviated to save horizontal space — e.g. `Gold II 47 LP → G2 47LP`, `Master 185 LP → M 185LP`. The "Peak:" and "Low:" sub-line labels in the player performance table are always written in full regardless of viewport.
 
-**Sync Now** badge in the card header triggers `POST /api/sync`.
 
 ## Superlative Drilldown (`/superlative/[category]`)
 
@@ -224,12 +229,12 @@ Scrollable list of **all stored matches** (newest first, not week-scoped). Each 
 ## Player Drilldown (`/player/[puuid]`)
 
 ### Sync Button
-Top-right of the player header (alongside the avatar and rank badge). Calls `POST /api/sync/[puuid]` — a targeted sync that dedicates the full 50s budget to a single player. Same multi-pass loop and rate-limit countdown as the main page sync. Intended for manual backfill when a player's match count looks wrong. Refreshes player data after each pass.
+Below the player identity on mobile, right-aligned on desktop. Visually identical to the homepage sync button. Calls `POST /api/sync/[puuid]` — a targeted sync that dedicates the full 50s budget to a single player. Same multi-pass loop, rate-limit countdown, and `SyncOverlay` result toast as the homepage. Success message includes the player name: "Richardpression synced — 3 matches added".
 
 ## Data Refresh Flow
 
 1. **Automatic**: Vercel Cron hits `GET /api/cron` daily at midnight UTC
-2. **Manual (all players)**: User clicks "Sync Now" on the home or players page → multi-pass `POST /api/sync`
-3. **Manual (one player)**: User clicks "SYNC" on the player drilldown page → multi-pass `POST /api/sync/[puuid]`
+2. **Manual (all players)**: User clicks "Sync Now" on the home page → multi-pass `POST /api/sync`
+3. **Manual (one player)**: User clicks "SYNC NOW" on the player drilldown page → multi-pass `POST /api/sync/[puuid]`
 4. **On add**: Adding a player fetches their rank + first 30 Set 17 matches. Subsequent syncs backfill any remaining history (30 per run).
 5. Page data is fetched via `GET /api/players` on mount (client-side `useEffect`)

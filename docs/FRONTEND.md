@@ -38,6 +38,7 @@ components/
 ├── PlayerCardView.tsx      Card view for player stats — CSS Grid, auto-fill columns, each player a card.
 ├── PlaytimeDisplay.tsx     Reusable playtime formatter with portal tooltip. Three variants: full, hours, short.
 ├── TabNavigation.tsx       Shared sticky tab bar + mobile dropdown. Props: selectedTab, onTabChange, weeks.
+├── SyncOverlay.tsx         Fixed-position toast for sync results. Portal to body. Auto-dismiss success, persist errors with copy button.
 └── RankChart.tsx           Recharts LineChart. Y-axis tick tooltips via portal. Props: hideLegend, lineColors.
 
 hooks/
