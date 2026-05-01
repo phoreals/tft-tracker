@@ -109,9 +109,9 @@ const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
 
 const Tab = styled.button<{ $active: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   padding: ${({ theme }) => theme.primitive.spacing.xs}
-    ${({ theme }) => theme.primitive.spacing.md};
+    ${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid
     ${({ $active, theme }) =>
