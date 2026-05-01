@@ -148,14 +148,19 @@ const SummonerChip = styled(Link)`
 `;
 
 const SummonerIcon = styled.div`
-  width: ${ICON_SIZE.avatar}px;
-  height: ${ICON_SIZE.avatar}px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(12px);
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   overflow: hidden;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    width: ${ICON_SIZE.avatar}px;
+    height: ${ICON_SIZE.avatar}px;
+  }
   display: flex;
   align-items: center;
   justify-content: center;
@@ -355,7 +360,7 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
                           alt=""
                           width={32}
                           height={32}
-                          style={{ display: "block" }}
+                          style={{ display: "block", width: "100%", height: "100%" }}
                         />
                       ) : (
                         <User size={ICON_SIZE.md} />
