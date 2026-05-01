@@ -120,11 +120,14 @@ const SummonerChip = styled(Link)`
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
-  margin-left: -${({ theme }) => theme.primitive.spacing.xs};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   text-decoration: none;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   transition: background 0.2s;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.xs};
+  }
 
   &:hover {
     background: rgba(229, 197, 135, 0.08);
@@ -195,6 +198,41 @@ const TimeCell = styled.td`
   font-size: 12px;
   color: ${({ theme }) => theme.semantic.color.textSecondary};
   white-space: nowrap;
+  display: none;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: table-cell;
+  }
+`;
+
+const TimeSortTh = styled(SortTh)`
+  display: none !important;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: table-cell !important;
+  }
+`;
+
+const RankEmblemMobile = styled.span`
+  display: inline-flex;
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: none;
+  }
+`;
+
+const RankEmblemDesktop = styled.span`
+  display: none;
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    display: inline-flex;
+  }
+`;
+
+const RankText = styled.span`
+  font-size: 10px;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    font-size: 12px;
+  }
 `;
 
 const EmptyCell = styled.td`
@@ -282,9 +320,9 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
             <SortTh $active={sortKey === "firstRate"} style={{ textAlign: "center" }} onClick={() => toggleSort("firstRate")}>
               {renderSortLabel("firstRate", "Win%")}
             </SortTh>
-            <SortTh $active={sortKey === "time"} style={{ textAlign: "right" }} onClick={() => toggleSort("time")}>
+            <TimeSortTh $active={sortKey === "time"} style={{ textAlign: "right" }} onClick={() => toggleSort("time")}>
               {renderSortLabel("time", "Playtime")}
-            </SortTh>
+            </TimeSortTh>
           </tr>
         </Thead>
         <Tbody>
@@ -317,12 +355,19 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
                     {row.tier && (
-                      <RankEmblem tier={row.tier} size={ICON_SIZE.md} color={getRankColor(row.tier)} />
+                      <>
+                        <RankEmblemMobile>
+                          <RankEmblem tier={row.tier} size={12} color={getRankColor(row.tier)} />
+                        </RankEmblemMobile>
+                        <RankEmblemDesktop>
+                          <RankEmblem tier={row.tier} size={14} color={getRankColor(row.tier)} />
+                        </RankEmblemDesktop>
+                      </>
                     )}
-                    <span style={{ fontSize: 12, color: getRankColor(row.tier) }}>
+                    <RankText style={{ color: getRankColor(row.tier) }}>
                       <RankFull>{row.rank}</RankFull>
                       <RankAbbr>{row.rankAbbr}</RankAbbr>
-                    </span>
+                    </RankText>
                   </div>
                 </td>
                 <CenterCell>{isSet ? row.totalGames : row.scopedGames}</CenterCell>
