@@ -30,9 +30,9 @@ Raw values with no UI meaning. Never import directly into components.
 
 **Radius**: 4px (`sm`) through 12px (`xl`), plus `full` = `9999px` for pill shapes and circular scrollbar thumbs
 
-**Font sizes**: `2xs` = 10px (between `xs`=9px and `sm`=11px) for small captions and chart ticks
+**Font sizes**: `2xs` 8px, `xs` 10px, `sm` 12px, `md` 14px, `lg` 18px, `xl` 24px, `2xl` 30px, `3xl` 36px, `4xl` 48px
 
-**Breakpoints**: `md` 768px, `lg` 1024px
+**Breakpoints**: `sm` 640px, `md` 768px, `lg` 1024px
 
 ### Semantic Layer
 Maps primitives to UI roles. This is what components reference.
@@ -135,7 +135,7 @@ Styled to match the theme: gold thumb (20% opacity, 40% on hover) on a dark trac
 
 ## Sidebar Brand
 
-The sidebar header displays an inline SVG of the TFT favicon (the 8-point star path defined in `app/icon.tsx`) followed by a brand text block. The SVG path is duplicated in `components/Sidebar.tsx` as `TFT_ICON_PATH`. Brand title is "THE ASYLUM" (uppercase, not italic) in the display font at 14px; subtitle is "TFT Tracker" in 9px muted text.
+The sidebar header displays an inline SVG of the TFT favicon (the 8-point star path defined in `app/icon.tsx`) followed by a brand text block. The SVG path is duplicated in `components/Sidebar.tsx` as `TFT_ICON_PATH`. Brand title is "THE ASYLUM" (uppercase, not italic) in the display font at 14px; subtitle is "TFT Tracker" in `2xs` (8px) muted text.
 
 When the sidebar is expanded (224px wide): icon is 20px, brand text fades in. When collapsed (56px): icon grows to 24px to fill the strip, brand text hides. Navigation icons follow the same pattern — 20px when expanded, 24px when collapsed.
 
@@ -161,7 +161,7 @@ Tab bars use conditional `mask-image` gradients on both left and right edges (48
 | Data value | 14px | Medium | Display | None |
 | Stat number | 30-36px | Bold | Display | None |
 | Body text | 14px | Regular | Body | None |
-| Muted caption | 9-11px | Regular | Display | Uppercase |
+| Muted caption | 8-12px | Regular | Display | Uppercase |
 
 ## CHART Constants Pattern
 
@@ -176,7 +176,7 @@ const CHART = {
   refStroke: theme.semantic.color.chartStroke,
   tick: {
     fill:       theme.primitive.color.neutral200,
-    fontSize:   parseInt(theme.primitive.fontSize["2xs"]),
+    fontSize:   parseInt(theme.primitive.fontSize.xs),
     fontFamily: "Space Grotesk",
   },
   tooltip: { bg, border, radius, fontFamily, fontSize, labelColor },

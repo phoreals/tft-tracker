@@ -46,7 +46,7 @@ const CHART = {
   refStroke: theme.semantic.color.chartStroke,
   tick: {
     fill:       theme.primitive.color.neutral200,
-    fontSize:   parseInt(theme.primitive.fontSize["2xs"]),
+    fontSize:   parseInt(theme.primitive.fontSize.xs),
     fontFamily: "Space Grotesk",
   },
   tooltip: {
@@ -213,7 +213,7 @@ const PageSubtitle = styled.p`
   font-family: ${({ theme }) => theme.semantic.font.body};
   font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   color: ${({ theme }) => theme.semantic.color.textMuted};
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const RankBadge = styled.div<{ $color: string }>`
@@ -236,7 +236,7 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: 540px) {
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.sm}) {
     grid-template-columns: repeat(3, 1fr);
   }
 
@@ -289,7 +289,7 @@ const StatRow = styled.div`
 
 const StatLabel = styled.span`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textMuted};
 `;
 
@@ -373,7 +373,7 @@ const MatchMeta = styled.span`
 
 const QueueBadge = styled.span<{ $ranked: boolean | undefined }>`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: 9px;
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   padding: 1px 5px;
   border-radius: ${({ theme }) => theme.primitive.radius.sm};

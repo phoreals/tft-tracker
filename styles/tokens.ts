@@ -38,9 +38,9 @@ export const primitive = {
   },
 
   fontSize: {
-    xs: "9px",
-    "2xs": "10px",
-    sm: "11px",
+    "2xs": "8px",
+    xs: "10px",
+    sm: "12px",
     md: "14px",
     lg: "18px",
     xl: "24px",
@@ -77,6 +77,7 @@ export const primitive = {
   },
 
   breakpoint: {
+    sm: "640px",
     md: "768px",
     lg: "1024px",
   },
@@ -148,13 +149,13 @@ export const semantic = {
     },
     label: {
       fontFamily: primitive.font.display,
-      fontSize: "12px",
+      fontSize: primitive.fontSize.sm,
       fontWeight: primitive.fontWeight.bold,
       lineHeight: 1,
     },
     data: {
       fontFamily: primitive.font.display,
-      fontSize: "14px",
+      fontSize: primitive.fontSize.md,
       fontWeight: primitive.fontWeight.medium,
       lineHeight: 1,
     },

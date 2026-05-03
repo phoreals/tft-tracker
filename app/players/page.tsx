@@ -107,7 +107,7 @@ const PageDescription = styled.p`
   font-family: ${({ theme }) => theme.semantic.font.body};
   font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   color: ${({ theme }) => theme.semantic.color.textMuted};
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const Grid = styled.div`
@@ -141,7 +141,7 @@ const FormGroup = styled.div`
 
 const FieldLabel = styled.label`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   display: block;
   margin-bottom: ${({ theme }) => theme.primitive.spacing.xs};
@@ -201,7 +201,7 @@ const PrimaryButton = styled.button`
 
 
 const SeedDescription = styled.p`
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textMuted};
   line-height: 1.6;
   margin-bottom: ${({ theme }) => theme.primitive.spacing.md};
@@ -214,7 +214,7 @@ const SeedButton = styled.button`
   justify-content: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   ${({ theme }) => theme.semantic.typography.label};
-  padding: 12px 0;
+  padding: ${({ theme }) => theme.primitive.spacing.sm} 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};

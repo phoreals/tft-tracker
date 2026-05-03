@@ -22,11 +22,12 @@ interface PlayerTableProps {
   players: PlayerRowInput[];
   selectedTab: "set" | number;
   weeks: { label: string; start: number; end: number; weekNumber: number }[];
+  periodTag?: React.ReactNode;
 }
 
 // ── Component ────────────────────────────────────────────────────
 
-export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
+export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTableProps) {
   const [view, setView] = useState<ViewMode>("table");
   const { sortedRows, sortKey, sortDir, toggleSort, isSet } = usePlayerRows(
     players,
@@ -39,7 +40,7 @@ export function PlayerTable({ players, selectedTab, weeks }: PlayerTableProps) {
   );
 
   return (
-    <GlassCard title="Player Performance" headerAction={toggle} prominent>
+    <GlassCard title="Player Performance" titleExtra={periodTag} headerAction={toggle} prominent>
       {view === "table" ? (
         <PlayerTableView
           rows={sortedRows}

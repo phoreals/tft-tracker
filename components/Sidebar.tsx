@@ -88,7 +88,7 @@ const BrandTitle = styled.span`
 const BrandSub = styled.span`
   display: block;
   ${({ theme }) => theme.semantic.typography.data};
-  font-size: 9px;
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   margin-top: 3px;
 `;
@@ -97,7 +97,7 @@ const Nav = styled.nav`
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const NavIcon = styled.span`
@@ -134,7 +134,6 @@ const NavLink = styled(Link)<{ $active: boolean; $expanded: boolean }>`
 
 const NavLabel = styled.span<{ $expanded: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   max-width: ${({ $expanded }) => ($expanded ? "160px" : "0")};
@@ -153,7 +152,7 @@ const Footer = styled.div<{ $expanded: boolean }>`
 
 const FooterText = styled.p`
   ${({ theme }) => theme.semantic.typography.data};
-  font-size: 9px;
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   color: rgba(208, 197, 181, 0.3);
   white-space: nowrap;
 `;
@@ -180,7 +179,6 @@ const CollapseBtn = styled.button`
 
 const CollapseBtnLabel = styled.span<{ $expanded: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 12px;
   overflow: hidden;
   max-width: ${({ $expanded }) => ($expanded ? "120px" : "0")};
   opacity: ${({ $expanded }) => ($expanded ? 1 : 0)};

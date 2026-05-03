@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import styled from "styled-components";
-import { RefreshCw, Clock, Trophy, Gamepad2, User } from "lucide-react";
+import { RefreshCw, User } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
 import { PlayerTable } from "@/components/PlayerTable";
@@ -12,7 +12,7 @@ import { getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLA
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { SyncOverlay } from "@/components/SyncOverlay";
-import { theme, ICON_SIZE } from "@/styles/theme";
+import { ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ const PageSubtitle = styled.p`
   font-family: ${({ theme }) => theme.semantic.font.body};
   font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   color: ${({ theme }) => theme.semantic.color.textMuted};
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const SyncButton = styled.button`
@@ -115,10 +115,6 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: 640px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     grid-template-columns: repeat(4, 1fr);
   }
@@ -135,33 +131,25 @@ const StatLabel = styled.span`
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textMuted};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: 12px;
-  }
 `;
 
 const DurationPill = styled.span`
   display: inline-flex;
   align-items: center;
-  padding: 4px;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.accent};
   flex-shrink: 0;
 `;
 
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xl};
+  font-size: clamp(${({ theme }) => theme.primitive.fontSize.lg}, 4vw, ${({ theme }) => theme.primitive.fontSize["3xl"]});
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
-
-  @media (min-width: 640px) {
-    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
-  }
 `;
 
 // Wraps unit indicators (%, LP, d/h/m, LP/game) in stat values.
@@ -173,7 +161,7 @@ const SuperlativesGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: 640px) {
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.sm}) {
     grid-template-columns: repeat(3, 1fr);
   }
 `;
@@ -449,6 +437,10 @@ export default function WeeklyStatsPage() {
     };
   }, [players, selectedTab, weeks]);
 
+  const isSetMode = selectedTab === "set";
+  const weekNumber = weeks[selectedTab as number]?.weekNumber;
+  const period = isSetMode ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
+
   const superlatives = useMemo(() => {
     if (players.length === 0) return [];
 
@@ -457,9 +449,6 @@ export default function WeeklyStatsPage() {
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
     const stats = computePlayerStats(players, win);
 
-    const isSetMode = selectedTab === "set";
-    const weekNumber = weeks[selectedTab as number]?.weekNumber;
-    const period = isSetMode ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
     return SUPERLATIVE_CATEGORIES.map((cat) => {
       const leader = findLeader(stats, cat);
       const val = leader ? leader[cat.key] : null;
@@ -548,6 +537,7 @@ export default function WeeklyStatsPage() {
         }))}
         selectedTab={selectedTab}
         weeks={weeks}
+        periodTag={<DurationPill>{loading ? "···" : period}</DurationPill>}
       />
 
       <RankChart
@@ -558,6 +548,7 @@ export default function WeeklyStatsPage() {
         }))}
         selectedTab={selectedTab}
         weeks={weeks}
+        periodTag={<DurationPill>{loading ? "···" : period}</DurationPill>}
       />
 
       <StatsGrid>
@@ -565,7 +556,7 @@ export default function WeeklyStatsPage() {
           <GlassCard>
             <StatRow>
               <StatLabel>Games</StatLabel>
-              <Gamepad2 size={ICON_SIZE.md} color={theme.semantic.color.accent} />
+              <DurationPill>{loading ? "···" : period}</DurationPill>
             </StatRow>
             <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
           </GlassCard>
@@ -575,7 +566,7 @@ export default function WeeklyStatsPage() {
           <GlassCard>
             <StatRow>
               <StatLabel>Squad Playtime</StatLabel>
-              <Clock size={ICON_SIZE.md} color={theme.semantic.color.info} />
+              <DurationPill>{loading ? "···" : period}</DurationPill>
             </StatRow>
             <StatValue>{loading ? "..." : <PlaytimeDisplay seconds={summaryStats.playtime} variant="full" />}</StatValue>
           </GlassCard>
@@ -585,7 +576,7 @@ export default function WeeklyStatsPage() {
           <GlassCard>
             <StatRow>
               <StatLabel>Avg Top 4 Rate</StatLabel>
-              <Trophy size={ICON_SIZE.md} color={theme.semantic.color.accent} />
+              <DurationPill>{loading ? "···" : period}</DurationPill>
             </StatRow>
             <StatValue>
               {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.top4 / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}
@@ -597,7 +588,7 @@ export default function WeeklyStatsPage() {
           <GlassCard>
             <StatRow>
               <StatLabel>Squad Win Rate</StatLabel>
-              <Trophy size={ICON_SIZE.md} color={theme.semantic.color.info} />
+              <DurationPill>{loading ? "···" : period}</DurationPill>
             </StatRow>
             <StatValue>
               {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.firsts / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}

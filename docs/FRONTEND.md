@@ -28,18 +28,18 @@ app/
 └── api/                    (see BACKEND.md)
 
 components/
-├── GlassCard.tsx           Glassmorphic card with motion animation. Accepts title, icon, headerAction.
+├── GlassCard.tsx           Glassmorphic card with motion animation. Accepts title, titleExtra, icon, headerAction.
 ├── Sidebar.tsx             Desktop sidebar with nav links. Uses Next.js Link + usePathname.
 ├── BottomNav.tsx           Mobile bottom nav. Same logic as Sidebar.
 ├── NavigationShell.tsx     Layout shell: Sidebar + main content area + BottomNav.
 ├── ViewToggle.tsx          Generic icon-button toggle for switching between named views (table/card/…).
-├── PlayerTable.tsx         Thin shell: calls usePlayerRows, manages view state, renders ViewToggle + active view.
+├── PlayerTable.tsx         Thin shell: calls usePlayerRows, manages view state, renders ViewToggle + active view. Accepts periodTag.
 ├── PlayerTableView.tsx     Table view for player stats — <table> with sortable headers.
 ├── PlayerCardView.tsx      Card view for player stats — CSS Grid, auto-fill columns, each player a card.
 ├── PlaytimeDisplay.tsx     Reusable playtime formatter with portal tooltip. Three variants: full, hours, short.
 ├── TabNavigation.tsx       Shared sticky tab bar + mobile dropdown. Props: selectedTab, onTabChange, weeks.
 ├── SyncOverlay.tsx         Fixed-position toast for sync results. Portal to body. Auto-dismiss success, persist errors with copy button.
-└── RankChart.tsx           Recharts LineChart. Y-axis tick tooltips via portal. Props: hideLegend, lineColors.
+└── RankChart.tsx           Recharts LineChart. Y-axis tick tooltips via portal. Props: hideLegend, lineColors, periodTag.
 
 hooks/
 ├── usePlayerRows.ts        Data + sort logic for player stats. Returns sortedRows, sortKey, sortDir, toggleSort.
@@ -77,6 +77,7 @@ Persistent layout wrapper. Renders:
 The primary UI container. Props:
 - `children` — card content
 - `title?` — uppercase label in the header
+- `titleExtra?` — ReactNode rendered inside the title row, right after the text (e.g. period tag pill)
 - `icon?` — Lucide icon component, rendered gold in the header
 - `headerAction?` — ReactNode for the right side of the header (e.g. sync badge, toggle)
 - `style?` — CSSProperties for overrides
@@ -86,10 +87,10 @@ Card padding is 16px on mobile, switching to the `glassCard.padding` token (24px
 Wraps content in a `motion.div` with fade-in + slide-up (16px) animation on mount.
 
 ### PlayerTable (shell)
-Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:
+Receives `{ players, selectedTab, weeks, periodTag? }` — fully controlled by page.tsx. Internally:
 1. Calls `usePlayerRows(players, selectedTab, weeks)` to get sorted rows and sort state
 2. Manages `view: "table" | "card"` state
-3. Renders a `ViewToggle` as the `GlassCard` `headerAction`
+3. Passes `periodTag` as `GlassCard`'s `titleExtra` and `ViewToggle` as `headerAction`
 4. Delegates rendering to `PlayerTableView` (table) or `PlayerCardView` (card)
 5. No internal tab state or tab bar
 
@@ -110,8 +111,8 @@ Reusable component for rendering playtime with a portal tooltip showing the most
 | Variant | Format | Used in |
 |---------|--------|---------|
 | `"full"` | `1d 23h 24m` | Player page stat card, squad playtime (main page) |
-| `"hours"` | `72h 24m` | Table view TIME column, card view TIME stat |
-| `"short"` | `72h` | (available; not currently used in production) |
+| `"hours"` | `72h 24m` | Table view TIME column |
+| `"short"` | `72h` | Card view TIME stat |
 
 Tooltip always shows `formatPlaytimeFull` output (`1d 23h 24m 30s` with seconds). Portal renders to `document.body` to escape any clipping context.
 
@@ -165,7 +166,7 @@ error: string             — validation/API error message
 2. **Styled components are defined above the React component** in the same file, grouped under a `// ── Styled ──` comment.
 3. **Transient props** use the `$prefix` convention (e.g. `$active`, `$elite`, `$spinning`) to prevent DOM forwarding.
 4. **No CSS classes or className** — everything is styled-components except `globals.css` (resets + keyframes).
-5. **Responsive**: mobile-first. Base styles target mobile; `@media (min-width: md)` adds desktop layout. Additional breakpoints used: `640px` (stats grid), `540px` (drilldown stat cards).
+5. **Responsive**: mobile-first. Base styles target mobile; `@media (min-width: md)` adds desktop layout. Three breakpoint tokens: `sm` (640px), `md` (768px), `lg` (1024px).
 6. **Horizontal scroll containers**: use the negative-margin bleed technique to extend a scrollable area to card edges while preserving trailing scroll padding:
    ```css
    margin-left: -${spacing.md}; margin-right: -${spacing.md};

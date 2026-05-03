@@ -31,13 +31,13 @@ A scrollable tab bar sits between the page header and the summary cards. It cont
 
 ### Superlatives
 
-Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting the player who leads each stat category for the selected tab's time window. Each card has the same layout as the summary cards (label + icon header, large stat value) plus a clickable player chip (24px profile icon + name) linking to the player's drilldown page. The chip has a hover affordance (gold tinted background).
+Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting the player who leads each stat category for the selected tab's time window. Each card shows a label + duration pill header and a large stat value, plus a clickable player chip (24px profile icon + name) linking to the player's drilldown page. The chip has a hover affordance (gold tinted background).
 
 | Card | Metric |
 |------|--------|
 | **Most Games** | Highest scoped game count |
 | **Best Top 4%** | Highest top-4 rate (min 1 game) |
-| **Most Wins (1st)** | Most 1st-place finishes |
+| **Best Win Rate (1st)** | Highest % of 1st-place finishes |
 | **Most Time Played** | Highest scoped playtime |
 | **Highest LP Gain** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
 | **Most Efficient Climb** | Highest LP gain per game played |
@@ -56,7 +56,7 @@ On the **Player Drilldown** page, any superlatives the viewed player currently h
 
 ### Summary Cards
 
-Four `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart). Each card is a link — clicking it navigates to a **Stat Drilldown** page (`/stats/[category]`) showing a per-player breakdown with a donut chart or gauge. The cards have the same hover lift effect as superlative cards.
+Four `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart). Each card has a label + duration pill header (same pill as superlatives) and a fluid-sized stat value (`clamp` between `lg` and `3xl`). Each card is a link — clicking it navigates to a **Stat Drilldown** page (`/stats/[category]`) showing a per-player breakdown with a donut chart or gauge. The cards have the same hover lift effect as superlative cards.
 
 | Card | "Set 17" | Week tab | Drilldown |
 |------|-----------|---------|-----------|
@@ -84,7 +84,7 @@ Single-column stacked layout. The chart sits above the ranked table at 50% width
 
 ### Player Performance Table
 
-A `GlassCard` with a **view toggle** (table / card) in the header. Data and sort state live in `usePlayerRows`; the active view is managed by `PlayerTable`.
+A `GlassCard` with a **duration pill** (period tag) after the title text and a **view toggle** (table / card) in the header action area. Data and sort state live in `usePlayerRows`; the active view is managed by `PlayerTable`.
 
 **View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 
@@ -101,13 +101,13 @@ A `GlassCard` with a **view toggle** (table / card) in the header. Data and sort
 | 1st% | Scoped `(placements == 1) / total * 100` | Cyan text |
 | Time Played | Scoped playtime | |
 
-**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab. Cards have a `borderDim` background, `xs` padding mobile / `md` desktop, and a gold glow (`glowGold`) on hover.
+**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName (`md`/14px) + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time as hours-only short format). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab. Cards have a `borderDim` background, `xs` padding mobile / `md` desktop, and a gold glow (`glowGold`) on hover.
 
 Empty state: centered message "No players tracked yet. Add players to get started." in both views.
 
 ### Rank Over Time Chart
 
-A Recharts `LineChart` inside a `GlassCard`. Mode is driven entirely by the page-level tab — no internal controls on the chart. Plots **daily LP** (converted from tier + rank + lp) for all tracked players on a shared timeline.
+A Recharts `LineChart` inside a `GlassCard` with a **duration pill** (period tag) after the title text. Mode is driven entirely by the page-level tab — no internal controls on the chart. Plots **daily LP** (converted from tier + rank + lp) for all tracked players on a shared timeline.
 
 - Y-axis: tier emblems at 400 LP boundaries + division labels (IV/III/II/I) at 100 LP intervals within each tier; domain auto-snapped to data range
 - X-axis: date (M/D), up to ~6 ticks, epoch timestamp scale

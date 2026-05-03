@@ -31,7 +31,7 @@ const NavLink = styled(Link)<{ $active: boolean }>`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   text-decoration: none;
   transition: color 0.2s;
   color: ${({ $active, theme }) =>
@@ -40,7 +40,7 @@ const NavLink = styled(Link)<{ $active: boolean }>`
 
 const NavLabel = styled.span`
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: 8px;
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
 `;
 
 const navItems = [

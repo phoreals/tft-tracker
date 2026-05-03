@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import styled from "styled-components";
 import { GlassCard } from "./GlassCard";
-import { TrendingUp } from "lucide-react";
+
 import { rankToLP, formatRankAbbr, getRankColor } from "@/lib/utils";
 import type { HistorySnapshot } from "@/lib/kv";
 import { theme } from "@/styles/theme";
@@ -28,7 +28,7 @@ const CHART = {
   refStroke: theme.semantic.color.chartStroke,
   tick: {
     fill:       theme.primitive.color.neutral200,
-    fontSize:   parseInt(theme.primitive.fontSize["2xs"]),
+    fontSize:   parseInt(theme.primitive.fontSize.xs),
     fontFamily: "Space Grotesk",
   },
   tooltip: {
@@ -381,9 +381,10 @@ interface RankChartProps {
   weeks: { label: string; start: number; end: number }[];
   hideLegend?: boolean;
   lineColors?: string[];
+  periodTag?: React.ReactNode;
 }
 
-export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors }: RankChartProps) {
+export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors, periodTag }: RankChartProps) {
   const [hiddenPlayers, setHiddenPlayers] = useState<Set<string>>(new Set());
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
   const hoveredPlayerRef = useRef<string | null>(null);
@@ -475,7 +476,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors 
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1] ?? null);
 
   return (
-    <GlassCard title="Rank Over Time" icon={TrendingUp} prominent>
+    <GlassCard title="Rank Over Time" titleExtra={periodTag} prominent>
       <ChartContainer
         ref={containerRef}
         onMouseMove={(e) => { mousePos.current = { x: e.clientX, y: e.clientY }; }}

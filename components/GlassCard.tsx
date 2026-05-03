@@ -37,11 +37,6 @@ const Title = styled.h3<{ $prominent?: boolean }>`
   font-size: ${({ $prominent, theme }) =>
     $prominent ? theme.primitive.fontSize.md : theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: ${({ $prominent, theme }) =>
-      $prominent ? theme.primitive.fontSize.md : "12px"};
-  }
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
@@ -61,6 +56,7 @@ interface GlassCardProps {
   children: React.ReactNode;
   style?: React.CSSProperties;
   title?: string;
+  titleExtra?: React.ReactNode;
   icon?: React.ElementType;
   headerAction?: React.ReactNode;
   prominent?: boolean;
@@ -70,6 +66,7 @@ export function GlassCard({
   children,
   style,
   title,
+  titleExtra,
   icon: Icon,
   headerAction,
   prominent,
@@ -87,6 +84,7 @@ export function GlassCard({
             <Title $prominent={prominent}>
               {Icon && <IconWrapper><Icon size={ICON_SIZE.md} /></IconWrapper>}
               {title}
+              {titleExtra}
             </Title>
           )}
           {headerAction && <div style={{ flexShrink: 0 }}>{headerAction}</div>}

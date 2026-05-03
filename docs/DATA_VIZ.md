@@ -148,7 +148,7 @@ Rendered via Recharts `content` prop (not a portal). Shows:
 ## Design Conventions Across All Charts
 
 1. **No axis lines or tick lines** — use `axisLine={false} tickLine={false}` on both axes. The grid provides visual reference instead.
-2. **Tick font**: always `{ fill: "#d0c5b5", fontSize: 10, fontFamily: "Space Grotesk" }`. These are hardcoded — Recharts tick props don't access theme.
+2. **Tick font**: always `{ fill: neutral200, fontSize: parseInt(fontSize.xs), fontFamily: "Space Grotesk" }` via the `CHART` constants block — uses theme tokens, not hardcoded values.
 3. **Horizontal-only grid**: `<CartesianGrid vertical={false}>` keeps charts uncluttered.
 4. **`connectNulls`**: enabled on all lines so gaps (days with no data) don't break the line.
 5. **`isAnimationActive={false}`**: disabled on RankChart to prevent re-animation when dot functions recreate on render.

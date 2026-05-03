@@ -158,7 +158,7 @@ const PageSubtitle = styled.p`
   font-family: ${({ theme }) => theme.semantic.font.body};
   font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   color: ${({ theme }) => theme.semantic.color.textMuted};
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const ContentGrid = styled.div`
@@ -232,7 +232,7 @@ const GaugeLabel = styled.span`
 
 const GaugeTrack = styled.div`
   position: relative;
-  height: 4px;
+  height: ${({ theme }) => theme.primitive.spacing["2xs"]};
   width: 100%;
   background: ${({ theme }) => theme.component.table.borderColor};
   border-radius: ${({ theme }) => theme.primitive.radius.full};
@@ -266,7 +266,7 @@ const Table = styled.table`
 const Thead = styled.thead`
   th {
     ${({ theme }) => theme.semantic.typography.label};
-    font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
     color: ${({ theme }) => theme.semantic.color.textMuted};
     text-align: left;
     padding: ${({ theme }) => theme.primitive.spacing.sm};
@@ -283,7 +283,7 @@ const RankBadge = styled.span`
   align-items: center;
   justify-content: center;
   min-width: 20px;
-  padding: 4px;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   font-family: ${({ theme }) => theme.semantic.font.display};
@@ -345,11 +345,11 @@ const ColorDot = styled.span<{ $color: string }>`
 `;
 
 const BarTrack = styled.div`
-  height: 4px;
+  height: ${({ theme }) => theme.primitive.spacing["2xs"]};
   width: 100%;
   background: ${({ theme }) => theme.component.table.borderColor};
   border-radius: ${({ theme }) => theme.primitive.radius.full};
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
   overflow: hidden;
 `;
 

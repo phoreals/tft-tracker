@@ -4,7 +4,7 @@ import React from "react";
 import styled from "styled-components";
 import Link from "next/link";
 import { User } from "lucide-react";
-import { ICON_SIZE } from "@/styles/theme";
+import { ICON_SIZE, theme } from "@/styles/theme";
 import { getRankColor } from "@/lib/utils";
 import { SortChevron } from "./SortChevron";
 import { PlaytimeDisplay } from "./PlaytimeDisplay";
@@ -72,7 +72,7 @@ const PlayerInfo = styled.div`
 const PlayerName = styled.div`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-size: ${({ theme }) => theme.primitive.fontSize.md};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   white-space: nowrap;
   overflow: hidden;
@@ -88,7 +88,7 @@ const PlayerTag = styled.span`
 const RankRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 `;
@@ -101,7 +101,7 @@ const Divider = styled.div`
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
 const Stat = styled.div`
@@ -120,7 +120,7 @@ const StatValue = styled.span`
 
 const StatLabel = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: 8px;
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   white-space: nowrap;
 `;
@@ -280,7 +280,7 @@ export function PlayerCardView({ rows, isSet, sortKey, sortDir, toggleSort }: Pl
                   {row.tier && (
                     <RankEmblem tier={row.tier} color={getRankColor(row.tier)} />
                   )}
-                  <span style={{ color: getRankColor(row.tier), fontSize: 11 }}>
+                  <span style={{ color: getRankColor(row.tier), fontSize: theme.primitive.fontSize.sm }}>
                     {row.rankAbbr}
                   </span>
                 </RankRow>
@@ -303,8 +303,8 @@ export function PlayerCardView({ rows, isSet, sortKey, sortDir, toggleSort }: Pl
                 <StatLabel>1ST</StatLabel>
               </Stat>
               <Stat>
-                <StatValue style={{ fontSize: 11 }}>
-                  <PlaytimeDisplay seconds={isSet ? row.totalDurationSec : row.scopedDurationSec} variant="hours" />
+                <StatValue style={{ fontSize: theme.primitive.fontSize.sm }}>
+                  <PlaytimeDisplay seconds={isSet ? row.totalDurationSec : row.scopedDurationSec} variant="short" />
                 </StatValue>
                 <StatLabel>TIME</StatLabel>
               </Stat>

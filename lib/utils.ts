@@ -169,6 +169,7 @@ export interface PlayerStat {
   player: PlayerStatInput;
   games: number;
   firsts: number;
+  winRate: number;
   top4Rate: number;
   time: number;
   lpDiff: number | null;
@@ -207,7 +208,9 @@ export function computePlayerStats(
         : null;
     const lpPerGame = lpDiff !== null && games > 0 ? lpDiff / games : null;
 
-    return { player: p, games, firsts, top4Rate, time, lpDiff, lpPerGame };
+    const winRate = games > 0 ? (firsts / games) * 100 : 0;
+
+    return { player: p, games, firsts, winRate, top4Rate, time, lpDiff, lpPerGame };
   });
 }
 
@@ -215,7 +218,7 @@ export type SuperlativeCategory = {
   slug: string;
   title: string;
   label: (isSet: boolean, weekNumber?: number) => string;
-  key: keyof Pick<PlayerStat, "games" | "firsts" | "top4Rate" | "time" | "lpDiff" | "lpPerGame">;
+  key: keyof Pick<PlayerStat, "games" | "firsts" | "winRate" | "top4Rate" | "time" | "lpDiff" | "lpPerGame">;
   format: (v: number) => string;
   filter: (s: PlayerStat) => boolean;
 };
@@ -223,7 +226,7 @@ export type SuperlativeCategory = {
 export const SUPERLATIVE_CATEGORIES: SuperlativeCategory[] = [
   { slug: "most-games",       title: "Most Games",           label: (s, w) => s ? `Most Games ${SET_LABEL}` : `Most Games ${w ? `Week ${w}` : "This Week"}`,                        key: "games",     format: (v) => String(v),                                      filter: (s) => s.games > 0 },
   { slug: "best-top4",        title: "Best Top 4%",          label: (s, w) => s ? `Best Top 4% ${SET_LABEL}` : `Best Top 4% ${w ? `Week ${w}` : "This Week"}`,                 key: "top4Rate",  format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
-  { slug: "most-wins",        title: "Most Wins (1st)",      label: (s, w) => s ? `Most Wins (1st) ${SET_LABEL}` : `Most Wins (1st) ${w ? `Week ${w}` : "This Week"}`,         key: "firsts",    format: (v) => String(v),                                      filter: (s) => s.firsts > 0 },
+  { slug: "most-wins",        title: "Best Win Rate (1st)",  label: (s, w) => s ? `Best Win Rate (1st) ${SET_LABEL}` : `Best Win Rate (1st) ${w ? `Week ${w}` : "This Week"}`,  key: "winRate",   format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
   { slug: "most-time",        title: "Most Time Played",     label: (s, w) => s ? `Most Time Played ${SET_LABEL}` : `Most Time Played ${w ? `Week ${w}` : "This Week"}`,       key: "time",      format: (v) => formatPlaytime(v),                              filter: (s) => s.time > 0 },
   { slug: "highest-lp",       title: "Highest LP Gain",      label: (s, w) => s ? `Highest LP Gain ${SET_LABEL}` : `Highest LP Gain ${w ? `Week ${w}` : "This Week"}`,         key: "lpDiff",    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,                  filter: (s) => s.lpDiff !== null },
   { slug: "best-lp-per-game", title: "Most Efficient Climb", label: (s, w) => s ? `Most Efficient Climb ${SET_LABEL}` : `Most Efficient Climb ${w ? `Week ${w}` : "This Week"}`, key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },

@@ -47,12 +47,12 @@ const Thead = styled.thead`
   th {
     padding: ${({ theme }) => theme.primitive.spacing.xs};
     font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
-    font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
     color: ${({ theme }) => theme.semantic.color.textDisabled};
 
     @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
       padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
-      font-size: 12px;
+      font-size: ${({ theme }) => theme.primitive.fontSize.sm};
     }
   }
 `;
@@ -61,6 +61,7 @@ const Thead = styled.thead`
 const SortIcon = styled.span<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
+  vertical-align: middle;
   margin-left: 3px;
   flex-shrink: 0;
   color: ${({ $active, theme }) =>
@@ -148,8 +149,8 @@ const SummonerChip = styled(Link)`
 `;
 
 const SummonerIcon = styled.div`
-  width: 16px;
-  height: 16px;
+  width: ${ICON_SIZE.md}px;
+  height: ${ICON_SIZE.md}px;
   flex-shrink: 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(12px);
@@ -179,7 +180,7 @@ const SummonerName = styled.span`
 
 const SummonerTag = styled.span`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -212,7 +213,7 @@ const FirstCell = styled.td`
 
 const TimeCell = styled.td`
   text-align: right;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textSecondary};
   white-space: nowrap;
   display: none;
@@ -245,10 +246,10 @@ const RankEmblemDesktop = styled.span`
 `;
 
 const RankText = styled.span`
-  font-size: 10px;
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: 12px;
+    font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   }
 `;
 
