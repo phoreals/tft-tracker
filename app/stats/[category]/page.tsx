@@ -254,9 +254,11 @@ const DonutWrap = styled.div`
   position: relative;
   touch-action: pan-y;
 
-  svg:focus {
+  svg:focus,
+  svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.primitive.radius.sm};
   }
   width: clamp(200px, 80dvw, 460px);
   aspect-ratio: 1;

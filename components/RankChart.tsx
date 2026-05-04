@@ -85,9 +85,11 @@ const ChartContainer = styled.div`
   width: 100%;
   touch-action: pan-y;
 
-  svg:focus {
+  svg:focus,
+  svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.primitive.radius.sm};
   }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -566,7 +568,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
 
               <Tooltip
                 content={<TooltipContent />}
-                cursor={{ stroke: CHART.grid, strokeWidth: 1 }}
+                cursor={{ stroke: CHART.refStroke, strokeWidth: 1 }}
                 wrapperStyle={{ background: "none", border: "none", boxShadow: "none", padding: 0, pointerEvents: "none" }}
               />
 
@@ -589,7 +591,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                     strokeOpacity={opacity}
                     strokeDasharray={dashPattern || undefined}
                     dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
-                    activeDot={{ r: 4, stroke: color, strokeWidth: 2 }}
+                    activeDot={{ r: 4, stroke: CHART.gold, strokeWidth: 2 }}
                     connectNulls
                     isAnimationActive={false}
                     onMouseEnter={() => {

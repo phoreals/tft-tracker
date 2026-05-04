@@ -346,9 +346,11 @@ const ChartContainer = styled.div`
   width: 100%;
   touch-action: pan-y;
 
-  svg:focus {
+  svg:focus,
+  svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.primitive.radius.sm};
   }
   margin-top: ${({ theme }) => theme.primitive.spacing.md};
 
