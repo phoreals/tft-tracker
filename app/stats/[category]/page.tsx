@@ -4,8 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
-import { ArrowLeft, User } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
+import { ArrowLeft } from "lucide-react";
+import { PieChart, Pie, Cell, Sector, Tooltip as RechartsTooltip, ResponsiveContainer, type PieSectorDataItem } from "recharts";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
 import { LINE_COLORS } from "@/components/RankChart";
@@ -240,6 +240,13 @@ const ContentGrid = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.lg};
+  align-items: center;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+  }
 `;
 
 const DonutSection = styled.div`
@@ -248,6 +255,7 @@ const DonutSection = styled.div`
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
   width: 100%;
+  flex-shrink: 0;
 `;
 
 const DonutWrap = styled.div`
@@ -260,7 +268,7 @@ const DonutWrap = styled.div`
     outline-offset: 2px;
     border-radius: ${({ theme }) => theme.primitive.radius.sm};
   }
-  width: clamp(200px, 80dvw, 460px);
+  width: min(clamp(240px, 80dvw, 360px), 100%);
   aspect-ratio: 1;
   display: flex;
   align-items: center;
@@ -296,7 +304,13 @@ const GaugeSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  width: 50%;
+  width: 100%;
+  flex-shrink: 0;
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    width: auto;
+    min-width: 200px;
+  }
 `;
 
 const GaugeValue = styled.span`
@@ -341,102 +355,64 @@ const GaugeRef = styled.div`
   opacity: 0.5;
 `;
 
-const Table = styled.table`
+const LegendList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  min-width: 0;
   width: 100%;
-  border-collapse: collapse;
-`;
 
-const Thead = styled.thead`
-  th {
-    ${({ theme }) => theme.semantic.typography.label};
-    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-    color: ${({ theme }) => theme.semantic.color.textMuted};
-    text-align: left;
-    padding: ${({ theme }) => theme.primitive.spacing.sm};
-    border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
-  }
-  th:first-child {
-    padding-left: ${({ theme }) => theme.primitive.spacing.xs};
-    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    width: auto;
   }
 `;
 
-const RankBadge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  color: ${({ theme }) => theme.semantic.color.textMuted};
-`;
-
-const Tbody = styled.tbody`
-  tr {
-    border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
-  }
-
-  @media (hover: hover) {
-    tr:hover {
-      background: ${({ theme }) => theme.component.table.rowHoverBg};
-    }
-  }
-
-  td {
-    padding: ${({ theme }) => theme.primitive.spacing.sm};
-    font-family: ${({ theme }) => theme.semantic.font.display};
-    font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-    color: ${({ theme }) => theme.semantic.color.textPrimary};
-  }
-  td:first-child {
-    padding-left: ${({ theme }) => theme.primitive.spacing.xs};
-    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
-  }
-`;
-
-const SummonerCell = styled.div`
+const LegendRow = styled.div<{ $active: boolean }>`
   display: flex;
   align-items: center;
-  gap: ${({ theme }) => theme.primitive.spacing.sm};
-`;
-
-const SummonerIcon = styled.div`
-  width: ${ICON_SIZE.avatar}px;
-  height: ${ICON_SIZE.avatar}px;
-  flex-shrink: 0;
-  background: ${({ theme }) => theme.component.glassCard.bg};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  cursor: default;
+  transition: background 0.15s;
+  background: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accentBgHover : "transparent"};
+`;
+
+const LegendRank = styled.span`
+  width: 18px;
+  flex-shrink: 0;
+  text-align: right;
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+`;
+
+const LegendName = styled.span`
+  flex: 1;
+  min-width: 0;
+  max-width: 140px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: ${({ theme }) => theme.semantic.color.accent};
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
 
-
-const BarTrack = styled.div`
-  height: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  width: 100%;
-  background: ${({ theme }) => theme.component.table.borderColor};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  overflow: hidden;
+const LegendValue = styled.span`
+  flex-shrink: 0;
+  text-align: right;
+  color: ${({ theme }) => theme.semantic.color.textSecondary};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 `;
 
-const BarFill = styled.div<{ $pct: number }>`
-  height: 100%;
-  width: ${({ $pct }) => $pct}%;
-  background: ${({ theme }) => theme.semantic.color.accent};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-`;
-
-const LeaderRow = styled.tr`
-  background: ${({ theme }) => theme.semantic.color.accentBgSubtle} !important;
+const LegendPct = styled.span`
+  flex-shrink: 0;
+  width: 42px;
+  text-align: right;
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 `;
 
 const DurationPill = styled.span`
@@ -450,6 +426,49 @@ const DurationPill = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.accent};
   flex-shrink: 0;
+`;
+
+const CategoryNav = styled.nav`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const CategoryPill = styled(Link)<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border: 1px solid ${({ $active, theme }) =>
+    $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+  background: ${({ $active, theme }) => $active ? theme.semantic.color.accentBgHover : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  text-decoration: none;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+    color: ${({ $active, theme }) =>
+      $active ? theme.semantic.color.accent : theme.semantic.color.textPrimary};
+  }
+
+  @media (hover: none) {
+    &:hover {
+      border-color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+      color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 const LoadingText = styled.p`
@@ -479,6 +498,7 @@ export default function StatsDrilldownPage() {
   const cat = STAT_CATEGORIES[slug];
   const weeks = useMemo(() => getSetWeeks(), []);
   const [selectedTab, setSelectedTab] = useSelectedTab();
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/players", { cache: "no-store" })
@@ -551,6 +571,18 @@ export default function StatsDrilldownPage() {
 
       <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 
+      <CategoryNav aria-label="Stat categories">
+        {Object.entries(STAT_CATEGORIES).map(([key, c]) => (
+          <CategoryPill
+            key={key}
+            href={`/stats/${key}?tab=${selectedTab}`}
+            $active={key === slug}
+          >
+            {c.title}
+          </CategoryPill>
+        ))}
+      </CategoryNav>
+
       {loading ? (
         <LoadingText>Loading...</LoadingText>
       ) : !hasData ? (
@@ -579,13 +611,25 @@ export default function StatsDrilldownPage() {
                       outerRadius="80%"
                       strokeWidth={0}
                       isAnimationActive={false}
+                      {...{ activeIndex } as Record<string, unknown>}
+                      activeShape={(props: PieSectorDataItem) => (
+                        <Sector
+                          {...props}
+                          outerRadius={(props.outerRadius ?? 0) + 6}
+                          stroke="rgba(12, 20, 30, 0.7)"
+                          strokeWidth={3}
+                        />
+                      )}
+                      onMouseEnter={(_, i) => setActiveIndex(i)}
+                      onMouseLeave={() => setActiveIndex(undefined)}
                     >
                       {rows.filter((r) => r.value > 0).map((r) => (
                         <Cell key={r.puuid} fill={getFill(r.puuid, r.color, r.patternType)} />
                       ))}
                     </Pie>
                     <RechartsTooltip
-                      wrapperStyle={{ zIndex: 10 }}
+                      wrapperStyle={{ zIndex: 10, transition: "none" }}
+                      animationDuration={0}
                       content={({ active, payload }) => {
                         if (!active || !payload?.length) return null;
                         const item = payload[0] as { name: string; value: number };
@@ -637,58 +681,37 @@ export default function StatsDrilldownPage() {
               </GaugeSection>
             )}
 
-            {/* Right: ranked table */}
-            <Table>
-              <Thead>
-                <tr>
-                  <th style={{ width: 28 }} />
-                  <th>Summoner</th>
-                  <th style={{ textAlign: "right" }}>{cat.title}</th>
-                </tr>
-              </Thead>
-              <Tbody>
-                {rows.map((r, i) => {
-                  const isLead = i === 0;
-                  const barPct = cat.getBarPct(r.value, cat.isShare ? total : maxVal);
-                  const Row = isLead ? LeaderRow : "tr";
-                  return (
-                    <Row key={r.puuid}>
-                      <td>
-                        <RankBadge>{i + 1}</RankBadge>
-                      </td>
-                      <td>
-                        <SummonerCell>
-                          <SummonerIcon>
-                            {r.profileIconId ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${r.profileIconId}.jpg`}
-                                alt=""
-                                width={32}
-                                height={32}
-                                style={{ display: "block" }}
-                              />
-                            ) : (
-                              <User size={ICON_SIZE.md} />
-                            )}
-                          </SummonerIcon>
-                          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <ColorDot color={r.color} patternType={r.patternType} />
-                            <span>{r.gameName}<span style={{ color: theme.semantic.color.textDisabled, fontSize: "0.85em", fontWeight: 400 }}>#{r.tagLine}</span></span>
-                          </span>
-                        </SummonerCell>
-                      </td>
-                      <td style={{ textAlign: "right" }}>
-                        <div>{r.label}</div>
-                        <BarTrack>
-                          <BarFill $pct={barPct} />
-                        </BarTrack>
-                      </td>
-                    </Row>
-                  );
-                })}
-              </Tbody>
-            </Table>
+            {/* Right: ranked legend */}
+            <LegendList>
+              {rows.map((r, i) => {
+                // For donut hover-sync: find this row's index in the filtered donut data
+                const donutRows = rows.filter((row) => row.value > 0);
+                const donutIdx = donutRows.indexOf(r);
+                const isActive = cat.isShare
+                  ? activeIndex !== undefined && donutIdx === activeIndex
+                  : activeIndex === i;
+                const pct = cat.isShare && total > 0
+                  ? ((r.value / total) * 100).toFixed(1)
+                  : null;
+                return (
+                  <LegendRow
+                    key={r.puuid}
+                    $active={isActive}
+                    onMouseEnter={() => {
+                      if (cat.isShare && donutIdx >= 0) setActiveIndex(donutIdx);
+                      else setActiveIndex(i);
+                    }}
+                    onMouseLeave={() => setActiveIndex(undefined)}
+                  >
+                    <LegendRank>{i + 1}</LegendRank>
+                    <ColorDot color={r.color} patternType={r.patternType} />
+                    <LegendName>{r.gameName}</LegendName>
+                    <LegendValue>{r.label}</LegendValue>
+                    {pct !== null && <LegendPct>{pct}%</LegendPct>}
+                  </LegendRow>
+                );
+              })}
+            </LegendList>
           </ContentGrid>
         </GlassCard>
       )}

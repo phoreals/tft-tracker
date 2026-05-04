@@ -5,18 +5,6 @@ import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import styled from "styled-components";
 import Link from "next/link";
-import {
-  ScatterChart,
-  Scatter,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  Cell,
-  type ScatterShapeProps,
-} from "recharts";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { RankChart } from "@/components/RankChart";
@@ -238,7 +226,7 @@ const StatsGrid = styled.div`
   }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 `;
 
@@ -341,24 +329,6 @@ const StatCount = styled.span`
   margin-left: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
-const ChartContainer = styled.div`
-  height: 220px;
-  width: 100%;
-  touch-action: pan-y;
-
-  svg:focus,
-  svg *:focus {
-    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
-    outline-offset: 2px;
-    border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  }
-  margin-top: ${({ theme }) => theme.primitive.spacing.md};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    height: 320px;
-  }
-`;
-
 const EmptyState = styled.div`
   display: flex;
   align-items: center;
@@ -367,6 +337,85 @@ const EmptyState = styled.div`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
+`;
+
+const PlacementGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
+`;
+
+const PlacementRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.sm};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  position: relative;
+  cursor: default;
+`;
+
+const PlacementTooltip = styled.div`
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 6px);
+  transform: translateX(-50%);
+  z-index: 10;
+  pointer-events: none;
+  white-space: nowrap;
+  background: rgba(12, 20, 30, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.lg};
+  box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.semantic.typography.label.fontSize};
+  display: none;
+
+  ${PlacementRow}:hover & {
+    display: flex;
+    align-items: center;
+    gap: ${({ theme }) => theme.primitive.spacing.sm};
+  }
+
+  @media (hover: none) {
+    display: none !important;
+  }
+`;
+
+const PlacementLabel = styled.span<{ $top4: boolean }>`
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ $top4, theme }) => $top4 ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+`;
+
+const PlacementTrack = styled.div`
+  flex: 1;
+  height: 20px;
+  background: ${({ theme }) => theme.component.table.borderColor};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  overflow: hidden;
+`;
+
+const PlacementFill = styled.div<{ $pct: number; $top4: boolean }>`
+  height: 100%;
+  width: ${({ $pct }) => $pct}%;
+  min-width: ${({ $pct }) => ($pct > 0 ? "4px" : "0")};
+  background: ${({ $top4, theme }) => $top4 ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  transition: width 0.2s ease;
+`;
+
+const PlacementCount = styled.span`
+  width: 24px;
+  flex-shrink: 0;
+  text-align: left;
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 `;
 
 const MatchList = styled.div`
@@ -755,30 +804,26 @@ export default function PlayerDrilldownPage() {
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [player, activeWindow]);
 
-  // All matches sorted chronologically — used for placement chart and match history
+  // All matches sorted chronologically — used for match history
   const allMatchesSorted = useMemo(() => {
     if (!player) return [];
     return [...player.matches].sort((a, b) => a.timestamp - b.timestamp);
   }, [player]);
 
-  // Placement per game chart — all games, not filtered by tab
-  const placementChartData = useMemo(() => {
-    return allMatchesSorted.map((m, i) => ({
-      game: i + 1,
-      placement: m.placement,
-      date: formatShortDate(m.timestamp),
-    }));
-  }, [allMatchesSorted]);
+  // Placement breakdown — scoped to active tab window
+  const placementCounts = useMemo(() => {
+    const counts = Array.from({ length: 8 }, (_, i) => ({ placement: i + 1, count: 0 }));
+    scopedMatches.forEach((m) => {
+      if (m.placement >= 1 && m.placement <= 8) counts[m.placement - 1].count++;
+    });
+    return counts;
+  }, [scopedMatches]);
 
   // Stats scoped to active window
   const totalGames = scopedMatches.length;
-  const allGames = player?.matches.length ?? 0;
   const top4 = scopedMatches.filter((m) => m.placement <= 4).length;
   const firsts = scopedMatches.filter((m) => m.placement === 1).length;
   const totalDuration = scopedMatches.reduce((s, m) => s + m.duration, 0);
-  const avgPlacement = totalGames > 0
-    ? (scopedMatches.reduce((s, m) => s + m.placement, 0) / totalGames).toFixed(2)
-    : "—";
 
   // Superlatives + LP stats: compute once, share both
   const { playerSuperlatives, lpDiff, lpPerGame } = useMemo(() => {
@@ -880,18 +925,7 @@ export default function PlayerDrilldownPage() {
             <StatLabel>Games</StatLabel>
             <DurationPill>{period}</DurationPill>
           </StatRow>
-          <StatValue>
-            {totalGames}
-            {!isSet && <StatCount>/ {allGames} total</StatCount>}
-          </StatValue>
-        </GlassCard>
-
-        <GlassCard>
-          <StatRow>
-            <StatLabel>Avg Placement</StatLabel>
-            <DurationPill>{period}</DurationPill>
-          </StatRow>
-          <StatValue>{avgPlacement}</StatValue>
+          <StatValue>{totalGames}</StatValue>
         </GlassCard>
 
         <GlassCard>
@@ -956,104 +990,42 @@ export default function PlayerDrilldownPage() {
         periodTag={<DurationPill>{period}</DurationPill>}
       />
 
-      {/* Placement per game — all games */}
-      <GlassCard title="Placement Per Game" prominent>
-        <ChartContainer>
-          {placementChartData.length === 0 ? (
-            <EmptyState>No games recorded yet.</EmptyState>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ top: 16, right: 16, bottom: 0, left: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
-                <XAxis
-                  dataKey="game"
-                  type="number"
-                  domain={[0, placementChartData.length + 1]}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={CHART.tick}
-                  dy={10}
-                  label={{ value: "Game #", position: "insideBottomRight", offset: -5, fill: CHART.tooltip.labelColor + "66", fontSize: CHART.tick.fontSize, fontFamily: "Space Grotesk" }}
-                />
-                <YAxis
-                  dataKey="placement"
-                  type="number"
-                  reversed
-                  domain={[0.5, 8.5]}
-                  ticks={[1, 2, 3, 4, 5, 6, 7, 8]}
-                  tickFormatter={toOrdinal}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={CHART.tick}
-                  width={36}
-                />
-                <ReferenceLine y={4.5} stroke={CHART.refStroke} strokeDasharray="6 4" />
-                <Tooltip
-                  cursor={{ strokeDasharray: "3 3", stroke: CHART.grid }}
-                  contentStyle={{
-                    backgroundColor: CHART.tooltip.bg,
-                    border: CHART.tooltip.border,
-                    borderRadius: CHART.tooltip.radius,
-                    boxShadow: CHART.tooltip.shadow,
-                    fontFamily: CHART.tooltip.fontFamily,
-                    fontSize: CHART.tooltip.fontSize,
-                  }}
-                  labelStyle={{ color: CHART.tooltip.labelColor }}
-                  formatter={(value, name) => {
-                    if (name === "placement") return [toOrdinal(Number(value)), "Placement"];
-                    return [value, name];
-                  }}
-                  content={({ active, payload }) => {
-                    if (!active || !payload?.length) return null;
-                    const d = payload[0]?.payload as typeof placementChartData[0];
-                    return (
-                      <div style={{
-                        background: CHART.tooltip.bg,
-                        border: CHART.tooltip.border,
-                        borderRadius: CHART.tooltip.radius,
-                        padding: "8px 12px",
-                        fontFamily: "Space Grotesk",
-                        fontSize: CHART.tooltip.fontSize,
-                      }}>
-                        <div style={{ color: CHART.tooltip.labelColor, marginBottom: 4 }}>
-                          Game {d.game} &middot; {d.date}
-                        </div>
-                        <div style={{ color: d.placement <= 4 ? CHART.gold : CHART.tick.fill, fontWeight: 600 }}>
-                          {toOrdinal(d.placement)}
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-                <Scatter
-                  data={placementChartData}
-                  isAnimationActive={false}
-                  shape={(props: ScatterShapeProps) => {
-                    const { cx, cy } = props;
-                    const d = (props as ScatterShapeProps & { payload: typeof placementChartData[0] }).payload;
-                    const top4 = d.placement <= 4;
-                    return (
-                      <circle
-                        cx={cx}
-                        cy={cy}
-                        r={5}
-                        fill={top4 ? CHART.gold : CHART.grid}
-                        fillOpacity={top4 ? 0.9 : 0.6}
-                        stroke={top4 ? CHART.gold : "none"}
-                        strokeOpacity={0.4}
-                        strokeWidth={1}
-                      />
-                    );
-                  }}
-                >
-                  {placementChartData.map((d, i) => (
-                    <Cell key={i} fill={d.placement <= 4 ? CHART.gold : CHART.grid} />
-                  ))}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-          )}
-        </ChartContainer>
+      {/* Placement breakdown — scoped to active tab */}
+      <GlassCard title="Placement Breakdown" titleExtra={<DurationPill>{period}</DurationPill>} prominent>
+        {totalGames === 0 ? (
+          <EmptyState>No games in this period.</EmptyState>
+        ) : (
+          <PlacementGrid>
+            {(() => {
+              const maxCount = Math.max(...placementCounts.map((c) => c.count));
+              return placementCounts.map((p) => {
+                const barPct = maxCount > 0 ? (p.count / maxCount) * 100 : 0;
+                const ratePct = totalGames > 0 ? ((p.count / totalGames) * 100).toFixed(1) : "0.0";
+                const isTop4 = p.placement <= 4;
+                return (
+                  <PlacementRow key={p.placement}>
+                    <PlacementTooltip>
+                      <span style={{ color: isTop4 ? theme.semantic.color.accent : theme.primitive.color.neutral200, fontWeight: 600 }}>
+                        {toOrdinal(p.placement)}
+                      </span>
+                      <span style={{ color: theme.primitive.color.neutral200 }}>
+                        {p.count} game{p.count !== 1 ? "s" : ""}
+                      </span>
+                      <span style={{ color: theme.semantic.color.textMuted }}>
+                        {ratePct}%
+                      </span>
+                    </PlacementTooltip>
+                    <PlacementLabel $top4={isTop4}>{toOrdinal(p.placement)}</PlacementLabel>
+                    <PlacementTrack>
+                      <PlacementFill $pct={barPct} $top4={isTop4} />
+                    </PlacementTrack>
+                    <PlacementCount>{p.count}</PlacementCount>
+                  </PlacementRow>
+                );
+              });
+            })()}
+          </PlacementGrid>
+        )}
       </GlassCard>
 
       {/* Match history — all games */}

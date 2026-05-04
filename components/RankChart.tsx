@@ -591,7 +591,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                     strokeOpacity={opacity}
                     strokeDasharray={dashPattern || undefined}
                     dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
-                    activeDot={{ r: 4, stroke: CHART.gold, strokeWidth: 2 }}
+                    activeDot={{ r: 4, stroke: theme.semantic.color.accent, strokeWidth: 2 }}
                     connectNulls
                     isAnimationActive={false}
                     onMouseEnter={() => {

@@ -75,12 +75,15 @@ Accessed by clicking a summary stat card on the home page. Categories: `games`, 
 - Same sticky tab bar (Set 17 / Week 1–N)
 
 ### Content
-Single-column stacked layout. The chart sits above the ranked table at 50% width.
+Side-by-side layout on desktop (chart left, legend right, centered as a unit), stacked on mobile.
 
-- **Games / Playtime**: donut chart (50% width) showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
-- **Top 4 Rate / Win Rate**: gauge section (50% width) — duration pill (period tag), large squad-average value, "SQUAD AVG" label, and a 4px progress bar with a 50% reference mark. No icon.
+- **Games / Playtime**: donut chart showing per-player share. Center label = total. Hovering a segment highlights the corresponding legend row; hovering a legend row expands the donut segment. Active segment expands outward 6px with a dark gap stroke.
+- **Top 4 Rate / Win Rate**: gauge section — duration pill (period tag), large squad-average value, "SQUAD AVG" label, and a 4px progress bar with a 50% reference mark.
 
-**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat + inline bar). Leader row has a subtle gold background. Bar fill = share of total (games/playtime) or ratio of max (rates). All values are non-negative so bars extend left-to-right.
+**Ranked legend** (all categories): compact list replacing the former table. Each row shows rank number, color dot (with pattern for players 6–10), player name (capped at 140px), formatted value, and percentage (donut pages only). Hover-synced with the chart via shared `activeIndex` state.
+
+### Category Navigation
+A horizontal pill bar above the content shows all 4 stat categories. The active category is highlighted. Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter.
 
 ### Player Performance Table
 
@@ -212,18 +215,15 @@ Horizontal layout: profile picture on the left, player info on the right.
 
 The page-level tab (Set / Week N) scopes the **stat cards only**. The rank chart, placement chart, and match history always show the full set history regardless of selected tab.
 
-### Stat Cards (2-column grid, 3 columns on sm, 4 on desktop)
-Games, Avg Placement, Top 4 Rate %, 1st Place Rate %, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label on its own line with a duration pill below it (column layout matching home page superlative cards). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
+### Stat Cards (2-column grid, 3 columns on sm and desktop)
+Games, Top 4 Rate %, 1st Place Rate %, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label on its own line with a duration pill below it (column layout matching home page superlative cards). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
+
+### Placement Breakdown Chart
+A horizontal bar chart showing the distribution of placements (1st–8th) scoped to the selected tab period. Each row shows an ordinal label, a proportional bar, and a count. Top 4 placements use gold (`accent`), bottom 4 use muted color. Hovering a bar shows a tooltip with the placement, game count, and percentage of total. Uses a `DurationPill` period tag. Empty state: "No games in this period."
 
 ### Rank Over Time Chart
 Uses the shared `<RankChart>` component with `hideLegend`, `lineColors={[gold300]}`, and a `periodTag` duration pill matching the selected tab. Single gold line, no legend. Same Y-axis tick tooltips and week highlight as the main page chart.
 
-### Placement Per Game Chart
-A `ScatterChart` plotting every stored match chronologically (not week-scoped):
-- **Gold dots**: placements ≤ 4 (top 4); muted grid-color dots for placements 5–8
-- Y-axis reversed, domain `[0.5, 8.5]`, ticks formatted as ordinals (1st, 2nd…)
-- **Reference line** at 4.5 (top 4 boundary)
-- Custom tooltip shows game number, date, and ordinal placement
 
 ### Match History List
 Scrollable list of **all stored matches** (newest first, not week-scoped). Initially shows the **20 most recent** games. A "SHOW ALL (N GAMES)" button at the bottom expands to the full list. Each row shows:
