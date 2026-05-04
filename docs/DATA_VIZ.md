@@ -52,9 +52,11 @@ Hovering a `<Line>` sets that player as `hoveredPlayer`:
 - Other lines: `strokeWidth=1`, `strokeOpacity=0.2`
 - State is tracked in both React state (`hoveredPlayer`) and a ref (`hoveredPlayerRef`) for use inside the tooltip render closure
 
-### Color Assignment
+### Color and Pattern Assignment
 
-Lines cycle through `LINE_COLORS` (10 values) by player index. Colors are chosen to avoid rank-tier hues (no gold/green/teal/purple):
+Each player gets a unique combination of **color** (from `LINE_COLORS`) and **stroke pattern** (from `LINE_DASH_PATTERNS`), both indexed by their position in the player list.
+
+**Color palette** — 10 visually distinct hues spread across the wheel, avoiding rank-tier badge colors (iron through challenger):
 
 ```ts
 const LINE_COLORS = [
@@ -62,7 +64,7 @@ const LINE_COLORS = [
   "#60a5fa", // blue
   "#fb923c", // orange
   "#a3e635", // lime
-  "#e879f9", // fuchsia
+  "#2dd4bf", // teal
   "#38bdf8", // sky
   "#fbbf24", // amber
   "#4ade80", // mint
@@ -71,7 +73,23 @@ const LINE_COLORS = [
 ];
 ```
 
-Color is index-stable — if the player list order changes, line colors will shift.
+**Stroke patterns** — players 6–10 (indices 5–9) each get a unique dash pattern as a secondary differentiator, so each player has a unique color+pattern combination on crowded charts:
+
+```ts
+const LINE_DASH_PATTERNS = [
+  "",          // players 1–5: solid
+  "", "", "", "",
+  "8 4",       // 6: long dash     ── ── ──
+  "3 3",       // 7: short dash    – – – –
+  "1 4",       // 8: dotted        ·  ·  ·
+  "8 3 2 3",   // 9: dash-dot      ──·──·
+  "12 3",      // 10: extra long   ────────
+];
+```
+
+The legend swatch renders as a short SVG line segment (16×8px) so it shows the actual stroke pattern, not just a color dot.
+
+Color and pattern are index-stable — if the player list order changes, assignments will shift.
 
 ### Data Transforms
 

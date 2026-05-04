@@ -15,7 +15,8 @@
       "Bash(git:*)",
       "Bash(zip -r tft-tracker.zip tft-tracker --exclude \"tft-tracker/.git/*\" --exclude \"tft-tracker/node_modules/*\" --exclude \"tft-tracker/.next/*\")",
       "Bash(zipinfo /Users/dvu40/test-dev/tft-tracker.zip)",
-      "Bash(zip -r tft-tracker.zip tft-tracker --exclude \"tft-tracker/node_modules/*\" --exclude \"tft-tracker/.next/*\")"
+      "Bash(zip -r tft-tracker.zip tft-tracker --exclude \"tft-tracker/node_modules/*\" --exclude \"tft-tracker/.next/*\")",
+      "Bash(npm install:*)"
     ]
   }
 }

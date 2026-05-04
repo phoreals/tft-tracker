@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
-import { ArrowLeft, Gamepad2, Clock, Trophy, User } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
@@ -24,7 +24,6 @@ import { theme, ICON_SIZE } from "@/styles/theme";
 
 type StatCategory = {
   title: string;
-  icon: React.ElementType;
   isShare: boolean;
   getValue: (matches: MatchData[]) => number;
   formatValue: (n: number) => string;
@@ -35,7 +34,6 @@ type StatCategory = {
 const STAT_CATEGORIES: Record<string, StatCategory> = {
   games: {
     title: "Games Played",
-    icon: Gamepad2,
     isShare: true,
     getValue: (ms) => ms.length,
     formatValue: (n) => String(n),
@@ -44,7 +42,6 @@ const STAT_CATEGORIES: Record<string, StatCategory> = {
   },
   playtime: {
     title: "Squad Playtime",
-    icon: Clock,
     isShare: true,
     getValue: (ms) => ms.reduce((s, m) => s + m.duration, 0),
     formatValue: formatPlaytime,
@@ -53,7 +50,6 @@ const STAT_CATEGORIES: Record<string, StatCategory> = {
   },
   "top4-rate": {
     title: "Avg Top 4 Rate",
-    icon: Trophy,
     isShare: false,
     getValue: (ms) => (ms.length > 0 ? (ms.filter((m) => m.placement <= 4).length / ms.length) * 100 : 0),
     formatValue: (n) => `${n.toFixed(1)}%`,
@@ -62,7 +58,6 @@ const STAT_CATEGORIES: Record<string, StatCategory> = {
   },
   "win-rate": {
     title: "Squad Win Rate",
-    icon: Trophy,
     isShare: false,
     getValue: (ms) => (ms.length > 0 ? (ms.filter((m) => m.placement === 1).length / ms.length) * 100 : 0),
     formatValue: (n) => `${n.toFixed(1)}%`,
@@ -88,6 +83,83 @@ interface PlayerData {
   matches: MatchData[];
 }
 
+type DonutPatternType = "solid" | "diag-right" | "horizontal" | "dots" | "diag-left" | "crosshatch";
+
+const DONUT_PATTERN_TYPES: DonutPatternType[] = [
+  "solid", "solid", "solid", "solid", "solid",
+  "diag-right",  // 6:  /////
+  "horizontal",  // 7:  =====
+  "dots",        // 8:  · · ·
+  "diag-left",   // 9:  \\\\\
+  "crosshatch",  // 10: #####
+];
+
+function renderPatternDef(puuid: string, color: string, type: DonutPatternType): React.ReactElement | null {
+  if (type === "solid") return null;
+  const id = `dp-${puuid}-${type}`;
+  // Background tinted with the same hue as the stroke for visual cohesion
+  const bgFill = `${color}33`; // 20% opacity of line color
+  const bg8 = <rect width="8" height="8" fill={bgFill} />;
+  let content: React.ReactElement;
+  switch (type) {
+    case "diag-right":
+      content = <path d="M-2,2 l4,-4 M0,8 l8,-8 M6,10 l4,-4" stroke={color} strokeWidth="2.5" strokeLinecap="square" />;
+      break;
+    case "horizontal":
+      content = <line x1="0" y1="4" x2="8" y2="4" stroke={color} strokeWidth="2.5" />;
+      break;
+    case "dots":
+      return (
+        <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="6" height="6">
+          <rect width="6" height="6" fill={bgFill} />
+          <circle cx="3" cy="3" r="2" fill={color} />
+        </pattern>
+      );
+    case "diag-left":
+      content = <path d="M2,-2 l-4,4 M8,0 l-8,8 M10,6 l-4,4" stroke={color} strokeWidth="2.5" strokeLinecap="square" />;
+      break;
+    case "crosshatch":
+      content = (
+        <>
+          <path d="M-2,2 l4,-4 M0,8 l8,-8 M6,10 l4,-4" stroke={color} strokeWidth="2" strokeLinecap="square" />
+          <path d="M2,-2 l-4,4 M8,0 l-8,8 M10,6 l-4,4" stroke={color} strokeWidth="2" strokeLinecap="square" />
+        </>
+      );
+      break;
+    default:
+      return null;
+  }
+  return (
+    <pattern key={id} id={id} patternUnits="userSpaceOnUse" width="8" height="8">
+      {bg8}
+      {content}
+    </pattern>
+  );
+}
+
+function getFill(puuid: string, color: string, type: DonutPatternType): string {
+  if (type === "solid") return color;
+  return `url(#dp-${puuid}-${type})`;
+}
+
+function ColorDot({ color, patternType }: { color: string; patternType: DonutPatternType }) {
+  if (patternType === "solid") {
+    return (
+      <svg width="10" height="10" viewBox="0 0 10 10" style={{ flexShrink: 0 }}>
+        <circle cx="5" cy="5" r="4.5" fill={color} />
+      </svg>
+    );
+  }
+  const miniId = `mini-${color.replace("#", "")}-${patternType}`;
+  const patternEl = renderPatternDef(miniId, color, patternType);
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" style={{ flexShrink: 0 }}>
+      {patternEl && <defs>{patternEl}</defs>}
+      <circle cx="5" cy="5" r="4.5" fill={getFill(miniId, color, patternType)} />
+    </svg>
+  );
+}
+
 interface PlayerRow {
   puuid: string;
   gameName: string;
@@ -96,6 +168,8 @@ interface PlayerRow {
   value: number;
   label: string;
   color: string;
+  playerIndex: number;
+  patternType: DonutPatternType;
   games: number;
 }
 
@@ -122,6 +196,7 @@ const BackLink = styled(Link)`
   color: ${({ theme }) => theme.semantic.color.textMuted};
   text-decoration: none;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  min-height: 44px;
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   align-self: flex-start;
@@ -335,14 +410,6 @@ const SummonerIcon = styled.div`
   color: ${({ theme }) => theme.semantic.color.accent};
 `;
 
-const ColorDot = styled.span<{ $color: string }>`
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: ${({ $color }) => $color};
-  flex-shrink: 0;
-`;
 
 const BarTrack = styled.div`
   height: ${({ theme }) => theme.primitive.spacing["2xs"]};
@@ -362,6 +429,18 @@ const BarFill = styled.div<{ $pct: number }>`
 
 const LeaderRow = styled.tr`
   background: ${({ theme }) => theme.semantic.color.accentBgSubtle} !important;
+`;
+
+const DurationPill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.accent};
+  flex-shrink: 0;
 `;
 
 const LoadingText = styled.p`
@@ -403,6 +482,8 @@ export default function StatsDrilldownPage() {
   const win = isSet
     ? { start: SET_START, end: SET_END }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+  const weekNumber = (weeks[selectedTab as number] ?? weeks[weeks.length - 1])?.weekNumber;
+  const period = isSet ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
 
   const { rows, total } = useMemo(() => {
     if (!cat) return { rows: [], total: 0 };
@@ -418,6 +499,8 @@ export default function StatsDrilldownPage() {
         value,
         label: cat.formatValue(value),
         color: LINE_COLORS[i % LINE_COLORS.length],
+        playerIndex: i,
+        patternType: DONUT_PATTERN_TYPES[i % DONUT_PATTERN_TYPES.length],
         games: ms.length,
       };
     });
@@ -430,7 +513,6 @@ export default function StatsDrilldownPage() {
 
   if (!cat) return <LoadingText>Category not found.</LoadingText>;
 
-  const Icon = cat.icon;
   const hasData = rows.some((r) => r.value > 0);
   const maxVal = rows.length > 0 ? Math.max(...rows.map((r) => r.value)) : 1;
   const aggregateLabel = cat.isShare
@@ -473,6 +555,11 @@ export default function StatsDrilldownPage() {
                 <DonutWrap>
                   <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
+                    <defs>
+                      {rows.filter((r) => r.value > 0 && r.patternType !== "solid").map((r) =>
+                        renderPatternDef(r.puuid, r.color, r.patternType)
+                      )}
+                    </defs>
                     <Pie
                       data={rows.filter((r) => r.value > 0)}
                       dataKey="value"
@@ -485,14 +572,16 @@ export default function StatsDrilldownPage() {
                       isAnimationActive={false}
                     >
                       {rows.filter((r) => r.value > 0).map((r) => (
-                        <Cell key={r.puuid} fill={r.color} />
+                        <Cell key={r.puuid} fill={getFill(r.puuid, r.color, r.patternType)} />
                       ))}
                     </Pie>
                     <RechartsTooltip
                       wrapperStyle={{ zIndex: 10 }}
                       content={({ active, payload }) => {
                         if (!active || !payload?.length) return null;
-                        const item = payload[0] as { name: string; value: number; fill: string };
+                        const item = payload[0] as { name: string; value: number };
+                        const row = rows.find((r) => r.gameName === item.name);
+                        if (!row) return null;
                         const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : "0";
                         return (
                           <div style={{
@@ -510,7 +599,7 @@ export default function StatsDrilldownPage() {
                             alignItems: "center",
                             gap: 8,
                           }}>
-                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: item.fill, flexShrink: 0, display: "inline-block" }} />
+                            <ColorDot color={row.color} patternType={row.patternType} />
                             <span style={{ color: theme.primitive.color.neutral200 }}>{item.name}</span>
                             <span style={{ color: theme.semantic.color.textMuted, marginLeft: "auto", paddingLeft: 12, flexShrink: 0 }}>
                               {cat.formatValue(item.value)} · {pct}%
@@ -529,7 +618,7 @@ export default function StatsDrilldownPage() {
               </DonutSection>
             ) : (
               <GaugeSection>
-                <Icon size={ICON_SIZE.lg} color={theme.semantic.color.accent} />
+                <DurationPill>{period}</DurationPill>
                 <GaugeValue>{aggregateLabel}</GaugeValue>
                 <GaugeLabel>SQUAD AVG</GaugeLabel>
                 <GaugeTrack>
@@ -575,7 +664,7 @@ export default function StatsDrilldownPage() {
                             )}
                           </SummonerIcon>
                           <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                            <ColorDot $color={r.color} />
+                            <ColorDot color={r.color} patternType={r.patternType} />
                             <span>{r.gameName}<span style={{ color: theme.semantic.color.textDisabled, fontSize: "0.85em", fontWeight: 400 }}>#{r.tagLine}</span></span>
                           </span>
                         </SummonerCell>

@@ -17,7 +17,7 @@ import {
   Cell,
   type ScatterShapeProps,
 } from "recharts";
-import { ArrowLeft, Trophy, Gamepad2, Clock, TrendingUp, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { RankChart } from "@/components/RankChart";
 import { TabNavigation } from "@/components/TabNavigation";
@@ -119,6 +119,7 @@ const BackLink = styled(Link)`
   color: ${({ theme }) => theme.semantic.color.textMuted};
   text-decoration: none;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  min-height: 44px;
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   align-self: flex-start;
@@ -182,13 +183,13 @@ const ProfileIcon = styled.div`
 const PlayerInfo = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   min-width: 0;
 `;
 
 const PlayerName = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xl};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   overflow-wrap: break-word;
   word-break: break-word;
@@ -219,13 +220,9 @@ const PageSubtitle = styled.p`
 const RankBadge = styled.div<{ $color: string }>`
   display: inline-flex;
   align-items: center;
-  gap: ${({ theme }) => theme.primitive.spacing.sm};
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
   ${({ theme }) => theme.semantic.typography.label};
   color: ${({ $color }) => $color};
-  background: ${({ $color }) => $color}1a;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.md};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ $color }) => $color}4d;
   width: fit-content;
 `;
 
@@ -281,16 +278,52 @@ const BadgeValue = styled.span`
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
 
+// In-card superlative indicator (smaller, text only)
+const CardSuperlativeLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  padding: 2px ${({ theme }) => theme.primitive.spacing.xs};
+  background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  color: ${({ theme }) => theme.semantic.color.accent};
+  text-decoration: none;
+  width: fit-content;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.semantic.color.accentBgHover};
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
+`;
+
 const StatRow = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
 `;
 
 const StatLabel = styled.span`
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textMuted};
+`;
+
+const DurationPill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.accent};
+  flex-shrink: 0;
 `;
 
 const StatValue = styled.span`
@@ -392,6 +425,23 @@ const QueueBadge = styled.span<{ $ranked: boolean | undefined }>`
       ? theme.semantic.color.accentBgSubtle
       : "transparent"};
   flex-shrink: 0;
+`;
+
+const ShowAllButton = styled.button`
+  ${({ theme }) => theme.semantic.typography.label};
+  color: ${({ theme }) => theme.semantic.color.accent};
+  background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+
+  &:hover {
+    background: ${({ theme }) => theme.semantic.color.accentBgHover};
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+  }
 `;
 
 const LoadingText = styled.div`
@@ -609,6 +659,7 @@ export default function PlayerDrilldownPage() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<{ tone: "muted" | "warn" | "error"; message: string } | null>(null);
+  const [showAllMatches, setShowAllMatches] = useState(false);
 
   const weeks = useMemo(() => getSetWeeks(), []);
   const [selectedTab, setSelectedTab] = useSelectedTab();
@@ -685,6 +736,8 @@ export default function PlayerDrilldownPage() {
   const activeWindow = isSet
     ? { start: SET_START, end: SET_END }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+  const weekNumber = (weeks[selectedTab as number] ?? weeks[weeks.length - 1])?.weekNumber;
+  const period = isSet ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
 
   // Matches filtered to the active window
   const scopedMatches = useMemo(() => {
@@ -736,6 +789,7 @@ export default function PlayerDrilldownPage() {
       const val = me ? me[cat.key] : null;
       return {
         slug: cat.slug,
+        title: cat.title,
         label: cat.label(isSet, weeks[selectedTab as number]?.weekNumber),
         value: val !== null ? cat.format(val as number) : "—",
       };
@@ -810,7 +864,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Games</StatLabel>
-            <Gamepad2 size={ICON_SIZE.sm} color={CHART.gold} />
+            <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue>
             {totalGames}
@@ -821,7 +875,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Avg Placement</StatLabel>
-            <TrendingUp size={ICON_SIZE.sm} color={CHART.cyan} />
+            <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue>{avgPlacement}</StatValue>
         </GlassCard>
@@ -829,7 +883,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Top 4 Rate</StatLabel>
-            <Trophy size={ICON_SIZE.sm} color={CHART.gold} />
+            <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue>{percentOf(top4, totalGames)}%<StatCount>({top4})</StatCount></StatValue>
         </GlassCard>
@@ -837,7 +891,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>1st Place Rate</StatLabel>
-            <Trophy size={ICON_SIZE.sm} color={CHART.cyan} />
+            <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
         </GlassCard>
@@ -845,7 +899,7 @@ export default function PlayerDrilldownPage() {
         <GlassCard>
           <StatRow>
             <StatLabel>Time Played</StatLabel>
-            <Clock size={ICON_SIZE.sm} color={CHART.cyan} />
+            <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue><PlaytimeDisplay seconds={totalDuration} variant="full" /></StatValue>
         </GlassCard>
@@ -869,6 +923,7 @@ export default function PlayerDrilldownPage() {
         weeks={weeks}
         hideLegend
         lineColors={[theme.primitive.color.gold300]}
+        periodTag={<DurationPill>{period}</DurationPill>}
       />
 
       {/* Placement per game — all games */}
@@ -974,23 +1029,38 @@ export default function PlayerDrilldownPage() {
       {/* Match history — all games */}
       <GlassCard title="Match History" prominent>
         <MatchList>
-          {[...allMatchesSorted].reverse().map((m) => (
-            <MatchRow key={m.matchId} $top4={m.placement <= 4}>
-              <MatchPlacement $place={m.placement}>
-                {toOrdinal(m.placement)}
-              </MatchPlacement>
-              <QueueBadge $ranked={m.gameType && m.gameType !== "standard" ? undefined : m.ranked}>
-                {queueLabel(m.gameType, m.ranked)}
-              </QueueBadge>
-              {m.lastRound != null && (
-                <MatchMeta>R{formatRound(m.lastRound)}</MatchMeta>
-              )}
-              <MatchMeta>{formatMatchDuration(m.duration)}</MatchMeta>
-              <PortalTooltip text={formatDateTime(m.timestamp)}>
-                <MatchMeta>{formatRelativeTime(m.timestamp)}</MatchMeta>
-              </PortalTooltip>
-            </MatchRow>
-          ))}
+          {(() => {
+            const reversed = [...allMatchesSorted].reverse();
+            const PREVIEW_COUNT = 20;
+            const visible = showAllMatches ? reversed : reversed.slice(0, PREVIEW_COUNT);
+            const remaining = reversed.length - PREVIEW_COUNT;
+            return (
+              <>
+                {visible.map((m) => (
+                  <MatchRow key={m.matchId} $top4={m.placement <= 4}>
+                    <MatchPlacement $place={m.placement}>
+                      {toOrdinal(m.placement)}
+                    </MatchPlacement>
+                    <QueueBadge $ranked={m.gameType && m.gameType !== "standard" ? undefined : m.ranked}>
+                      {queueLabel(m.gameType, m.ranked)}
+                    </QueueBadge>
+                    {m.lastRound != null && (
+                      <MatchMeta>R{formatRound(m.lastRound)}</MatchMeta>
+                    )}
+                    <MatchMeta>{formatMatchDuration(m.duration)}</MatchMeta>
+                    <PortalTooltip text={formatDateTime(m.timestamp)}>
+                      <MatchMeta>{formatRelativeTime(m.timestamp)}</MatchMeta>
+                    </PortalTooltip>
+                  </MatchRow>
+                ))}
+                {!showAllMatches && remaining > 0 && (
+                  <ShowAllButton onClick={() => setShowAllMatches(true)}>
+                    SHOW ALL ({reversed.length} GAMES)
+                  </ShowAllButton>
+                )}
+              </>
+            );
+          })()}
           {allMatchesSorted.length === 0 && (
             <MatchRow $top4={false}>
               <MatchMeta style={{ color: CHART.tooltip.labelColor, padding: `${theme.primitive.spacing.sm} 0` }}>

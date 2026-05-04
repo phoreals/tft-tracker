@@ -62,7 +62,6 @@ const SortIcon = styled.span<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
   vertical-align: middle;
-  margin-left: 3px;
   flex-shrink: 0;
   color: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accent : "currentColor"};
@@ -100,6 +99,8 @@ const SortTh = styled.th<{ $active: boolean }>`
 const SortThInner = styled.span`
   display: inline-flex;
   align-items: center;
+  gap: 3px;
+  white-space: nowrap;
 `;
 
 const Tbody = styled.tbody`
@@ -174,7 +175,7 @@ const SummonerName = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: ${({ theme }) => theme.primitive.fontSize.md};
+    font-size: ${({ theme }) => theme.primitive.fontSize.lg};
   }
 `;
 
@@ -184,7 +185,7 @@ const SummonerTag = styled.span`
   font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+    font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   }
 `;
 
@@ -303,17 +304,21 @@ interface PlayerTableViewProps {
 }
 
 export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: PlayerTableViewProps) {
-  const renderSortLabel = (key: SortKey, label: string) => {
+  const renderSortLabel = (key: SortKey, label: string, iconLeft = false) => {
     const isActive = sortKey === key;
     // For inactive columns: show "desc" chevron on hover — previewing what the first click will do.
     // For active columns: show current direction.
     const direction = isActive ? sortDir : "desc";
+    const icon = (
+      <SortIcon $active={isActive} data-active={isActive ? "true" : undefined}>
+        <SortChevron direction={direction} />
+      </SortIcon>
+    );
     return (
       <SortThInner>
+        {iconLeft && icon}
         {label}
-        <SortIcon $active={isActive} data-active={isActive ? "true" : undefined}>
-          <SortChevron direction={direction} />
-        </SortIcon>
+        {!iconLeft && icon}
       </SortThInner>
     );
   };
@@ -339,7 +344,7 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
               {renderSortLabel("firstRate", "Win%")}
             </SortTh>
             <TimeSortTh $active={sortKey === "time"} style={{ textAlign: "right" }} onClick={() => toggleSort("time")}>
-              {renderSortLabel("time", "Playtime")}
+              {renderSortLabel("time", "Playtime", true)}
             </TimeSortTh>
           </tr>
         </Thead>

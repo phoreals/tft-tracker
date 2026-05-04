@@ -46,18 +46,36 @@ const CHART = {
   },
 } as const;
 
-// Distinct line colors — chosen to avoid rank-tier hues (no gold/green/teal/purple).
+// Muted palette anchored to the app's brand colors: warm gold (#e5c587) and
+// cool cyan (#66fdfd). Colors arc from warm amber → sage → teal → periwinkle → mauve,
+// all desaturated to feel cohesive on the dark glass background.
 export const LINE_COLORS = [
   "#f472b6", // pink
   "#60a5fa", // blue
   "#fb923c", // orange
   "#a3e635", // lime
-  "#e879f9", // fuchsia
+  "#2dd4bf", // teal
   "#38bdf8", // sky
   "#fbbf24", // amber
   "#4ade80", // mint
   "#f87171", // rose
   "#818cf8", // indigo
+];
+
+// Secondary visual differentiator: players 6–10 (indices 5–9) get a dashed stroke
+// so each player has a unique color+pattern combination even when colors are similar
+// on a small display. Matches the strokeDasharray prop on Recharts <Line>.
+export const LINE_DASH_PATTERNS = [
+  "",          // 1–5: solid
+  "",
+  "",
+  "",
+  "",
+  "8 4",       // 6: long dash    ── ── ──
+  "3 3",       // 7: short dash   – – – –
+  "1 4",       // 8: dotted       ·  ·  ·
+  "8 3 2 3",   // 9: dash-dot     ──·──·
+  "12 3",      // 10: extra long  ────────
 ];
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -117,14 +135,19 @@ const LegendChip = styled.button<{ $hidden: boolean }>`
   }
 `;
 
-const LegendSwatch = styled.span<{ $color: string }>`
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-  background: ${({ $color }) => $color};
-  flex-shrink: 0;
-`;
+function LegendSwatch({ color, dashPattern }: { color: string; dashPattern: string }) {
+  return (
+    <svg width="16" height="8" viewBox="0 0 16 8" style={{ flexShrink: 0, display: "block" }}>
+      <line
+        x1="0" y1="4" x2="16" y2="4"
+        stroke={color}
+        strokeWidth="2.5"
+        strokeDasharray={dashPattern || undefined}
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 const ClearChip = styled.button`
   display: inline-flex;
@@ -288,6 +311,7 @@ interface TooltipEntry {
 function makePortalTooltip(
   mousePos: React.RefObject<{ x: number; y: number }>,
   hoveredPlayerRef: React.RefObject<string | null>,
+  playerNamesRef: React.RefObject<string[]>,
 ) {
   return function PortalTooltip({ active, payload, label }: {
     active?: boolean;
@@ -341,9 +365,13 @@ function makePortalTooltip(
           const rankLabel = String(item.payload[`${item.name}__label`] ?? item.value);
           const tier      = String(item.payload[`${item.name}__tier`] ?? "");
           const rankColor = getRankColor(tier);
+          const playerIdx = playerNamesRef.current.indexOf(item.name);
+          const dashPat = LINE_DASH_PATTERNS[playerIdx < 0 ? 0 : playerIdx % LINE_DASH_PATTERNS.length];
           return (
             <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 6, margin: "3px 0" }}>
-              <span style={{ width: 8, height: 8, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+              <svg width="16" height="8" viewBox="0 0 16 8" style={{ flexShrink: 0 }}>
+                <line x1="0" y1="4" x2="16" y2="4" stroke={item.color} strokeWidth="2.5" strokeDasharray={dashPat || undefined} strokeLinecap="round" />
+              </svg>
               <span style={{ color: CHART.tick.fill, flex: 1 }}>{item.name}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: "auto", paddingLeft: 16, flexShrink: 0 }}>
                 {tier && (
@@ -390,8 +418,10 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
   const hoveredPlayerRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const mousePos = useRef({ x: 0, y: 0 });
+  const playerNamesRef = useRef<string[]>(players.map((p) => p.gameName));
+  playerNamesRef.current = players.map((p) => p.gameName);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const TooltipContent = useMemo(() => makePortalTooltip(mousePos, hoveredPlayerRef), []);
+  const TooltipContent = useMemo(() => makePortalTooltip(mousePos, hoveredPlayerRef, playerNamesRef), []);
 
   const toggleHidden = (name: string) => {
     setHiddenPlayers((prev) => {
@@ -541,6 +571,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                 const globalIdx = players.indexOf(p);
                 const colors = lineColors ?? LINE_COLORS;
                 const color = colors[globalIdx % colors.length];
+                const dashPattern = LINE_DASH_PATTERNS[globalIdx % LINE_DASH_PATTERNS.length];
                 const isHovered = hoveredPlayer === p.gameName;
                 const anyHovered = hoveredPlayer !== null;
                 const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
@@ -553,6 +584,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                     stroke={color}
                     strokeWidth={strokeW}
                     strokeOpacity={opacity}
+                    strokeDasharray={dashPattern || undefined}
                     dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
                     activeDot={{ r: 4, stroke: color, strokeWidth: 2 }}
                     connectNulls
@@ -578,6 +610,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
           {players.map((p, i) => {
             const colors = lineColors ?? LINE_COLORS;
             const color = colors[i % colors.length];
+            const dashPattern = LINE_DASH_PATTERNS[i % LINE_DASH_PATTERNS.length];
             const isHidden = hiddenPlayers.has(p.gameName);
             return (
               <LegendChip
@@ -588,7 +621,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                 aria-label={`${isHidden ? "Show" : "Hide"} ${p.gameName}`}
                 onClick={() => toggleHidden(p.gameName)}
               >
-                <LegendSwatch $color={color} />
+                <LegendSwatch color={color} dashPattern={dashPattern} />
                 {p.gameName}
               </LegendChip>
             );

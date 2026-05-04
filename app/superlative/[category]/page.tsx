@@ -46,6 +46,7 @@ const BackLink = styled(Link)`
   color: ${({ theme }) => theme.semantic.color.textMuted};
   text-decoration: none;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  min-height: 44px;
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   align-self: flex-start;
@@ -109,7 +110,6 @@ const Thead = styled.thead`
 const SortIcon = styled.span<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
-  margin-left: 3px;
   flex-shrink: 0;
   color: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accent : "currentColor"};
@@ -144,6 +144,8 @@ const SortTh = styled.th<{ $active: boolean }>`
 const SortThInner = styled.span`
   display: inline-flex;
   align-items: center;
+  gap: 3px;
+  white-space: nowrap;
 `;
 
 const Tbody = styled.tbody`
@@ -218,6 +220,18 @@ const TagSpan = styled.span`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
+`;
+
+const DurationPill = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  ${({ theme }) => theme.semantic.typography.label};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.accent};
+  flex-shrink: 0;
 `;
 
 const BarTrack = styled.div`
@@ -324,6 +338,8 @@ export default function SuperlativeDrilldownPage() {
   const win = isSet
     ? { start: SET_START, end: SET_END }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+  const weekNumber = (weeks[selectedTab as number] ?? weeks[weeks.length - 1])?.weekNumber;
+  const period = isSet ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
 
   const stats = useMemo(() => {
     if (players.length === 0) return [];
@@ -397,7 +413,7 @@ export default function SuperlativeDrilldownPage() {
         <LoadingText>No data for this time period.</LoadingText>
       ) : (
         <>
-          <GlassCard title="Rankings" prominent>
+          <GlassCard title="Rankings" titleExtra={<DurationPill>{period}</DurationPill>} prominent>
             <Table>
               <Thead>
                 <tr>
@@ -412,10 +428,10 @@ export default function SuperlativeDrilldownPage() {
                   </SortTh>
                   <SortTh $active={sortCol === "value"} onClick={() => toggleSort("value")} style={{ textAlign: "right" }}>
                     <SortThInner style={{ justifyContent: "flex-end" }}>
-                      {cat.label(isSet, weeks[selectedTab as number]?.weekNumber)}
                       <SortIcon $active={sortCol === "value"} data-active={sortCol === "value" || undefined}>
                         <SortChevron direction={sortCol === "value" ? sortDir : "desc"} />
                       </SortIcon>
+                      {cat.title}
                     </SortThInner>
                   </SortTh>
                 </tr>

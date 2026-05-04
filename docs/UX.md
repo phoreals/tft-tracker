@@ -78,7 +78,7 @@ Accessed by clicking a summary stat card on the home page. Categories: `games`, 
 Single-column stacked layout. The chart sits above the ranked table at 50% width.
 
 - **Games / Playtime**: donut chart (50% width) showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
-- **Top 4 Rate / Win Rate**: gauge section (50% width) showing squad average — large value + label + 4px progress bar with 50% reference mark.
+- **Top 4 Rate / Win Rate**: gauge section (50% width) — duration pill (period tag), large squad-average value, "SQUAD AVG" label, and a 4px progress bar with a 50% reference mark. No icon.
 
 **Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat + inline bar). Leader row has a subtle gold background. Bar fill = share of total (games/playtime) or ratio of max (rates). All values are non-negative so bars extend left-to-right.
 
@@ -89,6 +89,8 @@ A `GlassCard` with a **duration pill** (period tag) after the title text and a *
 **View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 
 **Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use custom SVG arrows sized to the x-height of the header text. **Default sort on load: Rank descending (highest rank first).** Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
+
+**Sort icon placement**: the chevron appears to the right of the label for left-aligned and center-aligned columns (Summoner, Rank, Games, Top 4%, Win%). For right-aligned columns (Playtime), the chevron appears to the left of the label so the label text stays flush against the right cell edge. Header labels use `white-space: nowrap` to prevent wrapping at any viewport width.
 
 **Table view — 6 columns:**
 
@@ -114,7 +116,7 @@ A Recharts `LineChart` inside a `GlassCard` with a **duration pill** (period tag
 - Selected week is shaded as a `ReferenceArea` (gold tint)
 - **Legend** below the chart — one chip per player with colored circle swatch; click to solo/toggle; "Show all" button when any hidden
 - Hovering a line dims all others; tooltip follows cursor and portals to `document.body` for correct blur
-- Line colors avoid rank-tier hues; 10-color palette (pink, blue, orange, lime, fuchsia, sky, amber, mint, rose, indigo)
+- Line colors avoid rank-tier hues; 10-color palette (pink, blue, orange, lime, teal, sky, amber, mint, rose, indigo)
 
 Empty state: "No rank history yet. Sync to start tracking."
 
@@ -175,6 +177,8 @@ Accessed by clicking a superlative card on the Weekly Stats page. Category slugs
 ### Rankings Table
 Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. All rank numbers are pill badges — gold for the leader, dim/muted for the rest — with a fixed `min-width` so they align vertically.
 
+The "Summoner" header is left-aligned with the sort chevron to its right. The value column header (e.g. "Most Games") is right-aligned with the sort chevron to its left, keeping the label flush against the right edge. Both headers use `white-space: nowrap`.
+
 **Inline bar behavior**: For categories where values are always non-negative (most-games, best-top4, most-wins, most-time), the bar fills left-to-right proportional to the leader. For categories that can produce negative values (highest-lp, best-lp-per-game), a **centered bar** is used: a vertical center line divides the track, positive values extend gold to the right, negative values extend red to the left. The bar switches to centered mode automatically if any value in the current dataset is negative.
 
 ## Interaction States
@@ -205,11 +209,11 @@ Horizontal layout: profile picture on the left, player info on the right.
 
 The page-level tab (Set / Week N) scopes the **stat cards only**. The rank chart, placement chart, and match history always show the full set history regardless of selected tab.
 
-### Stat Cards (2×2 grid, 4 columns on desktop)
-Games, Avg Placement, Top 4 Rate %, 1st Place Rate %, Time Played — all scoped to the selected tab window.
+### Stat Cards (2-column grid, 3 columns on sm, 5 on desktop)
+Games, Avg Placement, Top 4 Rate %, 1st Place Rate %, Time Played — all scoped to the selected tab window. Each card header shows the label on its own line with a duration pill below it (column layout matching home page superlative cards). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
 
 ### Rank Over Time Chart
-Uses the shared `<RankChart>` component with `hideLegend` and `lineColors={[gold300]}`. Single gold line, no legend. Same Y-axis tick tooltips and week highlight as the main page chart.
+Uses the shared `<RankChart>` component with `hideLegend`, `lineColors={[gold300]}`, and a `periodTag` duration pill matching the selected tab. Single gold line, no legend. Same Y-axis tick tooltips and week highlight as the main page chart.
 
 ### Placement Per Game Chart
 A `ScatterChart` plotting every stored match chronologically (not week-scoped):
@@ -219,7 +223,7 @@ A `ScatterChart` plotting every stored match chronologically (not week-scoped):
 - Custom tooltip shows game number, date, and ordinal placement
 
 ### Match History List
-Scrollable list of **all stored matches** (newest first, not week-scoped). Each row shows:
+Scrollable list of **all stored matches** (newest first, not week-scoped). Initially shows the **20 most recent** games. A "SHOW ALL (N GAMES)" button at the bottom expands to the full list. Each row shows:
 - **Ordinal placement** (gold=1st, cyan=top 4, muted=bottom 4) with gold left border for top 4
 - **Queue badge**: RANKED / NORMAL / HYPER ROLL / DOUBLE UP / CHONCC (dimmed if non-ranked, absent for pre-migration records)
 - **Last round** in stage-round format: `R3-2` (absent for pre-migration records)

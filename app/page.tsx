@@ -211,7 +211,7 @@ const ChipIcon = styled.div`
 
 const ChipName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.textSecondary};
   overflow: hidden;
   text-overflow: ellipsis;
