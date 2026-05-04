@@ -252,6 +252,12 @@ const DonutSection = styled.div`
 
 const DonutWrap = styled.div`
   position: relative;
+  touch-action: pan-y;
+
+  svg:focus {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
   width: clamp(200px, 80dvw, 460px);
   aspect-ratio: 1;
   display: flex;
@@ -434,6 +440,7 @@ const LeaderRow = styled.tr`
 const DurationPill = styled.span`
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};

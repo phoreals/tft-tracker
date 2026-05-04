@@ -136,6 +136,11 @@ const Tab = styled.button<{ $active: boolean }>`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 const MobileSelectWrap = styled.div`
@@ -186,10 +191,14 @@ export function TabNavigation({
 
       <TabBar
         ref={tabBarRef}
+        role="tablist"
         $fadeLeft={fadeLeft}
         $fadeRight={fadeRight}
       >
         <Tab
+          type="button"
+          role="tab"
+          aria-selected={selectedTab === "set"}
           $active={selectedTab === "set"}
           data-active={selectedTab === "set" ? "true" : undefined}
           onClick={() => onTabChange("set")}
@@ -199,6 +208,9 @@ export function TabNavigation({
         {weeks.map((w, i) => (
           <Tab
             key={i}
+            type="button"
+            role="tab"
+            aria-selected={selectedTab === i}
             $active={selectedTab === i}
             data-active={selectedTab === i ? "true" : undefined}
             onClick={() => onTabChange(i)}

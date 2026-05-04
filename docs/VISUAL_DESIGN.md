@@ -30,7 +30,7 @@ Raw values with no UI meaning. Never import directly into components.
 
 **Radius**: 4px (`sm`) through 12px (`xl`), plus `full` = `9999px` for pill shapes and circular scrollbar thumbs
 
-**Font sizes**: `2xs` 8px, `xs` 10px, `sm` 12px, `md` 14px, `lg` 18px, `xl` 24px, `2xl` 30px, `3xl` 36px, `4xl` 48px
+**Font sizes**: `2xs` 8px, `xs` 10px, `sm` 12px, `md` 14px, `base` 16px, `lg` 18px, `xl` 24px, `2xl` 30px, `3xl` 36px, `4xl` 48px
 
 **Breakpoints**: `sm` 640px, `md` 768px, `lg` 1024px
 
@@ -100,7 +100,7 @@ The sticky tab bar uses a lighter variant — no background color, `backdrop-fil
 | Rank text (table) | Per-tier color (10 distinct values) | `getRankColor(tier)` from `lib/utils.ts` |
 | Profile icon border (player cards) | Per-tier color at 40% opacity | `getRankColor(tier)` |
 | Profile icon border (drilldown header) | Per-tier color at 40% opacity | `getRankColor(tier)` |
-| Player card row borders | Elite: gold 20%→50%; others: dim→cyan | `borderDefault` / `borderHover` |
+| Player card row borders | Uniform dim border, gold on hover | `borderDim` / `borderHover` |
 
 ## Rank Color Palette
 

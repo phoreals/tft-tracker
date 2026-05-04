@@ -42,6 +42,7 @@ export const primitive = {
     xs: "10px",
     sm: "12px",
     md: "14px",
+    base: "16px",
     lg: "18px",
     xl: "24px",
     "2xl": "30px",

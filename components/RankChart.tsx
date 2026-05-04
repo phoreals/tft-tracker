@@ -81,11 +81,17 @@ export const LINE_DASH_PATTERNS = [
 // ── Styled ───────────────────────────────────────────────────────
 
 const ChartContainer = styled.div`
-  height: 260px;
+  height: 360px;
   width: 100%;
+  touch-action: pan-y;
+
+  svg:focus {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    height: 360px;
+    height: 480px;
   }
 `;
 
@@ -133,6 +139,11 @@ const LegendChip = styled.button<{ $hidden: boolean }>`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 function LegendSwatch({ color, dashPattern }: { color: string; dashPattern: string }) {
@@ -156,7 +167,7 @@ const ClearChip = styled.button`
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   background: transparent;
-  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  color: ${({ theme }) => theme.semantic.color.accent};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   cursor: pointer;
@@ -169,6 +180,11 @@ const ClearChip = styled.button`
 
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
   }
 `;
 
@@ -230,41 +246,27 @@ function RankTick({ x, y, payload }: { x?: number; y?: number; payload?: { value
       {/* Transparent hit area so small text is easy to hover */}
       <rect x={x - 34} y={y - 10} width={34} height={20} fill="transparent" />
 
-      {withinTier === 0 && tier && (
+      {tier && (
         <image
           href={`${EMBLEM_BASE}/${tier.name}_tft.svg`}
-          x={x - AXIS_EMBLEM - 15}
+          x={x - 32}
           y={y - AXIS_EMBLEM / 2 - 1}
           width={AXIS_EMBLEM}
           height={AXIS_EMBLEM}
         />
       )}
-      {withinTier === 0 && !isHighTier && (
+      {!isHighTier && (
         <text
-          x={x - 2}
+          x={x - 32 + AXIS_EMBLEM + 2}
           y={y}
-          textAnchor="end"
-          dominantBaseline="middle"
-          fill={CHART.tick.fill}
-          fontSize={CHART.tick.fontSize}
-          fontFamily={CHART.tick.fontFamily}
-          opacity={0.4}
-        >
-          IV
-        </text>
-      )}
-      {withinTier !== 0 && (
-        <text
-          x={x - 2}
-          y={y}
-          textAnchor="end"
+          textAnchor="start"
           dominantBaseline="middle"
           fill={CHART.tick.fill}
           fontSize={CHART.tick.fontSize}
           fontFamily={CHART.tick.fontFamily}
           opacity={0.5}
         >
-          {DIV_LABELS[withinTier]}
+          {DIV_LABELS[withinTier] ?? ""}
         </text>
       )}
 
@@ -512,6 +514,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
         onMouseMove={(e) => { mousePos.current = { x: e.clientX, y: e.clientY }; }}
         onTouchStart={(e) => { const t = e.touches[0]; if (t) mousePos.current = { x: t.clientX, y: t.clientY }; }}
         onTouchMove={(e) => { const t = e.touches[0]; if (t) mousePos.current = { x: t.clientX, y: t.clientY }; }}
+        onTouchEnd={() => { mousePos.current = { x: -9999, y: -9999 }; hoveredPlayerRef.current = null; setHoveredPlayer(null); }}
       >
         {!hasData ? (
           <EmptyState>No rank history yet. Sync to start tracking.</EmptyState>

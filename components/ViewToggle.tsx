@@ -37,6 +37,11 @@ const Btn = styled.button<{ $active: boolean }>`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 // ── Component ────────────────────────────────────────────────────

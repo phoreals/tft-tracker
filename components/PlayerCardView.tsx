@@ -42,6 +42,11 @@ const Card = styled(Link)`
     background: ${({ theme }) => theme.component.table.rowHoverBg};
     box-shadow: ${({ theme }) => theme.semantic.shadow.glowGold};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 const PlayerHeader = styled.div`
@@ -72,7 +77,7 @@ const PlayerInfo = styled.div`
 const PlayerName = styled.div`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  font-size: ${({ theme }) => theme.primitive.fontSize.base};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   white-space: nowrap;
   overflow: hidden;
@@ -175,6 +180,11 @@ const SortPill = styled.button<{ $active: boolean }>`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 // ── RankEmblem ───────────────────────────────────────────────────
@@ -201,7 +211,7 @@ function RankEmblem({ tier, color }: { tier: string; color: string }) {
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
-      alt=""
+      alt={tier}
       width={size}
       height={size}
       style={{ display: "block", flexShrink: 0 }}

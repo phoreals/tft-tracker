@@ -172,18 +172,24 @@ const Tbody = styled.tbody`
   }
 `;
 
-const RankBadge = styled.span<{ $isLead?: boolean }>`
+const RANK_COLORS: Record<number, string> = {
+  1: "#e5c587", // gold
+  2: "#b0b8c4", // silver
+  3: "#c4956a", // bronze
+};
+
+const RankBadge = styled.span<{ $rank: number }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 20px;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  border: 1px solid ${({ $rank, theme }) => RANK_COLORS[$rank] ?? theme.semantic.color.borderDim};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  color: ${({ $isLead, theme }) => $isLead ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  color: ${({ $rank, theme }) => RANK_COLORS[$rank] ?? theme.semantic.color.textMuted};
 `;
 
 const SummonerCell = styled.div`
@@ -290,6 +296,53 @@ const LoadingText = styled.p`
   color: ${({ theme }) => theme.semantic.color.textMuted};
   text-align: center;
   padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
+`;
+
+const CategoryNav = styled.nav`
+  display: flex;
+  flex-wrap: wrap;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const CategoryPill = styled(Link)<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border: 1px solid ${({ $active, theme }) =>
+    $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+  background: ${({ $active, theme }) => $active ? theme.semantic.color.accentBgHover : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
+  text-decoration: none;
+  transition: all 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+    color: ${({ $active, theme }) =>
+      $active ? theme.semantic.color.accent : theme.semantic.color.textPrimary};
+  }
+
+  @media (hover: none) {
+    &:hover {
+      border-color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+      color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+    }
+  }
+
+  &:active {
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 // ── Helpers ──────────────────────────────────────────────────────
@@ -407,6 +460,18 @@ export default function SuperlativeDrilldownPage() {
 
       <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 
+      <CategoryNav aria-label="Superlative categories">
+        {SUPERLATIVE_CATEGORIES.map((c) => (
+          <CategoryPill
+            key={c.slug}
+            href={`/superlative/${c.slug}?tab=${selectedTab}`}
+            $active={c.slug === slug}
+          >
+            {c.title}
+          </CategoryPill>
+        ))}
+      </CategoryNav>
+
       {loading ? (
         <LoadingText>Loading...</LoadingText>
       ) : ranked.length === 0 ? (
@@ -439,12 +504,13 @@ export default function SuperlativeDrilldownPage() {
               <Tbody>
                 {sortedRanked.map((r, i) => {
                   const val = (r[cat.key] as number) ?? 0;
-                  const isLead = leader?.player.puuid === r.player.puuid;
+                  const naturalRank = ranked.indexOf(r) + 1;
+                  const isLead = naturalRank === 1;
                   const Row = isLead ? LeaderRow : "tr";
                   return (
                     <Row key={r.player.puuid}>
                       <td>
-                        <RankBadge $isLead={isLead}>{i + 1}</RankBadge>
+                        <RankBadge $rank={naturalRank}>{i + 1}</RankBadge>
                       </td>
                       <td>
                         <SummonerCell>

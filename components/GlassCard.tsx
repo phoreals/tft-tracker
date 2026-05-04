@@ -5,7 +5,7 @@ import styled from "styled-components";
 import { motion } from "motion/react";
 import { ICON_SIZE } from "@/styles/theme";
 
-const Card = styled(motion.div)`
+const Card = styled(motion.div)<{ $spaceBetween?: boolean }>`
   background: ${({ theme }) => theme.component.glassCard.bg};
   backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.component.glassCard.border};
@@ -14,6 +14,7 @@ const Card = styled(motion.div)`
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   display: flex;
   flex-direction: column;
+  justify-content: ${({ $spaceBetween }) => $spaceBetween ? "space-between" : "flex-start"};
   gap: ${({ theme }) => theme.primitive.spacing.md};
   position: relative;
   overflow: hidden;
@@ -60,6 +61,7 @@ interface GlassCardProps {
   icon?: React.ElementType;
   headerAction?: React.ReactNode;
   prominent?: boolean;
+  spaceBetween?: boolean;
 }
 
 export function GlassCard({
@@ -70,9 +72,11 @@ export function GlassCard({
   icon: Icon,
   headerAction,
   prominent,
+  spaceBetween,
 }: GlassCardProps) {
   return (
     <Card
+      $spaceBetween={spaceBetween}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}

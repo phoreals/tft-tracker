@@ -103,7 +103,7 @@ A `GlassCard` with a **duration pill** (period tag) after the title text and a *
 | 1st% | Scoped `(placements == 1) / total * 100` | Cyan text |
 | Time Played | Scoped playtime | |
 
-**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName (`md`/14px) + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time as hours-only short format). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab. Cards have a `borderDim` background, `xs` padding mobile / `md` desktop, and a gold glow (`glowGold`) on hover.
+**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName (`base`/16px) + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time as hours-only short format). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab. Cards have a `borderDim` background, `xs` padding mobile / `md` desktop, and a gold glow (`glowGold`) on hover.
 
 Empty state: centered message "No players tracked yet. Add players to get started." in both views.
 
@@ -160,7 +160,7 @@ On submit: calls `POST /api/players` → validates against Riot API → fetches 
 - Current rank (full text on desktop, abbreviated on mobile) + W/L record
 - Delete button (appears on hover, red on hover)
 
-Elite tiers (Diamond+) get gold borders; others get dim borders with cyan hover.
+All player rows use uniform `borderDim` borders with gold `borderHover` on hover — no elite/non-elite distinction.
 
 **Rank abbreviation on mobile**: Rank strings are abbreviated to save horizontal space — e.g. `Gold II 47 LP → G2 47LP`, `Master 185 LP → M 185LP`. The "Peak:" and "Low:" sub-line labels in the player performance table are always written in full regardless of viewport.
 
@@ -174,8 +174,11 @@ Accessed by clicking a superlative card on the Weekly Stats page. Category slugs
 - Page title = category label (e.g. "Most Games")
 - Same sticky tab bar as other pages (Set 17 / Week 1–N)
 
+### Category Navigation
+A horizontal pill bar above the Rankings card shows all 6 superlative categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. Uses the same visual style as sort pills.
+
 ### Rankings Table
-Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. All rank numbers are pill badges — gold for the leader, dim/muted for the rest — with a fixed `min-width` so they align vertically.
+Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. Rank badges use gold/silver/bronze colors for positions 1–3, with dim borders for 4th and below. Badge colors reflect natural rank (by value), not display order — re-sorting the table doesn't change badge colors.
 
 The "Summoner" header is left-aligned with the sort chevron to its right. The value column header (e.g. "Most Games") is right-aligned with the sort chevron to its left, keeping the label flush against the right edge. Both headers use `white-space: nowrap`.
 
@@ -209,8 +212,8 @@ Horizontal layout: profile picture on the left, player info on the right.
 
 The page-level tab (Set / Week N) scopes the **stat cards only**. The rank chart, placement chart, and match history always show the full set history regardless of selected tab.
 
-### Stat Cards (2-column grid, 3 columns on sm, 5 on desktop)
-Games, Avg Placement, Top 4 Rate %, 1st Place Rate %, Time Played — all scoped to the selected tab window. Each card header shows the label on its own line with a duration pill below it (column layout matching home page superlative cards). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
+### Stat Cards (2-column grid, 3 columns on sm, 4 on desktop)
+Games, Avg Placement, Top 4 Rate %, 1st Place Rate %, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label on its own line with a duration pill below it (column layout matching home page superlative cards). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
 
 ### Rank Over Time Chart
 Uses the shared `<RankChart>` component with `hideLegend`, `lineColors={[gold300]}`, and a `periodTag` duration pill matching the selected tab. Single gold line, no legend. Same Y-axis tick tooltips and week highlight as the main page chart.

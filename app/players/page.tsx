@@ -197,6 +197,11 @@ const PrimaryButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 
@@ -236,6 +241,11 @@ const SeedButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 
@@ -274,14 +284,13 @@ const PlayerList = styled.div<{ $scrolled: boolean }>`
   }
 `;
 
-const PlayerRow = styled(motion.div)<{ $elite: boolean }>`
+const PlayerRow = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.table.headerBg};
-  border: 1px solid ${({ $elite, theme }) =>
-    $elite ? theme.semantic.color.borderDefault : theme.semantic.color.borderDim};
+  border: 1px solid ${({ theme }) => theme.semantic.color.borderDim};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   transition: all 0.2s;
 
@@ -293,8 +302,7 @@ const PlayerRow = styled(motion.div)<{ $elite: boolean }>`
   /* only translate on pointer devices to avoid touch overflow */
   @media (hover: hover) {
     &:hover {
-      border-color: ${({ $elite, theme }) =>
-        $elite ? theme.semantic.color.borderHover : theme.semantic.color.borderInfo};
+      border-color: ${({ theme }) => theme.semantic.color.borderHover};
       transform: translateX(4px);
     }
   }
@@ -417,6 +425,13 @@ const DeleteButton = styled.button`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
+
+  &:focus-visible {
+    opacity: 1;
+    transform: scale(1);
+    outline: 2px solid ${({ theme }) => theme.semantic.color.danger};
+    outline-offset: 2px;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -450,7 +465,7 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
-      alt=""
+      alt={tier}
       width={size}
       height={size}
       style={{ display: "block", flexShrink: 0 }}
@@ -474,8 +489,6 @@ interface PlayerData {
     losses: number;
   } | null;
 }
-
-const HIGH_TIERS = new Set(["DIAMOND", "MASTER", "GRANDMASTER", "CHALLENGER"]);
 
 // ── Component ────────────────────────────────────────────────────
 
@@ -675,10 +688,9 @@ export default function ManagePlayersPage() {
               <EmptyState>No players tracked yet. Add a summoner to get started.</EmptyState>
             ) : (
               players.map((player) => {
-                const isElite = HIGH_TIERS.has(player.current?.tier ?? "");
                 const rankColor = getRankColor(player.current?.tier);
                 return (
-                  <PlayerRow key={player.puuid} $elite={isElite}>
+                  <PlayerRow key={player.puuid}>
                     <PlayerInfo>
                       <Avatar $color={rankColor}>
                         {player.profileIconId ? (
@@ -716,7 +728,10 @@ export default function ManagePlayersPage() {
                         </PlayerMeta>
                       </div>
                     </PlayerInfo>
-                    <DeleteButton onClick={() => handleRemove(player.puuid)}>
+                    <DeleteButton
+                      onClick={() => handleRemove(player.puuid)}
+                      aria-label={`Remove ${player.gameName}`}
+                    >
                       <Trash2 size={ICON_SIZE.nav} />
                     </DeleteButton>
                   </PlayerRow>

@@ -174,7 +174,10 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
   return createPortal(
     <Backdrop>
       <Card $tone={status.tone}>
-        <MessageWrap>
+        <MessageWrap
+          role={isError ? "alert" : "status"}
+          aria-live={isError ? "assertive" : "polite"}
+        >
           <Message $tone={status.tone} $isError={isError}>
             {status.message}
           </Message>
@@ -184,11 +187,12 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
             <IconButton
               onClick={handleCopy}
               title={copied ? "Copied!" : "Copy error"}
+              aria-label={copied ? "Copied!" : "Copy error"}
             >
               {copied ? <Check size={14} /> : <Copy size={14} />}
             </IconButton>
           )}
-          <IconButton onClick={onDismiss} title="Dismiss">
+          <IconButton onClick={onDismiss} title="Dismiss" aria-label="Dismiss">
             <X size={14} />
           </IconButton>
         </Actions>

@@ -156,7 +156,7 @@ const PlayerHeader = styled.div`
 
 const PlayerIdentity = styled.div`
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.md};
   min-width: 0;
 `;
@@ -238,7 +238,7 @@ const StatsGrid = styled.div`
   }
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
   }
 `;
 
@@ -344,6 +344,12 @@ const StatCount = styled.span`
 const ChartContainer = styled.div`
   height: 220px;
   width: 100%;
+  touch-action: pan-y;
+
+  svg:focus {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
   margin-top: ${({ theme }) => theme.primitive.spacing.md};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -772,20 +778,20 @@ export default function PlayerDrilldownPage() {
     ? (scopedMatches.reduce((s, m) => s + m.placement, 0) / totalGames).toFixed(2)
     : "—";
 
-  // Superlatives: which categories does this player lead?
-  const playerSuperlatives = useMemo(() => {
-    if (!player || allPlayers.length === 0) return [];
+  // Superlatives + LP stats: compute once, share both
+  const { playerSuperlatives, lpDiff, lpPerGame } = useMemo(() => {
+    if (!player || allPlayers.length === 0) return { playerSuperlatives: [], lpDiff: null as number | null, lpPerGame: null as number | null };
 
     const win = isSet
       ? { start: SET_START, end: SET_END }
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
     const stats = computePlayerStats(allPlayers, win);
+    const me = stats.find((s) => s.player.puuid === player.puuid);
 
-    return SUPERLATIVE_CATEGORIES.filter((cat) => {
+    const superlatives = SUPERLATIVE_CATEGORIES.filter((cat) => {
       const leader = findLeader(stats, cat);
       return leader?.player.puuid === player.puuid;
     }).map((cat) => {
-      const me = stats.find((s) => s.player.puuid === player.puuid);
       const val = me ? me[cat.key] : null;
       return {
         slug: cat.slug,
@@ -794,6 +800,12 @@ export default function PlayerDrilldownPage() {
         value: val !== null ? cat.format(val as number) : "—",
       };
     });
+
+    return {
+      playerSuperlatives: superlatives,
+      lpDiff: me?.lpDiff ?? null,
+      lpPerGame: me?.lpPerGame ?? null,
+    };
   }, [player, allPlayers, selectedTab, weeks, isSet]);
 
   if (loading) return <LoadingText>Loading...</LoadingText>;
@@ -902,6 +914,22 @@ export default function PlayerDrilldownPage() {
             <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue><PlaytimeDisplay seconds={totalDuration} variant="full" /></StatValue>
+        </GlassCard>
+
+        <GlassCard>
+          <StatRow>
+            <StatLabel>LP Gain</StatLabel>
+            <DurationPill>{period}</DurationPill>
+          </StatRow>
+          <StatValue>{lpDiff !== null ? `${lpDiff >= 0 ? "+" : ""}${lpDiff} LP` : "—"}</StatValue>
+        </GlassCard>
+
+        <GlassCard>
+          <StatRow>
+            <StatLabel>LP / Game</StatLabel>
+            <DurationPill>{period}</DurationPill>
+          </StatRow>
+          <StatValue>{lpPerGame !== null ? `${lpPerGame >= 0 ? "+" : ""}${lpPerGame.toFixed(1)} LP/g` : "—"}</StatValue>
         </GlassCard>
       </StatsGrid>
 

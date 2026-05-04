@@ -93,6 +93,11 @@ const SortTh = styled.th<{ $active: boolean }>`
   &:active {
     opacity: 0.7;
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 // Layout only — no hover logic here.
@@ -147,6 +152,11 @@ const SummonerChip = styled(Link)`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgActive};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 const SummonerIcon = styled.div`
@@ -175,7 +185,7 @@ const SummonerName = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: ${({ theme }) => theme.primitive.fontSize.lg};
+    font-size: ${({ theme }) => theme.primitive.fontSize.base};
   }
 `;
 
@@ -284,7 +294,7 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
-      alt=""
+      alt={tier}
       width={size}
       height={size}
       style={{ display: "block", flexShrink: 0 }}
@@ -304,6 +314,12 @@ interface PlayerTableViewProps {
 }
 
 export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: PlayerTableViewProps) {
+  const sortKeyDown = (key: SortKey) => (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSort(key); }
+  };
+  const ariaSort = (key: SortKey): "ascending" | "descending" | "none" =>
+    sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
+
   const renderSortLabel = (key: SortKey, label: string, iconLeft = false) => {
     const isActive = sortKey === key;
     // For inactive columns: show "desc" chevron on hover — previewing what the first click will do.
@@ -328,22 +344,22 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
       <Table>
         <Thead>
           <tr>
-            <SortTh $active={sortKey === "name"} onClick={() => toggleSort("name")}>
+            <SortTh $active={sortKey === "name"} aria-sort={ariaSort("name")} tabIndex={0} onClick={() => toggleSort("name")} onKeyDown={sortKeyDown("name")}>
               {renderSortLabel("name", "Summoner")}
             </SortTh>
-            <SortTh $active={sortKey === "rankLP"} onClick={() => toggleSort("rankLP")}>
+            <SortTh $active={sortKey === "rankLP"} aria-sort={ariaSort("rankLP")} tabIndex={0} onClick={() => toggleSort("rankLP")} onKeyDown={sortKeyDown("rankLP")}>
               {renderSortLabel("rankLP", "Rank")}
             </SortTh>
-            <SortTh $active={sortKey === "games"} style={{ textAlign: "center" }} onClick={() => toggleSort("games")}>
+            <SortTh $active={sortKey === "games"} aria-sort={ariaSort("games")} tabIndex={0} style={{ textAlign: "center" }} onClick={() => toggleSort("games")} onKeyDown={sortKeyDown("games")}>
               {renderSortLabel("games", "Games")}
             </SortTh>
-            <SortTh $active={sortKey === "top4Rate"} style={{ textAlign: "center" }} onClick={() => toggleSort("top4Rate")}>
+            <SortTh $active={sortKey === "top4Rate"} aria-sort={ariaSort("top4Rate")} tabIndex={0} style={{ textAlign: "center" }} onClick={() => toggleSort("top4Rate")} onKeyDown={sortKeyDown("top4Rate")}>
               {renderSortLabel("top4Rate", "Top 4%")}
             </SortTh>
-            <SortTh $active={sortKey === "firstRate"} style={{ textAlign: "center" }} onClick={() => toggleSort("firstRate")}>
+            <SortTh $active={sortKey === "firstRate"} aria-sort={ariaSort("firstRate")} tabIndex={0} style={{ textAlign: "center" }} onClick={() => toggleSort("firstRate")} onKeyDown={sortKeyDown("firstRate")}>
               {renderSortLabel("firstRate", "Win%")}
             </SortTh>
-            <TimeSortTh $active={sortKey === "time"} style={{ textAlign: "right" }} onClick={() => toggleSort("time")}>
+            <TimeSortTh $active={sortKey === "time"} aria-sort={ariaSort("time")} tabIndex={0} style={{ textAlign: "right" }} onClick={() => toggleSort("time")} onKeyDown={sortKeyDown("time")}>
               {renderSortLabel("time", "Playtime", true)}
             </TimeSortTh>
           </tr>

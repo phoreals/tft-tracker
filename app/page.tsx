@@ -91,6 +91,11 @@ const SyncButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 const SpinningIcon = styled(RefreshCw)<{ $spinning: boolean }>`
@@ -194,6 +199,11 @@ const PlayerChip = styled(Link)`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgActive};
   }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 const ChipIcon = styled.div`
@@ -252,6 +262,11 @@ const SuperlativeCardLink = styled(Link)`
   &:active {
     transform: translateY(0);
     background: rgba(229, 197, 135, 0.04);
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
   }
 `;
 
@@ -501,14 +516,14 @@ export default function WeeklyStatsPage() {
           : superlatives
         ).map((s) => (
           <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}?tab=${selectedTab}`}>
-            <GlassCard>
+            <GlassCard spaceBetween>
               <StatRow>
                 <StatLabel>{s.label}</StatLabel>
                 <DurationPill>{s.period}</DurationPill>
               </StatRow>
               <StatValue>{renderStatValue(s.value)}</StatValue>
               {s.player && (
-                <PlayerChip href={`/player/${s.player.puuid}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                <PlayerChip href={`/player/${s.player.puuid}`} title={`${s.player.gameName}#${s.player.tagLine}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                   <ChipIcon>
                     {s.player.profileIconId ? (
                       <img
