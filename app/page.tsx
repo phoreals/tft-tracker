@@ -171,7 +171,7 @@ const PlayerChip = styled(Link)`
   align-self: flex-start;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing.xs};
   margin-left: -${({ theme }) => theme.primitive.spacing.xs};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   text-decoration: none;
@@ -211,12 +211,16 @@ const ChipIcon = styled.div`
 
 const ChipName = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-size: ${({ theme }) => theme.primitive.fontSize.md};
   color: ${({ theme }) => theme.semantic.color.textSecondary};
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+
+  @media (max-width: ${({ theme }) => theme.primitive.breakpoint.sm}) {
+    font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  }
 `;
 
 const ChipTag = styled.span`
