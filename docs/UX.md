@@ -75,12 +75,14 @@ Accessed by clicking a summary stat card on the home page. Categories: `games`, 
 - Same sticky tab bar (Set 17 / Week 1–N)
 
 ### Content
-Side-by-side layout on desktop (chart left, legend right, centered as a unit), stacked on mobile.
+Single-column stacked layout. The chart sits above the ranked table at 50% width.
 
-- **Games / Playtime**: donut chart showing per-player share. Center label = total. Hovering a segment highlights the corresponding legend row; hovering a legend row expands the donut segment. Active segment expands outward 6px with a dark gap stroke.
-- **Top 4 Rate / Win Rate**: gauge section — duration pill (period tag), large squad-average value, "SQUAD AVG" label, and a 4px progress bar with a 50% reference mark.
+- **Games / Playtime**: donut chart (50% width) showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
+- **Top 4 Rate / Win Rate**: gauge section (50% width) — duration pill (period tag), large squad-average value, "SQUAD AVG" label, and a 4px progress bar with a 50% reference mark. No icon.
 
-**Ranked legend** (all categories): compact list replacing the former table. Each row shows rank number, color dot (with pattern for players 6–10), player name (capped at 140px), formatted value, and percentage (donut pages only). Hover-synced with the chart via shared `activeIndex` state.
+**Donut interaction**: hovering a donut segment expands it outward by 6px with a dark gap stroke. Tooltip snaps instantly between segments (no animation).
+
+**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat + inline bar). Leader row has a subtle gold background. Bar fill = share of total (games/playtime) or ratio of max (rates). All values are non-negative so bars extend left-to-right.
 
 ### Category Navigation
 A horizontal pill bar above the content shows all 4 stat categories. The active category is highlighted. Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter.
