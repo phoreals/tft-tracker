@@ -212,13 +212,13 @@ const RankAbbr = styled.span`
   }
 `;
 
-const CenterCell = styled.td`
-  text-align: center;
+const RightCell = styled.td`
+  text-align: right;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
 
 const FirstCell = styled.td`
-  text-align: center;
+  text-align: right;
   color: ${({ theme }) => theme.semantic.color.info};
 `;
 
@@ -350,14 +350,14 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
             <SortTh $active={sortKey === "rankLP"} aria-sort={ariaSort("rankLP")} tabIndex={0} onClick={() => toggleSort("rankLP")} onKeyDown={sortKeyDown("rankLP")}>
               {renderSortLabel("rankLP", "Rank")}
             </SortTh>
-            <SortTh $active={sortKey === "games"} aria-sort={ariaSort("games")} tabIndex={0} style={{ textAlign: "center" }} onClick={() => toggleSort("games")} onKeyDown={sortKeyDown("games")}>
-              {renderSortLabel("games", "Games")}
+            <SortTh $active={sortKey === "games"} aria-sort={ariaSort("games")} tabIndex={0} style={{ textAlign: "right" }} onClick={() => toggleSort("games")} onKeyDown={sortKeyDown("games")}>
+              {renderSortLabel("games", "Games", true)}
             </SortTh>
-            <SortTh $active={sortKey === "top4Rate"} aria-sort={ariaSort("top4Rate")} tabIndex={0} style={{ textAlign: "center" }} onClick={() => toggleSort("top4Rate")} onKeyDown={sortKeyDown("top4Rate")}>
-              {renderSortLabel("top4Rate", "Top 4%")}
+            <SortTh $active={sortKey === "top4Rate"} aria-sort={ariaSort("top4Rate")} tabIndex={0} style={{ textAlign: "right" }} onClick={() => toggleSort("top4Rate")} onKeyDown={sortKeyDown("top4Rate")}>
+              {renderSortLabel("top4Rate", "Top 4%", true)}
             </SortTh>
-            <SortTh $active={sortKey === "firstRate"} aria-sort={ariaSort("firstRate")} tabIndex={0} style={{ textAlign: "center" }} onClick={() => toggleSort("firstRate")} onKeyDown={sortKeyDown("firstRate")}>
-              {renderSortLabel("firstRate", "Win%")}
+            <SortTh $active={sortKey === "firstRate"} aria-sort={ariaSort("firstRate")} tabIndex={0} style={{ textAlign: "right" }} onClick={() => toggleSort("firstRate")} onKeyDown={sortKeyDown("firstRate")}>
+              {renderSortLabel("firstRate", "Win%", true)}
             </SortTh>
             <TimeSortTh $active={sortKey === "time"} aria-sort={ariaSort("time")} tabIndex={0} style={{ textAlign: "right" }} onClick={() => toggleSort("time")} onKeyDown={sortKeyDown("time")}>
               {renderSortLabel("time", "Playtime", true)}
@@ -409,8 +409,8 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
                     </RankText>
                   </div>
                 </td>
-                <CenterCell>{isSet ? row.totalGames : row.scopedGames}</CenterCell>
-                <CenterCell>{row.top4Rate}%</CenterCell>
+                <RightCell>{isSet ? row.totalGames : row.scopedGames}</RightCell>
+                <RightCell>{row.top4Rate}%</RightCell>
                 <FirstCell>{row.firstRate}%</FirstCell>
                 <TimeCell><PlaytimeDisplay seconds={isSet ? row.totalDurationSec : row.scopedDurationSec} variant="hours" /></TimeCell>
               </tr>

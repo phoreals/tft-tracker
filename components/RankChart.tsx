@@ -482,9 +482,9 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
     const rawMin = Math.min(...allLPValues);
     const rawMax = Math.max(...allLPValues);
 
-    // Snap to the tier boundaries that contain the actual data range.
-    const minBase = Math.max(0, Math.floor(rawMin / 400) * 400);
-    const maxBase = Math.min(3600, Math.ceil(rawMax / 400) * 400);
+    // Snap to the nearest division boundary (100 LP) around the data range.
+    const minBase = Math.max(0, Math.floor(rawMin / 100) * 100);
+    const maxBase = Math.min(3600, Math.ceil(rawMax / 100) * 100);
 
     const ticks: number[] = [];
     for (let lp = minBase; lp <= maxBase; lp += 100) {

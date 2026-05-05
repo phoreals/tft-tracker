@@ -26,7 +26,7 @@ A scrollable tab bar sits between the page header and the summary cards. It cont
 - Horizontal scrollbar thumb is invisible by default and appears on hover.
 - On load and on tab change, the active tab scrolls into view via `data-active="true"` + `scrollIntoView`.
 - **Sticky**: the tab wrap sticks to `top: 0`. An `IntersectionObserver` on a zero-height sentinel element before the tab wrap drives a `$isSticky` prop — `backdrop-filter: blur(16px)` and a subtle gold glow activate only when stuck. On wide viewports (>1440px), `--bleed-extra` is computed via `ResizeObserver` so the sticky strip always bleeds edge-to-edge.
-- A mobile dropdown (`<select>`) mirrors the same tab options; the desktop tab bar is hidden on small screens.
+- A mobile dropdown (`CustomSelect`) mirrors the same tab options; the desktop tab bar is hidden on small screens. The period name (e.g. "Set 17", "Week 1") is bold and gold-colored, followed by a muted date range in `· date – date` format matching the page subheader.
 - **The same tab system and sticky behavior applies to the Superlative Drilldown and Player Drilldown pages.**
 
 ### Superlatives
@@ -82,7 +82,7 @@ Single-column stacked layout. The chart sits above the ranked table at 50% width
 
 **Donut interaction**: hovering a donut segment expands it outward by 6px with a dark gap stroke. Tooltip snaps instantly between segments (no animation).
 
-**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat + inline bar). Leader row has a subtle gold background. Bar fill = share of total (games/playtime) or ratio of max (rates). All values are non-negative so bars extend left-to-right.
+**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat), Percentage (share of total for games/playtime, or the rate itself for top4-rate/win-rate). Leader row has a subtle gold background. No inline bars.
 
 ### Category Navigation
 A horizontal pill bar above the content shows all 4 stat categories. The active category is highlighted. Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter.
@@ -95,7 +95,7 @@ A `GlassCard` with a **duration pill** (period tag) after the title text and a *
 
 **Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use custom SVG arrows sized to the x-height of the header text. **Default sort on load: Rank descending (highest rank first).** Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
 
-**Sort icon placement**: the chevron appears to the right of the label for left-aligned and center-aligned columns (Summoner, Rank, Games, Top 4%, Win%). For right-aligned columns (Playtime), the chevron appears to the left of the label so the label text stays flush against the right cell edge. Header labels use `white-space: nowrap` to prevent wrapping at any viewport width.
+**Sort icon placement**: the chevron appears to the right of the label for left-aligned columns (Summoner, Rank). For right-aligned columns (Games, Top 4%, Win%, Playtime), the chevron appears to the left of the label so the label text stays flush against the right cell edge. Header labels use `white-space: nowrap` to prevent wrapping at any viewport width.
 
 **Table view — 6 columns:**
 

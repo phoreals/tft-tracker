@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 import { CustomSelect } from "@/components/CustomSelect";
-import { SET_LABEL } from "@/lib/utils";
+import { SET_LABEL, SET_START, SET_END } from "@/lib/utils";
 import { useFullBleedSticky, useScrollFade } from "@/hooks/useTabNavigation";
 
 // ── Types ───────────────────────────────────────────────────────
@@ -180,10 +180,11 @@ export function TabNavigation({
             onTabChange(v === "set" ? "set" : parseInt(v, 10))
           }
           options={[
-            { value: "set", label: SET_LABEL },
+            { value: "set", label: SET_LABEL, sublabel: `${formatShortDate(SET_START)}\u2009\u2013\u2009${formatShortDate(SET_END)}` },
             ...weeks.map((w, i) => ({
               value: String(i),
-              label: `${w.label} (${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)})`,
+              label: w.label,
+              sublabel: `${formatShortDate(w.start)}\u2009\u2013\u2009${formatShortDate(w.end)}`,
             })),
           ]}
         />

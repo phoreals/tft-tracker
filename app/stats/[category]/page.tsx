@@ -28,7 +28,6 @@ type StatCategory = {
   getValue: (matches: MatchData[]) => number;
   formatValue: (n: number) => string;
   formatTotal: (n: number) => string;
-  getBarPct: (value: number, total: number) => number;
 };
 
 const STAT_CATEGORIES: Record<string, StatCategory> = {
@@ -38,7 +37,6 @@ const STAT_CATEGORIES: Record<string, StatCategory> = {
     getValue: (ms) => ms.length,
     formatValue: (n) => String(n),
     formatTotal: (n) => String(n),
-    getBarPct: (v, total) => (total > 0 ? (v / total) * 100 : 0),
   },
   playtime: {
     title: "Squad Playtime",
@@ -46,7 +44,6 @@ const STAT_CATEGORIES: Record<string, StatCategory> = {
     getValue: (ms) => ms.reduce((s, m) => s + m.duration, 0),
     formatValue: formatPlaytime,
     formatTotal: formatPlaytime,
-    getBarPct: (v, total) => (total > 0 ? (v / total) * 100 : 0),
   },
   "top4-rate": {
     title: "Avg Top 4 Rate",
@@ -54,7 +51,6 @@ const STAT_CATEGORIES: Record<string, StatCategory> = {
     getValue: (ms) => (ms.length > 0 ? (ms.filter((m) => m.placement <= 4).length / ms.length) * 100 : 0),
     formatValue: (n) => `${n.toFixed(1)}%`,
     formatTotal: (n) => `${n.toFixed(1)}%`,
-    getBarPct: (v) => v, // already a percentage
   },
   "win-rate": {
     title: "Squad Win Rate",
@@ -62,7 +58,6 @@ const STAT_CATEGORIES: Record<string, StatCategory> = {
     getValue: (ms) => (ms.length > 0 ? (ms.filter((m) => m.placement === 1).length / ms.length) * 100 : 0),
     formatValue: (n) => `${n.toFixed(1)}%`,
     formatTotal: (n) => `${n.toFixed(1)}%`,
-    getBarPct: (v) => v,
   },
 };
 
@@ -419,22 +414,6 @@ const SummonerIcon = styled.div`
 `;
 
 
-const BarTrack = styled.div`
-  height: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  width: 100%;
-  background: ${({ theme }) => theme.component.table.borderColor};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  overflow: hidden;
-`;
-
-const BarFill = styled.div<{ $pct: number }>`
-  height: 100%;
-  width: ${({ $pct }) => $pct}%;
-  background: ${({ theme }) => theme.semantic.color.accent};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
-`;
-
 const LeaderRow = styled.tr`
   background: ${({ theme }) => theme.semantic.color.accentBgSubtle} !important;
 `;
@@ -447,7 +426,7 @@ const DurationPill = styled.span`
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
   ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.accent};
   flex-shrink: 0;
 `;
@@ -567,7 +546,6 @@ export default function StatsDrilldownPage() {
   if (!cat) return <LoadingText>Category not found.</LoadingText>;
 
   const hasData = rows.some((r) => r.value > 0);
-  const maxVal = rows.length > 0 ? Math.max(...rows.map((r) => r.value)) : 1;
   const aggregateLabel = cat.isShare
     ? cat.formatTotal(total)
     : rows.length > 0
@@ -712,12 +690,12 @@ export default function StatsDrilldownPage() {
                   <th style={{ width: 28 }} />
                   <th>Summoner</th>
                   <th style={{ textAlign: "right" }}>{cat.title}</th>
+                  <th style={{ textAlign: "right" }}>%</th>
                 </tr>
               </Thead>
               <Tbody>
                 {rows.map((r, i) => {
                   const isLead = i === 0;
-                  const barPct = cat.getBarPct(r.value, cat.isShare ? total : maxVal);
                   const Row = isLead ? LeaderRow : "tr";
                   return (
                     <Row key={r.puuid}>
@@ -747,10 +725,12 @@ export default function StatsDrilldownPage() {
                         </SummonerCell>
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        <div>{r.label}</div>
-                        <BarTrack>
-                          <BarFill $pct={barPct} />
-                        </BarTrack>
+                        {r.label}
+                      </td>
+                      <td style={{ textAlign: "right", color: theme.semantic.color.textMuted, whiteSpace: "nowrap" }}>
+                        {cat.isShare
+                          ? `${total > 0 ? ((r.value / total) * 100).toFixed(1) : "0.0"}%`
+                          : r.label}
                       </td>
                     </Row>
                   );

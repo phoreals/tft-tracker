@@ -110,11 +110,21 @@ const CheckIcon = styled.span`
   color: ${({ theme }) => theme.semantic.color.accent};
 `;
 
+const BoldLabel = styled.strong`
+  color: ${({ theme }) => theme.semantic.color.accent};
+`;
+
+const Sublabel = styled.span`
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
+`;
+
 // ── Component ────────────────────────────────────────────────────
 
 export interface SelectOption {
   value: string;
   label: string;
+  sublabel?: string;
 }
 
 interface CustomSelectProps {
@@ -134,7 +144,9 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
 
   const selectedIndex = options.findIndex((o) => o.value === value);
-  const selectedLabel = options[selectedIndex]?.label ?? value;
+  const selectedOption = options[selectedIndex];
+  const selectedLabel = selectedOption?.label ?? value;
+  const selectedSublabel = selectedOption?.sublabel;
 
   // Measure trigger position for the fixed-position portal
   const measureTrigger = () => {
@@ -246,7 +258,7 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
               setOpen(false);
             }}
           >
-            <span>{opt.label}</span>
+            <span><BoldLabel>{opt.label}</BoldLabel>{opt.sublabel && <Sublabel>{"\u2002·\u2002"}{opt.sublabel}</Sublabel>}</span>
             {isSelected && (
               <CheckIcon>
                 <Check size={14} />
@@ -269,7 +281,7 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
         onClick={handleOpen}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span>{selectedLabel}</span>
+        <span><BoldLabel>{selectedLabel}</BoldLabel>{selectedSublabel && <Sublabel>{"\u2002·\u2002"}{selectedSublabel}</Sublabel>}</span>
         <ChevronIcon $open={open}>
           <ChevronDown size={14} />
         </ChevronIcon>
