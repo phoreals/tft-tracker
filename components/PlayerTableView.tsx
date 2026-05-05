@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import styled from "styled-components";
 import Link from "next/link";
 import { User } from "lucide-react";
@@ -8,22 +8,75 @@ import { ICON_SIZE } from "@/styles/theme";
 import { SortChevron } from "./SortChevron";
 import { getRankColor } from "@/lib/utils";
 import { PlaytimeDisplay } from "./PlaytimeDisplay";
+import { useScrollFade } from "@/hooks/useTabNavigation";
 import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
 // ── Styled ───────────────────────────────────────────────────────
 
-const TableWrap = styled.div`
-  overflow-x: auto;
+/* Outer: positions fade overlays above the scroll content but not the scrollbar. */
+const TableFade = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   margin-left: -${({ theme }) => theme.primitive.spacing.md};
   margin-right: -${({ theme }) => theme.primitive.spacing.md};
-  padding-left: ${({ theme }) => theme.primitive.spacing.md};
-  padding-right: ${({ theme }) => theme.primitive.spacing.md};
+  position: relative;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     margin-left: -${({ theme }) => theme.primitive.spacing.lg};
     margin-right: -${({ theme }) => theme.primitive.spacing.lg};
+  }
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    /* Stop above the scrollbar (3px track) */
+    bottom: 3px;
+    width: 48px;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
+  &::before {
+    left: 0;
+    background: linear-gradient(to right, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
+    opacity: ${({ $fadeLeft }) => ($fadeLeft ? 1 : 0)};
+  }
+
+  &::after {
+    right: 0;
+    background: linear-gradient(to left, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
+    opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
+  }
+`;
+
+/* Inner: scrollable container with hidden scrollbar that appears on hover. */
+const TableWrap = styled.div`
+  overflow-x: auto;
+  padding-left: ${({ theme }) => theme.primitive.spacing.md};
+  padding-right: ${({ theme }) => theme.primitive.spacing.md};
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
     padding-left: ${({ theme }) => theme.primitive.spacing.lg};
     padding-right: ${({ theme }) => theme.primitive.spacing.lg};
+  }
+
+  &::-webkit-scrollbar {
+    height: 3px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: ${({ theme }) => theme.primitive.radius.full};
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.semantic.color.borderDefault};
+  }
+
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  &:hover {
+    scrollbar-color: ${({ theme }) => theme.semantic.color.borderDefault} transparent;
   }
 `;
 
@@ -314,6 +367,9 @@ interface PlayerTableViewProps {
 }
 
 export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: PlayerTableViewProps) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const { fadeLeft, fadeRight } = useScrollFade(wrapRef);
+
   const sortKeyDown = (key: SortKey) => (e: React.KeyboardEvent) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleSort(key); }
   };
@@ -340,7 +396,8 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
   };
 
   return (
-    <TableWrap>
+    <TableFade $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
+    <TableWrap ref={wrapRef}>
       <Table>
         <Thead>
           <tr>
@@ -419,5 +476,6 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
         </Tbody>
       </Table>
     </TableWrap>
+    </TableFade>
   );
 }

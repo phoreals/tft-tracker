@@ -139,9 +139,9 @@ The sidebar header displays an inline SVG of the TFT favicon (the 8-point star p
 
 When the sidebar is expanded (224px wide): icon is 20px, brand text fades in. When collapsed (56px): icon grows to 24px to fill the strip, brand text hides. Navigation icons follow the same pattern — 20px when expanded, 24px when collapsed.
 
-## Scroll Affordance on Tab Bars
+## Scroll Affordance
 
-Tab bars use conditional `mask-image` gradients on both left and right edges (48px each) to signal scrollability. The gradients respond to scroll position via a `useScrollFade` hook — no left fade when fully scrolled left, no right fade when fully scrolled right. The horizontal scrollbar is invisible by default and only appears on hover (`&:hover::-webkit-scrollbar-thumb`).
+Horizontally scrollable containers (tab bars, player performance table) use conditional `mask-image` gradients on both left and right edges (48px each) to signal remaining content. The gradients respond to scroll position via a shared `useScrollFade` hook — no left fade when fully scrolled left, no right fade when fully scrolled right. The horizontal scrollbar is invisible by default and only appears on hover (`&:hover::-webkit-scrollbar-thumb`, 3px height, gold thumb at 20% opacity).
 
 ## Animation
 

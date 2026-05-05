@@ -153,6 +153,22 @@ export function getRankColor(tier?: string): string {
   return RANK_COLORS[tier.toUpperCase()] ?? "rgba(208, 197, 181, 0.4)";
 }
 
+/**
+ * Returns a color for a 1-based rank position, smoothly interpolating
+ * from brand gold (#e5c587) to a dim slate across `total` items.
+ * Hue stays on gold through the first half, then fades to neutral.
+ */
+export function getLeaderboardColor(rank: number, total: number): string {
+  if (total <= 1) return "#e5c587";
+  const t = (rank - 1) / (total - 1); // 0 → 1
+  // Hue stays on gold (41°) then jumps late to cool neutral (220°).
+  // Saturation drops fast so mid-ranks are warm gray, not green.
+  const h = 41 + Math.pow(t, 3) * (220 - 41);
+  const s = 62 * Math.pow(1 - t, 2);  // 62% → 0% (fast drop)
+  const l = 71 - t * 31;              // 71% → 40%
+  return `hsl(${h.toFixed(0)}, ${s.toFixed(0)}%, ${l.toFixed(0)}%)`;
+}
+
 // ── Superlative Stats ───────────────────────────────────────────
 
 export interface PlayerStatInput {

@@ -48,7 +48,7 @@ Each card has a **duration pill** in the top-right of its header showing the act
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
 
-Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width.
+Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width. The chip has `margin-bottom: -xs` to offset its padding and keep the card's bottom spacing visually balanced.
 
 When loading or no players are fetched, all 6 cards render with "..." as placeholder values. Cards stretch to equal height in the grid regardless of whether a player chip is present.
 
@@ -82,7 +82,7 @@ Single-column stacked layout. The chart sits above the ranked table at 50% width
 
 **Donut interaction**: hovering a donut segment expands it outward by 6px with a dark gap stroke. Tooltip snaps instantly between segments (no animation).
 
-**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat), Percentage (share of total for games/playtime, or the rate itself for top4-rate/win-rate). Leader row has a subtle gold background. No inline bars.
+**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat), Percentage (share of total for games/playtime, or the rate itself for top4-rate/win-rate). Leader row has a subtle gold background. Rank badges use the same `getLeaderboardColor` gradient as superlative drilldowns. No inline bars.
 
 ### Category Navigation
 A horizontal pill bar above the content shows all 4 stat categories. The active category is highlighted. Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter.
@@ -96,6 +96,8 @@ A `GlassCard` with a **duration pill** (period tag) after the title text and a *
 **Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use custom SVG arrows sized to the x-height of the header text. **Default sort on load: Rank descending (highest rank first).** Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
 
 **Sort icon placement**: the chevron appears to the right of the label for left-aligned columns (Summoner, Rank). For right-aligned columns (Games, Top 4%, Win%, Playtime), the chevron appears to the left of the label so the label text stays flush against the right cell edge. Header labels use `white-space: nowrap` to prevent wrapping at any viewport width.
+
+**Horizontal scroll affordance** (table view): The table wrapper scrolls horizontally on narrow viewports. The scrollbar is invisible by default and appears (3px, gold thumb) on hover. Conditional `mask-image` gradients fade the left and/or right edges (48px) to signal remaining content, driven by the same `useScrollFade` hook used by tab bars. Gradients respond to scroll position — no left fade when fully scrolled left, no right fade when fully scrolled right.
 
 **Table view — 6 columns:**
 
@@ -183,7 +185,7 @@ Accessed by clicking a superlative card on the Weekly Stats page. Category slugs
 A horizontal pill bar above the Rankings card shows all 6 superlative categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. Uses the same visual style as sort pills.
 
 ### Rankings Table
-Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. Rank badges use gold/silver/bronze colors for positions 1–3, with dim borders for 4th and below. Badge colors reflect natural rank (by value), not display order — re-sorting the table doesn't change badge colors.
+Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. Rank badges use a smooth color gradient from brand gold (1st) to dim slate (last) via `getLeaderboardColor(rank, total)` in `lib/utils.ts`. The gradient keeps the gold hue through top ranks then desaturates to cool neutral. Badge colors reflect natural rank (by value), not display order — re-sorting the table doesn't change badge colors.
 
 The "Summoner" header is left-aligned with the sort chevron to its right. The value column header (e.g. "Most Games") is right-aligned with the sort chevron to its left, keeping the label flush against the right edge. Both headers use `white-space: nowrap`.
 
@@ -221,7 +223,11 @@ The page-level tab (Set / Week N) scopes the **stat cards only**. The rank chart
 Games, Top 4 Rate %, 1st Place Rate %, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label on its own line with a duration pill below it (column layout matching home page superlative cards). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
 
 ### Placement Breakdown Chart
-A horizontal bar chart showing the distribution of placements (1st–8th) scoped to the selected tab period. Each row shows an ordinal label, a proportional bar, and a count. Top 4 placements use gold (`accent`), bottom 4 use muted color. Hovering a bar shows a tooltip with the placement, game count, and percentage of total. Uses a `DurationPill` period tag. Empty state: "No games in this period."
+Scoped to the selected tab period. Uses a `DurationPill` period tag. A **view toggle** (bar chart / pie chart icons) in the card header switches between two views. Empty state: "No games in this period."
+
+**Bar view** (default): A Recharts horizontal `BarChart` with vertical layout. Each placement (1st–8th) has a unique color from `PLACEMENT_COLORS` — top 4 use gold hue with decreasing saturation, bottom 4 use cool slate tones. A dotted reference line separates 4th from 5th (win vs loss). X-axis shows count scale with grid lines. Count labels appear to the right of each bar. Glassmorphic tooltip on hover shows ordinal, game count, and percentage.
+
+**Donut view**: A Recharts `PieChart` donut starting at 12 o'clock (clockwise). Same per-placement colors. Always-visible labels point to each segment via connector lines, showing ordinal (colored, bold) and percentage (muted) on two lines. Center shows total games count and "GAMES" label. Segment expands 4px on hover with dark gap stroke. Glassmorphic tooltip on hover.
 
 ### Rank Over Time Chart
 Uses the shared `<RankChart>` component with `hideLegend`, `lineColors={[gold300]}`, and a `periodTag` duration pill matching the selected tab. Single gold line, no legend. Same Y-axis tick tooltips and week highlight as the main page chart.

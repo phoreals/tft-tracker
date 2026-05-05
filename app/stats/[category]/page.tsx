@@ -13,6 +13,7 @@ import {
   formatPlaytime,
   percentOf,
   getSetWeeks,
+  getLeaderboardColor,
   SET_START,
   SET_END,
   SET_LABEL,
@@ -281,7 +282,7 @@ const DonutTotal = styled.span`
 
 const DonutLabel = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: clamp(8px, 1.5dvw, 11px);
+  font-size: clamp(10px, 1.5dvw, 11px);
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   margin-top: 3px;
   text-align: center;
@@ -356,18 +357,18 @@ const Thead = styled.thead`
   }
 `;
 
-const RankBadge = styled.span`
+const RankBadge = styled.span<{ $color: string }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 20px;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
+  border: 1px solid ${({ $color }) => $color};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  color: ${({ theme }) => theme.semantic.color.textMuted};
+  color: ${({ $color }) => $color};
 `;
 
 const Tbody = styled.tbody`
@@ -700,7 +701,7 @@ export default function StatsDrilldownPage() {
                   return (
                     <Row key={r.puuid}>
                       <td>
-                        <RankBadge>{i + 1}</RankBadge>
+                        <RankBadge $color={getLeaderboardColor(i + 1, rows.length)}>{i + 1}</RankBadge>
                       </td>
                       <td>
                         <SummonerCell>

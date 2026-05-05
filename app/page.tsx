@@ -178,6 +178,7 @@ const PlayerChip = styled(Link)`
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing.xs};
   margin-left: -${({ theme }) => theme.primitive.spacing.xs};
+  margin-bottom: -${({ theme }) => theme.primitive.spacing.xs};
   border-radius: ${({ theme }) => theme.primitive.radius.sm};
   text-decoration: none;
   color: inherit;

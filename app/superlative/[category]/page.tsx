@@ -16,6 +16,7 @@ import {
   computePlayerStats,
   SUPERLATIVE_CATEGORIES,
   findLeader,
+  getLeaderboardColor,
   type PlayerStatInput,
 } from "@/lib/utils";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
@@ -172,24 +173,18 @@ const Tbody = styled.tbody`
   }
 `;
 
-const RANK_COLORS: Record<number, string> = {
-  1: "#e5c587", // gold
-  2: "#b0b8c4", // silver
-  3: "#c4956a", // bronze
-};
-
-const RankBadge = styled.span<{ $rank: number }>`
+const RankBadge = styled.span<{ $color: string }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 20px;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ $rank, theme }) => RANK_COLORS[$rank] ?? theme.semantic.color.borderDim};
+  border: 1px solid ${({ $color }) => $color};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  color: ${({ $rank, theme }) => RANK_COLORS[$rank] ?? theme.semantic.color.textMuted};
+  color: ${({ $color }) => $color};
 `;
 
 const SummonerCell = styled.div`
@@ -510,7 +505,7 @@ export default function SuperlativeDrilldownPage() {
                   return (
                     <Row key={r.player.puuid}>
                       <td>
-                        <RankBadge $rank={naturalRank}>{i + 1}</RankBadge>
+                        <RankBadge $color={getLeaderboardColor(naturalRank, ranked.length)}>{i + 1}</RankBadge>
                       </td>
                       <td>
                         <SummonerCell>

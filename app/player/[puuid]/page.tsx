@@ -5,8 +5,10 @@ import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import styled from "styled-components";
 import Link from "next/link";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, BarChart3, PieChart as PieChartIcon } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Cell, CartesianGrid, ReferenceLine, Tooltip as RechartsTooltip, PieChart, Pie, Sector, ResponsiveContainer, LabelList, type PieSectorDataItem } from "recharts";
 import { GlassCard } from "@/components/GlassCard";
+import { ViewToggle } from "@/components/ViewToggle";
 import { RankChart } from "@/components/RankChart";
 import { TabNavigation } from "@/components/TabNavigation";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
@@ -49,6 +51,19 @@ const CHART = {
   gold:    theme.primitive.color.gold300,
   cyan:    theme.primitive.color.cyan500,
 } as const;
+
+// Per-placement colors: 1–4 are gold hue (41°) with decreasing lightness/saturation.
+// 5–8 are cool neutrals.
+const PLACEMENT_COLORS = [
+  "#e5c587", // 1st — brand gold
+  "#c9ab6f", // 2nd — muted gold
+  "#ad925a", // 3rd — dim gold
+  "#917a48", // 4th — dark gold
+  "#8a9bb0", // 5th — slate blue
+  "#7088a0", // 6th — steel
+  "#5c7080", // 7th — dim teal
+  "#4a5c6a", // 8th — dark slate
+] as const;
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -339,83 +354,90 @@ const EmptyState = styled.div`
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
 `;
 
-const PlacementGrid = styled.div`
+const PlacementChartWrap = styled.div`
+  width: 100%;
+  height: 280px;
+  touch-action: pan-y;
+
+  svg:focus,
+  svg *:focus {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  }
+`;
+
+const PlacementDonutWrap = styled.div`
+  position: relative;
+  width: clamp(200px, 70dvw, 320px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+  touch-action: pan-y;
+
+  svg:focus,
+  svg *:focus {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  }
+`;
+
+const DonutCenter = styled.div`
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+`;
+
+const DonutTotal = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: clamp(18px, 4dvw, 24px);
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  line-height: 1;
+`;
+
+const DonutLabel = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: clamp(10px, 1.5dvw, 11px);
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  margin-top: 3px;
+`;
+
+const PlacementLegend = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  margin-top: ${({ theme }) => theme.primitive.spacing.sm};
 `;
 
-const PlacementRow = styled.div`
+const LegendRow = styled.div<{ $isTop4: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  position: relative;
-  cursor: default;
 `;
 
-const PlacementTooltip = styled.div`
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 6px);
-  transform: translateX(-50%);
-  z-index: 10;
-  pointer-events: none;
-  white-space: nowrap;
-  background: rgba(12, 20, 30, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.lg};
-  box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset};
-  padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
-  font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.semantic.typography.label.fontSize};
-  display: none;
-
-  ${PlacementRow}:hover & {
-    display: flex;
-    align-items: center;
-    gap: ${({ theme }) => theme.primitive.spacing.sm};
-  }
-
-  @media (hover: none) {
-    display: none !important;
-  }
-`;
-
-const PlacementLabel = styled.span<{ $top4: boolean }>`
-  width: 28px;
-  text-align: right;
+const LegendDot = styled.span<{ $color: string }>`
+  width: 8px;
+  height: 8px;
+  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  background: ${({ $color }) => $color};
   flex-shrink: 0;
-  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
-  color: ${({ $top4, theme }) => $top4 ? theme.semantic.color.accent : theme.semantic.color.textMuted};
 `;
 
-const PlacementTrack = styled.div`
+const LegendLabel = styled.span`
   flex: 1;
-  height: 20px;
-  background: ${({ theme }) => theme.component.table.borderColor};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  overflow: hidden;
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
 
-const PlacementFill = styled.div<{ $pct: number; $top4: boolean }>`
-  height: 100%;
-  width: ${({ $pct }) => $pct}%;
-  min-width: ${({ $pct }) => ($pct > 0 ? "4px" : "0")};
-  background: ${({ $top4, theme }) => $top4 ? theme.semantic.color.accent : theme.semantic.color.textMuted};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
-  transition: width 0.2s ease;
-`;
-
-const PlacementCount = styled.span`
-  width: 24px;
-  flex-shrink: 0;
-  text-align: left;
+const LegendPct = styled.span`
   color: ${({ theme }) => theme.semantic.color.textMuted};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  flex-shrink: 0;
 `;
 
 const MatchList = styled.div`
@@ -717,6 +739,8 @@ export default function PlayerDrilldownPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<{ tone: "muted" | "warn" | "error"; message: string } | null>(null);
   const [showAllMatches, setShowAllMatches] = useState(false);
+  const [placementView, setPlacementView] = useState<"bar" | "donut">("bar");
+  const [activeDonutIndex, setActiveDonutIndex] = useState<number | undefined>(undefined);
 
   const weeks = useMemo(() => getSetWeeks(), []);
   const [selectedTab, setSelectedTab] = useSelectedTab();
@@ -991,40 +1015,262 @@ export default function PlayerDrilldownPage() {
       />
 
       {/* Placement breakdown — scoped to active tab */}
-      <GlassCard title="Placement Breakdown" titleExtra={<DurationPill>{period}</DurationPill>} prominent>
+      <GlassCard
+        title="Placement Breakdown"
+        titleExtra={<DurationPill>{period}</DurationPill>}
+        headerAction={
+          <ViewToggle
+            views={[
+              { id: "bar" as const, icon: BarChart3, label: "Bar chart" },
+              { id: "donut" as const, icon: PieChartIcon, label: "Donut chart" },
+            ]}
+            value={placementView}
+            onChange={setPlacementView}
+          />
+        }
+        prominent
+      >
         {totalGames === 0 ? (
           <EmptyState>No games in this period.</EmptyState>
+        ) : placementView === "bar" ? (
+          <PlacementChartWrap>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={placementCounts.map((p) => ({
+                  ...p,
+                  label: toOrdinal(p.placement),
+                  pct: totalGames > 0 ? ((p.count / totalGames) * 100).toFixed(1) + "%" : "0%",
+                }))}
+                layout="vertical"
+                margin={{ top: 0, right: 36, bottom: 4, left: 0 }}
+                barCategoryGap="20%"
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} horizontal={false} />
+                <XAxis
+                  type="number"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={CHART.tick}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="label"
+                  axisLine={false}
+                  tickLine={false}
+                  width={32}
+                  tick={(props: Record<string, unknown>) => {
+                    const x = Number(props.x ?? 0);
+                    const y = Number(props.y ?? 0);
+                    const payload = props.payload as { value: string; index: number };
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor="end"
+                        dominantBaseline="middle"
+                        fill={PLACEMENT_COLORS[payload.index]}
+                        fontSize={CHART.tick.fontSize}
+                        fontFamily={CHART.tick.fontFamily}
+                        fontWeight={700}
+                      >
+                        {payload.value}
+                      </text>
+                    );
+                  }}
+                />
+                <ReferenceLine
+                  y="4th"
+                  stroke={CHART.refStroke}
+                  strokeDasharray="4 4"
+                  strokeWidth={1}
+                  ifOverflow="extendDomain"
+                  position="end"
+                />
+                <RechartsTooltip
+                  cursor={{ fill: CHART.refFill }}
+                  wrapperStyle={{ zIndex: 10, transition: "none" }}
+                  animationDuration={0}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const item = payload[0];
+                    const data = item.payload as { label: string; count: number; placement: number; pct: string };
+                    return (
+                      <div style={{
+                        background: "rgba(12, 20, 30, 0.6)",
+                        backdropFilter: "blur(16px)",
+                        WebkitBackdropFilter: "blur(16px)",
+                        border: CHART.tooltip.border,
+                        borderRadius: CHART.tooltip.radius,
+                        boxShadow: CHART.tooltip.shadow,
+                        padding: `${theme.primitive.spacing.xs} ${theme.primitive.spacing.sm}`,
+                        fontFamily: CHART.tooltip.fontFamily,
+                        fontSize: CHART.tooltip.fontSize,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                      }}>
+                        <span style={{ color: PLACEMENT_COLORS[data.placement - 1], fontWeight: 600 }}>
+                          {data.label}
+                        </span>
+                        <span style={{ color: theme.primitive.color.neutral200 }}>
+                          {data.count} game{data.count !== 1 ? "s" : ""}
+                        </span>
+                        <span style={{ color: theme.semantic.color.textMuted }}>
+                          {data.pct}
+                        </span>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="count" radius={[4, 4, 4, 4]} isAnimationActive={false}>
+                  {placementCounts.map((p) => (
+                    <Cell
+                      key={p.placement}
+                      fill={PLACEMENT_COLORS[p.placement - 1]}
+                    />
+                  ))}
+                  <LabelList
+                    dataKey="count"
+                    position="right"
+                    fill={theme.semantic.color.textPrimary}
+                    fontSize={parseInt(theme.primitive.fontSize.sm)}
+                    fontFamily="Space Grotesk"
+                    fontWeight={500}
+                    formatter={(v) => (Number(v) > 0 ? String(v) : "")}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </PlacementChartWrap>
         ) : (
-          <PlacementGrid>
-            {(() => {
-              const maxCount = Math.max(...placementCounts.map((c) => c.count));
-              return placementCounts.map((p) => {
-                const barPct = maxCount > 0 ? (p.count / maxCount) * 100 : 0;
-                const ratePct = totalGames > 0 ? ((p.count / totalGames) * 100).toFixed(1) : "0.0";
-                const isTop4 = p.placement <= 4;
-                return (
-                  <PlacementRow key={p.placement}>
-                    <PlacementTooltip>
-                      <span style={{ color: isTop4 ? theme.semantic.color.accent : theme.primitive.color.neutral200, fontWeight: 600 }}>
-                        {toOrdinal(p.placement)}
-                      </span>
-                      <span style={{ color: theme.primitive.color.neutral200 }}>
-                        {p.count} game{p.count !== 1 ? "s" : ""}
-                      </span>
-                      <span style={{ color: theme.semantic.color.textMuted }}>
-                        {ratePct}%
-                      </span>
-                    </PlacementTooltip>
-                    <PlacementLabel $top4={isTop4}>{toOrdinal(p.placement)}</PlacementLabel>
-                    <PlacementTrack>
-                      <PlacementFill $pct={barPct} $top4={isTop4} />
-                    </PlacementTrack>
-                    <PlacementCount>{p.count}</PlacementCount>
-                  </PlacementRow>
-                );
-              });
-            })()}
-          </PlacementGrid>
+          <>
+            <PlacementDonutWrap>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={placementCounts.filter((p) => p.count > 0).map((p) => ({
+                      ...p,
+                      pctLabel: `${totalGames > 0 ? ((p.count / totalGames) * 100).toFixed(0) : 0}%`,
+                    }))}
+                    dataKey="count"
+                    nameKey="placement"
+                    cx="50%"
+                    cy="50%"
+                    startAngle={90}
+                    endAngle={-270}
+                    innerRadius="55%"
+                    outerRadius="72%"
+                    strokeWidth={0}
+                    isAnimationActive={false}
+                    {...{ activeIndex: activeDonutIndex } as Record<string, unknown>}
+                    activeShape={(props: PieSectorDataItem) => (
+                      <Sector
+                        {...props}
+                        outerRadius={(props.outerRadius ?? 0) + 4}
+                        stroke="rgba(12, 20, 30, 0.7)"
+                        strokeWidth={3}
+                      />
+                    )}
+                    onMouseEnter={(_, i) => setActiveDonutIndex(i)}
+                    onMouseLeave={() => setActiveDonutIndex(undefined)}
+                    {...{ label: (props: Record<string, unknown>) => {
+                      const { cx, cy, midAngle, outerRadius, placement, pctLabel } = props as {
+                        cx: number; cy: number; midAngle: number; outerRadius: number;
+                        placement: number; pctLabel: string;
+                      };
+                      const RADIAN = Math.PI / 180;
+                      const sin = Math.sin(-RADIAN * midAngle);
+                      const cos = Math.cos(-RADIAN * midAngle);
+                      const r1 = outerRadius + 6;
+                      const r2 = outerRadius + 20;
+                      const x1 = cx + r1 * cos;
+                      const y1 = cy + r1 * sin;
+                      const x2 = cx + r2 * cos;
+                      const y2 = cy + r2 * sin;
+                      const textX = x2 + (cos >= 0 ? 4 : -4);
+                      const anchor = cos >= 0 ? "start" : "end";
+                      const color = PLACEMENT_COLORS[placement - 1];
+                      return (
+                        <g>
+                          <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={1} opacity={0.5} />
+                          <text
+                            x={textX}
+                            y={y2}
+                            textAnchor={anchor}
+                            dominantBaseline="middle"
+                            fill={color}
+                            fontSize={CHART.tick.fontSize}
+                            fontFamily={CHART.tick.fontFamily}
+                            fontWeight={700}
+                          >
+                            {toOrdinal(placement)}
+                          </text>
+                          <text
+                            x={textX}
+                            y={y2 + 12}
+                            textAnchor={anchor}
+                            dominantBaseline="middle"
+                            fill={theme.semantic.color.textMuted}
+                            fontSize={CHART.tick.fontSize - 1}
+                            fontFamily={CHART.tick.fontFamily}
+                          >
+                            {pctLabel}
+                          </text>
+                        </g>
+                      );
+                    }, labelLine: false } as Record<string, unknown>}
+                  >
+                    {placementCounts.filter((p) => p.count > 0).map((p) => (
+                      <Cell
+                        key={p.placement}
+                        fill={PLACEMENT_COLORS[p.placement - 1]}
+                      />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    wrapperStyle={{ zIndex: 10, transition: "none" }}
+                    animationDuration={0}
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const data = payload[0].payload as { placement: number; count: number };
+                      const pct = totalGames > 0 ? ((data.count / totalGames) * 100).toFixed(1) : "0.0";
+                      return (
+                        <div style={{
+                          background: "rgba(12, 20, 30, 0.6)",
+                          backdropFilter: "blur(16px)",
+                          WebkitBackdropFilter: "blur(16px)",
+                          border: CHART.tooltip.border,
+                          borderRadius: CHART.tooltip.radius,
+                          boxShadow: CHART.tooltip.shadow,
+                          padding: `${theme.primitive.spacing.xs} ${theme.primitive.spacing.sm}`,
+                          fontFamily: CHART.tooltip.fontFamily,
+                          fontSize: CHART.tooltip.fontSize,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}>
+                          <span style={{ color: PLACEMENT_COLORS[data.placement - 1], fontWeight: 600 }}>
+                            {toOrdinal(data.placement)}
+                          </span>
+                          <span style={{ color: theme.primitive.color.neutral200 }}>
+                            {data.count} game{data.count !== 1 ? "s" : ""}
+                          </span>
+                          <span style={{ color: theme.semantic.color.textMuted }}>
+                            {pct}%
+                          </span>
+                        </div>
+                      );
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <DonutCenter>
+                <DonutTotal>{totalGames}</DonutTotal>
+                <DonutLabel>GAMES</DonutLabel>
+              </DonutCenter>
+            </PlacementDonutWrap>
+          </>
         )}
       </GlassCard>
 
