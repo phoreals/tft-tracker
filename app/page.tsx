@@ -121,6 +121,10 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
     grid-template-columns: repeat(4, 1fr);
   }
@@ -185,6 +189,8 @@ const PlayerChip = styled(Link)`
     &:hover {
       background: none;
     }
+    border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
+    padding: calc(${({ theme }) => theme.primitive.spacing.xs} - 1px);
   }
 
   &:active {

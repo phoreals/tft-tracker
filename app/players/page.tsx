@@ -6,6 +6,7 @@ import { UserPlus, Users, Trash2, DatabaseZap, Lock } from "lucide-react";
 import { motion } from "motion/react";
 import { GlassCard } from "@/components/GlassCard";
 import { formatRank, formatRankAbbr, getRankColor } from "@/lib/utils";
+import { RankEmblem, RankText } from "@/components/RankDisplay";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -371,18 +372,6 @@ const TierLabel = styled.span<{ $color: string }>`
   color: ${({ $color }) => $color};
 `;
 
-const RankFull = styled.span`
-  display: none;
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: inline;
-  }
-`;
-
-const RankAbbr = styled.span`
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: none;
-  }
-`;
 
 const Dot = styled.span`
   width: ${({ theme }) => theme.primitive.spacing["2xs"]};
@@ -442,37 +431,7 @@ const EmptyState = styled.div`
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
 `;
 
-// ── RankEmblem ───────────────────────────────────────────────────
 
-function RankEmblem({ tier, size, color }: { tier: string; size: number; color: string }) {
-  const [failed, setFailed] = React.useState(false);
-  if (failed) {
-    return (
-      <span
-        style={{
-          display: "inline-block",
-          width: size,
-          height: size,
-          borderRadius: 2,
-          background: color,
-          opacity: 0.85,
-          flexShrink: 0,
-        }}
-      />
-    );
-  }
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
-      alt={tier}
-      width={size}
-      height={size}
-      style={{ display: "block", flexShrink: 0 }}
-      onError={() => setFailed(true)}
-    />
-  );
-}
 
 // ── Types & Constants ────────────────────────────────────────────
 
@@ -713,10 +672,10 @@ export default function ManagePlayersPage() {
                           )}
                           <TierLabel $color={rankColor}>
                             {player.current ? (
-                              <>
-                                <RankFull>{formatRank(player.current.tier, player.current.rank, player.current.lp)}</RankFull>
-                                <RankAbbr>{formatRankAbbr(player.current.tier, player.current.rank, player.current.lp)}</RankAbbr>
-                              </>
+                              <RankText
+                                full={formatRank(player.current.tier, player.current.rank, player.current.lp)}
+                                abbr={formatRankAbbr(player.current.tier, player.current.rank, player.current.lp)}
+                              />
                             ) : "UNRANKED"}
                           </TierLabel>
                           {player.current && (

@@ -7,6 +7,7 @@ import { User } from "lucide-react";
 import { ICON_SIZE } from "@/styles/theme";
 import { SortChevron } from "./SortChevron";
 import { getRankColor } from "@/lib/utils";
+import { ResponsiveEmblem, RankText } from "@/components/RankDisplay";
 import { PlaytimeDisplay } from "./PlaytimeDisplay";
 import { useScrollFade } from "@/hooks/useTabNavigation";
 import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
@@ -252,19 +253,6 @@ const SummonerTag = styled.span`
   }
 `;
 
-const RankFull = styled.span`
-  display: none;
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: inline;
-  }
-`;
-
-const RankAbbr = styled.span`
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: none;
-  }
-`;
-
 const RightCell = styled.td`
   text-align: right;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
@@ -295,21 +283,7 @@ const TimeSortTh = styled(SortTh)`
   }
 `;
 
-const RankEmblemMobile = styled.span`
-  display: inline-flex;
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: none;
-  }
-`;
-
-const RankEmblemDesktop = styled.span`
-  display: none;
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    display: inline-flex;
-  }
-`;
-
-const RankText = styled.span`
+const RankTextWrap = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
@@ -323,38 +297,6 @@ const EmptyCell = styled.td`
   color: ${({ theme }) => theme.semantic.color.textDisabled};
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
 `;
-
-// ── RankEmblem ───────────────────────────────────────────────────
-
-function RankEmblem({ tier, size, color }: { tier: string; size: number; color: string }) {
-  const [failed, setFailed] = React.useState(false);
-  if (failed) {
-    return (
-      <span
-        style={{
-          display: "inline-block",
-          width: size,
-          height: size,
-          borderRadius: 2,
-          background: color,
-          opacity: 0.85,
-          flexShrink: 0,
-        }}
-      />
-    );
-  }
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={`https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-mini-crests/${tier.toLowerCase()}_tft.svg`}
-      alt={tier}
-      width={size}
-      height={size}
-      style={{ display: "block", flexShrink: 0 }}
-      onError={() => setFailed(true)}
-    />
-  );
-}
 
 // ── Component ────────────────────────────────────────────────────
 
@@ -451,19 +393,11 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
                 <td>
                   <div style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
                     {row.tier && (
-                      <>
-                        <RankEmblemMobile>
-                          <RankEmblem tier={row.tier} size={12} color={getRankColor(row.tier)} />
-                        </RankEmblemMobile>
-                        <RankEmblemDesktop>
-                          <RankEmblem tier={row.tier} size={14} color={getRankColor(row.tier)} />
-                        </RankEmblemDesktop>
-                      </>
+                      <ResponsiveEmblem tier={row.tier} color={getRankColor(row.tier)} />
                     )}
-                    <RankText style={{ color: getRankColor(row.tier) }}>
-                      <RankFull>{row.rank}</RankFull>
-                      <RankAbbr>{row.rankAbbr}</RankAbbr>
-                    </RankText>
+                    <RankTextWrap style={{ color: getRankColor(row.tier) }}>
+                      <RankText full={row.rank} abbr={row.rankAbbr} />
+                    </RankTextWrap>
                   </div>
                 </td>
                 <RightCell>{isSet ? row.totalGames : row.scopedGames}</RightCell>

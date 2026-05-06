@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
@@ -20,6 +20,7 @@ import {
   SET_LABEL,
 } from "@/lib/utils";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
+import { useScrollFade } from "@/hooks/useTabNavigation";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Category config ──────────────────────────────────────────────
@@ -338,6 +339,17 @@ const GaugeRef = styled.div`
   opacity: 0.5;
 `;
 
+const GaugeRefLabel = styled.span`
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(100% + ${({ theme }) => theme.primitive.spacing.xs});
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  white-space: nowrap;
+`;
+
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
@@ -428,6 +440,41 @@ const LoadingText = styled.p`
   padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
 `;
 
+const CategoryNavWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
+  position: relative;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 48px;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
+  &::before {
+    left: 0;
+    background: linear-gradient(to right, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
+    opacity: ${({ $fadeLeft }) => ($fadeLeft ? 1 : 0)};
+  }
+
+  &::after {
+    right: 0;
+    background: linear-gradient(to left, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
+    opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+`;
+
 const CategoryNav = styled.nav`
   display: flex;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
@@ -503,6 +550,8 @@ export default function StatsDrilldownPage() {
   const cat = STAT_CATEGORIES[slug];
   const weeks = useMemo(() => getSetWeeks(), []);
   const [selectedTab, setSelectedTab] = useSelectedTab();
+  const catNavRef = useRef<HTMLElement>(null);
+  const { fadeLeft: catFadeLeft, fadeRight: catFadeRight } = useScrollFade(catNavRef as React.RefObject<HTMLDivElement>);
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   useEffect(() => {
@@ -575,7 +624,8 @@ export default function StatsDrilldownPage() {
 
       <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 
-      <CategoryNav aria-label="Stat categories">
+      <CategoryNavWrap $fadeLeft={catFadeLeft} $fadeRight={catFadeRight}>
+      <CategoryNav ref={catNavRef} aria-label="Stat categories">
         {Object.entries(STAT_CATEGORIES).map(([key, c]) => (
           <CategoryPill
             key={key}
@@ -586,6 +636,7 @@ export default function StatsDrilldownPage() {
           </CategoryPill>
         ))}
       </CategoryNav>
+      </CategoryNavWrap>
 
       {loading ? (
         <LoadingText>Loading...</LoadingText>
@@ -680,7 +731,8 @@ export default function StatsDrilldownPage() {
                 <GaugeLabel>SQUAD AVG</GaugeLabel>
                 <GaugeTrack>
                   <GaugeFill $pct={typeof aggregateLabel === "string" ? parseFloat(aggregateLabel) : 0} />
-                  <GaugeRef title="50% reference" />
+                  <GaugeRef />
+                  <GaugeRefLabel>50%</GaugeRefLabel>
                 </GaugeTrack>
               </GaugeSection>
             )}

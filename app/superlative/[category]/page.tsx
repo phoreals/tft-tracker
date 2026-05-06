@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
@@ -21,6 +21,7 @@ import {
   type PlayerStatInput,
 } from "@/lib/utils";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
+import { useScrollFade } from "@/hooks/useTabNavigation";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
 // ── Constants ────────────────────────────────────────────────────
@@ -283,6 +284,41 @@ const LoadingText = styled.p`
   padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
 `;
 
+const CategoryNavWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
+  position: relative;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 48px;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.15s;
+  }
+
+  &::before {
+    left: 0;
+    background: linear-gradient(to right, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
+    opacity: ${({ $fadeLeft }) => ($fadeLeft ? 1 : 0)};
+  }
+
+  &::after {
+    right: 0;
+    background: linear-gradient(to left, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
+    opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+`;
+
 const CategoryNav = styled.nav`
   display: flex;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
@@ -376,6 +412,8 @@ export default function SuperlativeDrilldownPage() {
 
   const weeks = useMemo(() => getSetWeeks(), []);
   const [selectedTab, setSelectedTab] = useSelectedTab();
+  const catNavRef = useRef<HTMLElement>(null);
+  const { fadeLeft: catFadeLeft, fadeRight: catFadeRight } = useScrollFade(catNavRef as React.RefObject<HTMLDivElement>);
 
   useEffect(() => {
     fetch("/api/players", { cache: "no-store" })
@@ -457,7 +495,8 @@ export default function SuperlativeDrilldownPage() {
 
       <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 
-      <CategoryNav aria-label="Superlative categories">
+      <CategoryNavWrap $fadeLeft={catFadeLeft} $fadeRight={catFadeRight}>
+      <CategoryNav ref={catNavRef} aria-label="Superlative categories">
         {SUPERLATIVE_CATEGORIES.map((c) => (
           <CategoryPill
             key={c.slug}
@@ -468,6 +507,7 @@ export default function SuperlativeDrilldownPage() {
           </CategoryPill>
         ))}
       </CategoryNav>
+      </CategoryNavWrap>
 
       {loading ? (
         <LoadingText>Loading...</LoadingText>
