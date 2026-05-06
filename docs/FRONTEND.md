@@ -124,7 +124,7 @@ Generic component. Takes `views: { id, icon, label? }[]`, `value`, and `onChange
 ### PlayerTableView / PlayerCardView
 Presentational only — receive `rows`, sort state, and `isSet`; no data fetching or computation.
 - `PlayerTableView`: semantic `<table>` with sortable `<th>` elements, bleed scroll wrapper, rank emblems, profile icons
-- `PlayerCardView`: `display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr))`. Each card links to the player drilldown. Shows avatar, rank, and four stats (games, top4%, 1st%, time).
+- `PlayerCardView`: `display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr))`. Each card links to the player drilldown. Shows avatar, rank, and four stats (games, top4%, 1st%, time).
 
 ### RankChart
 Receives `{ players, selectedTab, weeks }` — fully controlled by page.tsx. Internally:

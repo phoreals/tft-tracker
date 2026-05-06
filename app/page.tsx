@@ -144,6 +144,16 @@ const StatLabel = styled.span`
 `;
 
 
+const NoDataLabel = styled.span`
+  align-self: flex-start;
+  padding: ${({ theme }) => theme.primitive.spacing.xs};
+  margin-left: -${({ theme }) => theme.primitive.spacing.xs};
+  margin-bottom: -${({ theme }) => theme.primitive.spacing.xs};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+`;
+
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: clamp(${({ theme }) => theme.primitive.fontSize.lg}, 4vw, ${({ theme }) => theme.primitive.fontSize["3xl"]});
@@ -519,7 +529,7 @@ export default function WeeklyStatsPage() {
                 <DurationPill>{s.period}</DurationPill>
               </StatRow>
               <StatValue>{renderStatValue(s.value)}</StatValue>
-              {s.player && (
+              {s.player ? (
                 <PlayerChip href={`/player/${s.player.puuid}`} title={`${s.player.gameName}#${s.player.tagLine}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                   <ChipIcon>
                     {s.player.profileIconId ? (
@@ -536,6 +546,8 @@ export default function WeeklyStatsPage() {
                   </ChipIcon>
                   <ChipName>{s.player.gameName}<ChipTag>#{s.player.tagLine}</ChipTag></ChipName>
                 </PlayerChip>
+              ) : (
+                <NoDataLabel>Awaiting data</NoDataLabel>
               )}
             </GlassCard>
           </SuperlativeCardLink>

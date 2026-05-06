@@ -14,7 +14,7 @@ import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {

@@ -46,7 +46,7 @@ Each card has a **duration pill** in the top-right of its header showing the act
 
 `cat.label(isSet, weekNumber?)` on `SuperlativeCategory` is still used for column headers in the drilldown table — it returns e.g. "Most Games Week 2" or "Most Games Set 17" depending on context.
 
-If no players qualify for a category (e.g. no games in a week), the card shows "—" with no player chip. Ties go to the first alphabetically by gameName.
+If no players qualify for a category (e.g. no games in a week), the card shows "—" as the stat value and "Awaiting data" in place of the player chip (muted text, same height as a chip to keep cards uniform). Ties go to the first alphabetically by gameName.
 
 Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width. The chip has `margin-bottom: -xs` to offset its padding and keep the card's bottom spacing visually balanced.
 
@@ -110,7 +110,7 @@ A `GlassCard` with a **duration pill** (period tag) after the title text and a *
 | 1st% | Scoped `(placements == 1) / total * 100` | Cyan text |
 | Time Played | Scoped playtime | |
 
-**Card view**: `auto-fill` CSS grid (`minmax(200px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName (`base`/16px) + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time as hours-only short format). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab. Cards have a `borderDim` background, `xs` padding mobile / `md` desktop, and a gold glow (`glowGold`) on hover.
+**Card view**: `auto-fill` CSS grid (`minmax(240px, 1fr)`). Each player card links to their drilldown page and shows: profile avatar (40px) + gameName (`base`/16px) + abbreviated rank, then a 4-stat row (Games, Top 4%, 1st%, Time as hours-only short format). Cards respect the current tab — scoped values shown for week tabs, set totals for the Set tab. Cards have a `borderDim` background, `xs` padding mobile / `md` desktop, and a gold glow (`glowGold`) on hover.
 
 Empty state: centered message "No players tracked yet. Add players to get started." in both views.
 
