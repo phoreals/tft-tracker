@@ -12,6 +12,7 @@ import { getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLA
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { SyncOverlay } from "@/components/SyncOverlay";
+import { DurationPill } from "@/components/DurationPill";
 import { ICON_SIZE } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -138,17 +139,6 @@ const StatLabel = styled.span`
   color: ${({ theme }) => theme.semantic.color.textMuted};
 `;
 
-const DurationPill = styled.span`
-  display: inline-flex;
-  align-items: center;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  color: ${({ theme }) => theme.semantic.color.accent};
-  flex-shrink: 0;
-`;
 
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};

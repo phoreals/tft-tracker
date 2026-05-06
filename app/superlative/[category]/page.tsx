@@ -8,6 +8,7 @@ import { ArrowLeft, User } from "lucide-react";
 import { SortChevron } from "@/components/SortChevron";
 import { TabNavigation } from "@/components/TabNavigation";
 import { GlassCard } from "@/components/GlassCard";
+import { DurationPill } from "@/components/DurationPill";
 import {
   getSetWeeks,
   SET_START,
@@ -72,11 +73,11 @@ const BackLink = styled(Link)`
 
 const PageTitle = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+    font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
 
@@ -223,17 +224,6 @@ const TagSpan = styled.span`
   font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
 `;
 
-const DurationPill = styled.span`
-  display: inline-flex;
-  align-items: center;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  color: ${({ theme }) => theme.semantic.color.accent};
-  flex-shrink: 0;
-`;
 
 const BarTrack = styled.div`
   height: ${({ theme }) => theme.primitive.spacing["2xs"]};
@@ -295,13 +285,25 @@ const LoadingText = styled.p`
 
 const CategoryNav = styled.nav`
   display: flex;
-  flex-wrap: wrap;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
+  overflow-x: auto;
+  flex-wrap: nowrap;
+
+  &::-webkit-scrollbar {
+    height: 0;
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
 `;
 
 const CategoryPill = styled(Link)<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ $active, theme }) =>

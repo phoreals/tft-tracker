@@ -13,6 +13,7 @@ import { RankChart } from "@/components/RankChart";
 import { TabNavigation } from "@/components/TabNavigation";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { SyncOverlay } from "@/components/SyncOverlay";
+import { DurationPill } from "@/components/DurationPill";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import {
   formatRank,
@@ -317,17 +318,7 @@ const StatLabel = styled.span`
   color: ${({ theme }) => theme.semantic.color.textMuted};
 `;
 
-const DurationPill = styled.span`
-  display: inline-flex;
-  align-items: center;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  color: ${({ theme }) => theme.semantic.color.accent};
-  flex-shrink: 0;
-`;
+
 
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
@@ -480,6 +471,17 @@ const MatchMeta = styled.span`
   ${({ theme }) => theme.semantic.typography.data};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textDisabled};
+`;
+
+const MatchDateTouch = styled.span`
+  ${({ theme }) => theme.semantic.typography.data};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  display: none;
+
+  @media (hover: none) {
+    display: inline;
+  }
 `;
 
 
@@ -1299,6 +1301,7 @@ export default function PlayerDrilldownPage() {
                     <PortalTooltip text={formatDateTime(m.timestamp)}>
                       <MatchMeta>{formatRelativeTime(m.timestamp)}</MatchMeta>
                     </PortalTooltip>
+                    <MatchDateTouch>{formatShortDate(m.timestamp)}</MatchDateTouch>
                   </MatchRow>
                 ))}
                 {!showAllMatches && remaining > 0 && (

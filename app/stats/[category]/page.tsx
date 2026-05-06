@@ -8,6 +8,7 @@ import { ArrowLeft, User } from "lucide-react";
 import { PieChart, Pie, Cell, Sector, Tooltip as RechartsTooltip, ResponsiveContainer, type PieSectorDataItem } from "recharts";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
+import { DurationPill } from "@/components/DurationPill";
 import { LINE_COLORS } from "@/components/RankChart";
 import {
   formatPlaytime,
@@ -217,11 +218,11 @@ const BackLink = styled(Link)`
 
 const PageTitle = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
+    font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
 
@@ -419,18 +420,6 @@ const LeaderRow = styled.tr`
   background: ${({ theme }) => theme.semantic.color.accentBgSubtle} !important;
 `;
 
-const DurationPill = styled.span`
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
-  border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  color: ${({ theme }) => theme.semantic.color.accent};
-  flex-shrink: 0;
-`;
 
 const LoadingText = styled.p`
   ${({ theme }) => theme.semantic.typography.label};
@@ -441,13 +430,25 @@ const LoadingText = styled.p`
 
 const CategoryNav = styled.nav`
   display: flex;
-  flex-wrap: wrap;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
+  overflow-x: auto;
+  flex-wrap: nowrap;
+
+  &::-webkit-scrollbar {
+    height: 0;
+  }
+
+  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
 `;
 
 const CategoryPill = styled(Link)<{ $active: boolean }>`
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
+  white-space: nowrap;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   border-radius: ${({ theme }) => theme.primitive.radius.md};
   border: 1px solid ${({ $active, theme }) =>

@@ -32,6 +32,7 @@ components/
 ├── Sidebar.tsx             Desktop sidebar with nav links. Uses Next.js Link + usePathname.
 ├── BottomNav.tsx           Mobile bottom nav. Same logic as Sidebar.
 ├── NavigationShell.tsx     Layout shell: Sidebar + main content area + BottomNav.
+├── DurationPill.tsx        Shared period tag pill (e.g. "Set 17", "Week 3"). Gold border + accent text.
 ├── ViewToggle.tsx          Generic icon-button toggle for switching between named views (table/card/…).
 ├── PlayerTable.tsx         Thin shell: calls usePlayerRows, manages view state, renders ViewToggle + active view. Accepts periodTag.
 ├── PlayerTableView.tsx     Table view for player stats — <table> with sortable headers.

@@ -85,7 +85,7 @@ Single-column stacked layout. The chart sits above the ranked table at 50% width
 **Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat), Percentage (share of total for games/playtime, or the rate itself for top4-rate/win-rate). Leader row has a subtle gold background. Rank badges use the same `getLeaderboardColor` gradient as superlative drilldowns. No inline bars.
 
 ### Category Navigation
-A horizontal pill bar above the content shows all 4 stat categories. The active category is highlighted. Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter.
+A horizontal pill bar above the content shows all 4 stat categories. The active category is highlighted. Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally.
 
 ### Player Performance Table
 
@@ -182,7 +182,7 @@ Accessed by clicking a superlative card on the Weekly Stats page. Category slugs
 - Same sticky tab bar as other pages (Set 17 / Week 1–N)
 
 ### Category Navigation
-A horizontal pill bar above the Rankings card shows all 6 superlative categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. Uses the same visual style as sort pills.
+A horizontal pill bar above the Rankings card shows all 6 superlative categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally.
 
 ### Rankings Table
 Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. Rank badges use a smooth color gradient from brand gold (1st) to dim slate (last) via `getLeaderboardColor(rank, total)` in `lib/utils.ts`. The gradient keeps the gold hue through top ranks then desaturates to cool neutral. Badge colors reflect natural rank (by value), not display order — re-sorting the table doesn't change badge colors.
@@ -239,7 +239,7 @@ Scrollable list of **all stored matches** (newest first, not week-scoped). Initi
 - **Queue badge**: RANKED / NORMAL / HYPER ROLL / DOUBLE UP / CHONCC (dimmed if non-ranked, absent for pre-migration records)
 - **Last round** in stage-round format: `R3-2` (absent for pre-migration records)
 - **Duration** in `m:ss` format
-- **Relative time** (`2h ago`, `3d ago`) — hovering shows a portal tooltip with the full date/time; tooltip is suppressed on touch-only devices
+- **Relative time** (`2h ago`, `3d ago`) — hovering shows a portal tooltip with the full date/time. On touch-only devices, the tooltip is suppressed and a short date (M/D) is shown inline instead.
 
 ## Player Drilldown (`/player/[puuid]`)
 
