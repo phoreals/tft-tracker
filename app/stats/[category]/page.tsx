@@ -581,6 +581,10 @@ export default function StatsDrilldownPage() {
   const weekNumber = (weeks[selectedTab as number] ?? weeks[weeks.length - 1])?.weekNumber;
   const period = isSet ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
 
+  // Period duration in seconds, capped at now so set tab doesn't divide by future time
+  const periodSec = win ? (Math.min(win.end, Date.now()) - win.start) / 1000 : 0;
+  const periodLabel = isSet ? "the set" : "the week";
+
   const { rows, total } = useMemo(() => {
     if (!cat) return { rows: [], total: 0 };
 
@@ -758,6 +762,9 @@ export default function StatsDrilldownPage() {
                   <th>Summoner</th>
                   <th style={{ textAlign: "right" }}>{cat.title}</th>
                   <th style={{ textAlign: "right" }}>%</th>
+                  {slug === "playtime" && (
+                    <th style={{ textAlign: "right" }}>% of {periodLabel}</th>
+                  )}
                 </tr>
               </Thead>
               <Tbody>
@@ -799,6 +806,11 @@ export default function StatsDrilldownPage() {
                           ? `${total > 0 ? ((r.value / total) * 100).toFixed(1) : "0.0"}%`
                           : r.label}
                       </td>
+                      {slug === "playtime" && (
+                        <td style={{ textAlign: "right", color: theme.semantic.color.textMuted, whiteSpace: "nowrap" }}>
+                          {periodSec > 0 ? `${((r.value / periodSec) * 100).toFixed(1)}%` : "—"}
+                        </td>
+                      )}
                     </Row>
                   );
                 })}

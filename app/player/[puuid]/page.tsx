@@ -335,6 +335,13 @@ const StatCount = styled.span`
   margin-left: ${({ theme }) => theme.primitive.spacing["2xs"]};
 `;
 
+const TimeSubstat = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+  margin-top: -${({ theme }) => theme.primitive.spacing["2xs"]};
+`;
+
 const EmptyState = styled.div`
   display: flex;
   align-items: center;
@@ -852,6 +859,12 @@ export default function PlayerDrilldownPage() {
   const firsts = scopedMatches.filter((m) => m.placement === 1).length;
   const totalDuration = scopedMatches.reduce((s, m) => s + m.duration, 0);
 
+  // % of period stats — cap end at now so set tab doesn't divide by future time
+  const periodSec = (Math.min(activeWindow.end, Date.now()) - activeWindow.start) / 1000;
+  const pctOfPeriod = periodSec > 0 ? (totalDuration / periodSec) * 100 : 0;
+  const pctOfConsciousness = periodSec > 0 ? (totalDuration / (periodSec * 16 / 24)) * 100 : 0;
+  const periodLabel = isSet ? "the set" : "your week";
+
   // Superlatives + LP stats: compute once, share both
   const { playerSuperlatives, lpDiff, lpPerGame } = useMemo(() => {
     if (!player || allPlayers.length === 0) return { playerSuperlatives: [], lpDiff: null as number | null, lpPerGame: null as number | null };
@@ -977,6 +990,11 @@ export default function PlayerDrilldownPage() {
             <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue><PlaytimeDisplay seconds={totalDuration} variant="full" /></StatValue>
+          {totalDuration > 0 && (
+            <TimeSubstat>
+              {pctOfPeriod.toFixed(1)}% of {periodLabel} · {pctOfConsciousness.toFixed(1)}% of your consciousness
+            </TimeSubstat>
+          )}
         </GlassCard>
 
         <GlassCard>
