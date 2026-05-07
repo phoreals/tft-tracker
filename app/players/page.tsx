@@ -73,12 +73,12 @@ const Page = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.lg};
   padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.xl};
     padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     /* border-box includes Page's own padding in the height.
        Only subtract Content's padding-bottom so the total stack = 100dvh. */
     box-sizing: border-box;
@@ -95,11 +95,11 @@ const PageTitle = styled.h1`
   overflow-wrap: break-word;
   word-break: break-word;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
@@ -116,7 +116,7 @@ const Grid = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     flex-direction: row;
     flex: 1;
     min-height: 0;
@@ -128,7 +128,7 @@ const LeftColumn = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     flex: 4;
     align-self: flex-start;
   }
@@ -181,7 +181,7 @@ const PrimaryButton = styled.button`
   ${({ theme }) => theme.semantic.typography.label};
   padding: ${({ theme }) => theme.primitive.spacing.md} 0;
   border: none;
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   cursor: pointer;
   transition: filter 0.2s;
   box-shadow: ${({ theme }) => theme.semantic.shadow.buttonGold};
@@ -222,9 +222,10 @@ const SeedButton = styled.button`
   ${({ theme }) => theme.semantic.typography.label};
   padding: ${({ theme }) => theme.primitive.spacing.sm} 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
-  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   color: ${({ theme }) => theme.semantic.color.info};
   cursor: pointer;
@@ -271,7 +272,7 @@ const PlayerList = styled.div<{ $scrolled: boolean }>`
   box-shadow: ${({ $scrolled }) =>
     $scrolled ? "inset 0 6px 8px -6px rgba(0, 0, 0, 0.25)" : "none"};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.sm};
     margin-left: -${({ theme }) => theme.component.glassCard.padding};
     margin-right: -${({ theme }) => theme.component.glassCard.padding};
@@ -279,7 +280,7 @@ const PlayerList = styled.div<{ $scrolled: boolean }>`
     padding-right: ${({ theme }) => theme.component.glassCard.padding};
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     max-height: none;
     min-height: 0;
   }
@@ -292,12 +293,12 @@ const PlayerRow = styled(motion.div)`
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.table.headerBg};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDim};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   transition: all 0.2s;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     padding: ${({ theme }) => theme.primitive.spacing.sm} ${({ theme }) => theme.primitive.spacing.md};
-    border-radius: ${({ theme }) => theme.primitive.radius.lg};
+    border-radius: ${({ theme }) => theme.semantic.radius.card};
   }
 
   /* only translate on pointer devices to avoid touch overflow */
@@ -318,14 +319,14 @@ const PlayerInfo = styled.div`
 const Avatar = styled.div<{ $color: string }>`
   width: 36px;
   height: 36px;
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   border: 2px solid ${({ $color }) => $color};
   overflow: hidden;
   flex-shrink: 0;
   background: rgba(0, 0, 0, 0.3);
   transition: border-color 0.2s;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     width: 48px;
     height: 48px;
   }
@@ -344,7 +345,7 @@ const PlayerName = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.md};
   }
 `;
@@ -361,7 +362,7 @@ const PlayerMeta = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   margin-top: 2px;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
   }
 `;
@@ -376,7 +377,7 @@ const TierLabel = styled.span<{ $color: string }>`
 const Dot = styled.span`
   width: ${({ theme }) => theme.primitive.spacing["2xs"]};
   height: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   background: ${({ theme }) => theme.primitive.color.neutral700};
 `;
 
@@ -644,7 +645,7 @@ export default function ManagePlayersPage() {
             onScroll={(e) => setListScrolled(e.currentTarget.scrollTop > 2)}
           >
             {players.length === 0 ? (
-              <EmptyState>No players tracked yet. Add a summoner to get started.</EmptyState>
+              <EmptyState>No players tracked yet. Add players to get started.</EmptyState>
             ) : (
               players.map((player) => {
                 const rankColor = getRankColor(player.current?.tier);

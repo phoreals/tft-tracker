@@ -26,7 +26,7 @@ const Trigger = styled.button<{ $open: boolean }>`
     $open ? theme.semantic.color.accentBgHover : "rgba(12, 20, 30, 0.4)"};
   border: 1px solid ${({ $open, theme }) =>
     $open ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
@@ -65,10 +65,10 @@ const OptionList = styled.ul<{ $top: number; $left: number; $width: number }>`
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} 0;
   list-style: none;
   background: rgba(12, 20, 30, 0.6);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   max-height: 280px;
   overflow-y: auto;
@@ -78,7 +78,7 @@ const OptionList = styled.ul<{ $top: number; $left: number; $width: number }>`
   }
   &::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.semantic.color.borderDefault};
-    border-radius: ${({ theme }) => theme.primitive.radius.full};
+    border-radius: ${({ theme }) => theme.semantic.radius.pill};
   }
 `;
 

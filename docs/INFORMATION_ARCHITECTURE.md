@@ -24,7 +24,7 @@
 /player/[puuid]            Player Drilldown
   ├── Tab bar (sticky)     "Set 17" | Week 1 … Week N
   ├── Header               Profile icon, name, rank badge with emblem
-  ├── Stat cards (5)       Games, Avg Placement, Top 4%, 1st%, Time Played
+  ├── Stat cards (6)       Games, Top 4 Rate, Win Rate, Time Played, LP Gain, LP/Game
   ├── Superlative badges   Pill badges for categories this player leads (links to /)
   ├── Rank over time       Full history line chart, selected week highlighted
   ├── Placement chart      Per-game placement line chart (tab-scoped)

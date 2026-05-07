@@ -28,11 +28,13 @@ Raw values with no UI meaning. Never import directly into components.
 
 **Spacing scale**: 4px (`2xs`) through 64px (`3xl`)
 
-**Radius**: 4px (`sm`) through 12px (`xl`), plus `full` = `9999px` for pill shapes and circular scrollbar thumbs
+**Radius**: 2px (`xs`) through 12px (`xl`), plus `full` = `9999px` for pill shapes and circular scrollbar thumbs
 
 **Font sizes**: `2xs` 8px, `xs` 10px, `sm` 12px, `md` 14px, `base` 16px, `lg` 18px, `xl` 24px, `2xl` 30px, `3xl` 36px, `4xl` 48px
 
-**Breakpoints**: `sm` 640px, `md` 768px, `lg` 1024px
+**Breakpoints** (viewport, for nav/layout only): `sm` 640px, `md` 768px, `lg` 1024px
+
+**Container breakpoints** (content-width, for all content components): `sm` 500px, `md` 700px, `lg` 900px
 
 ### Semantic Layer
 Maps primitives to UI roles. This is what components reference.
@@ -54,6 +56,10 @@ Maps primitives to UI roles. This is what components reference.
 
 **Shadows**: `glassInset` (card inner glow), `glowGold`, `glowCyan`, `buttonGold`
 
+**Blur**: `subtle` (12px, inline elements), `standard` (16px, tooltips/sticky bars), `card` (24px, overlays/dropdowns), `heavy` (48px, navigation chrome)
+
+**Radius**: `micro` (2px, bar chart bars), `element` (4px, chips/icons), `control` (6px, inputs/buttons/pills), `card` (8px, cards/overlays/tooltips), `pill` (9999px, fully rounded)
+
 **Chart-specific semantic colors**: `chartGrid` (7% gold), `chartHighlight` (8% gold fill for week reference area), `chartStroke` (25% gold stroke)
 
 **Typography presets** (spread into styled-components):
@@ -64,7 +70,7 @@ Maps primitives to UI roles. This is what components reference.
 
 ### Component Layer
 Pre-composed values for specific UI patterns:
-- `glassCard`: bg, border, shadow, radius, padding (24px desktop), backdrop blur. Cards use 12px padding on mobile (`spacing.sm`), switching to the token value at the `md` breakpoint.
+- `glassCard`: bg, border, shadow, radius, padding (24px desktop). Cards use 12px padding on mobile (`spacing.sm`), switching to the token value at the `md` breakpoint. No `backdrop-filter` — the card bg is opaque enough against the solid body background that blur has no visible effect, and omitting it lets chart tooltips inside cards use their own blur freely.
 - `sidebar`: width (224px), collapsedWidth (56px), bg, border color
 - `bottomNav`: height (64px), bg
 - `table`: header bg, row hover bg, border color
@@ -73,16 +79,20 @@ Pre-composed values for specific UI patterns:
 
 ## Glassmorphism Pattern
 
-The signature visual effect. Used by `GlassCard` and navigation:
+The signature visual effect. Used by navigation chrome (sidebar, bottom nav) and the sticky tab bar:
 
 ```css
-background: rgba(12, 20, 30, 0.7);       /* semi-transparent dark surface */
-backdrop-filter: blur(24px);              /* blur content behind */
-border: 1px solid rgba(229, 197, 135, 0.2); /* subtle gold border */
-box-shadow: inset 0 0 20px rgba(229, 197, 135, 0.05); /* warm inner glow */
+background: rgba(7, 15, 25, 0.95);          /* near-opaque dark surface */
+-webkit-backdrop-filter: blur(48px);         /* heavy blur (semantic.blur.heavy) */
+backdrop-filter: blur(48px);
+border: 1px solid rgba(229, 197, 135, 0.1);  /* subtle gold border */
 ```
 
-The sticky tab bar uses a lighter variant — no background color, `backdrop-filter: blur(16px)`, a gold `border-bottom`, and a `box-shadow: 0 4px 16px rgba(229, 197, 135, 0.06)` glow. This lets page content show through while remaining visually distinct.
+`GlassCard` uses a semi-transparent background (`bgCard`) with border and inset shadow but **no** `backdrop-filter` — the body background is nearly solid, so blur has no visible effect. Omitting it avoids creating a stacking context that would block `backdrop-filter` on child elements (e.g. chart tooltips).
+
+The sticky tab bar uses a lighter variant — no background color, `backdrop-filter: blur(standard)` (16px) only when sticky, a gold `border-bottom`, and a subtle glow. This lets page content show through while remaining visually distinct.
+
+All blur values come from the semantic blur token scale: `subtle` (12px), `standard` (16px), `card` (24px), `heavy` (48px). Both `-webkit-backdrop-filter` and `backdrop-filter` are always set for Safari compatibility.
 
 ## Color Usage Rules
 

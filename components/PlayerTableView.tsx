@@ -20,7 +20,7 @@ const TableFade = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   margin-right: -${({ theme }) => theme.primitive.spacing.md};
   position: relative;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     margin-left: -${({ theme }) => theme.primitive.spacing.lg};
     margin-right: -${({ theme }) => theme.primitive.spacing.lg};
   }
@@ -57,7 +57,7 @@ const TableWrap = styled.div`
   padding-left: ${({ theme }) => theme.primitive.spacing.md};
   padding-right: ${({ theme }) => theme.primitive.spacing.md};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     padding-left: ${({ theme }) => theme.primitive.spacing.lg};
     padding-right: ${({ theme }) => theme.primitive.spacing.lg};
   }
@@ -67,7 +67,7 @@ const TableWrap = styled.div`
   }
   &::-webkit-scrollbar-thumb {
     background: transparent;
-    border-radius: ${({ theme }) => theme.primitive.radius.full};
+    border-radius: ${({ theme }) => theme.semantic.radius.pill};
   }
   &:hover::-webkit-scrollbar-thumb {
     background: ${({ theme }) => theme.semantic.color.borderDefault};
@@ -89,7 +89,7 @@ const Table = styled.table`
   font-weight: ${({ theme }) => theme.primitive.fontWeight.medium};
   border-collapse: collapse;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.md};
   }
 `;
@@ -104,7 +104,7 @@ const Thead = styled.thead`
     font-size: ${({ theme }) => theme.primitive.fontSize.xs};
     color: ${({ theme }) => theme.semantic.color.textDisabled};
 
-    @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
       padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
       font-size: ${({ theme }) => theme.primitive.fontSize.sm};
     }
@@ -173,7 +173,7 @@ const Tbody = styled.tbody`
   td {
     padding: ${({ theme }) => theme.primitive.spacing.xs};
 
-    @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+    @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
       padding: 20px ${({ theme }) => theme.primitive.spacing.lg};
     }
   }
@@ -184,12 +184,12 @@ const SummonerChip = styled(Link)`
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   text-decoration: none;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   transition: background 0.2s;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     margin-left: -${({ theme }) => theme.primitive.spacing.xs};
   }
 
@@ -218,12 +218,13 @@ const SummonerIcon = styled.div`
   height: ${ICON_SIZE.md}px;
   flex-shrink: 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
-  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.subtle});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.subtle});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   overflow: hidden;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     width: ${ICON_SIZE.avatar}px;
     height: ${ICON_SIZE.avatar}px;
   }
@@ -238,7 +239,7 @@ const SummonerName = styled.span`
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.base};
   }
 `;
@@ -248,7 +249,7 @@ const SummonerTag = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   }
 `;
@@ -270,7 +271,7 @@ const TimeCell = styled.td`
   white-space: nowrap;
   display: none;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: table-cell;
   }
 `;
@@ -278,7 +279,7 @@ const TimeCell = styled.td`
 const TimeSortTh = styled(SortTh)`
   display: none !important;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: table-cell !important;
   }
 `;
@@ -286,7 +287,7 @@ const TimeSortTh = styled(SortTh)`
 const RankTextWrap = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.sm};
   }
 `;

@@ -34,7 +34,7 @@ const Page = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.lg};
   padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.xl};
     padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
   }
@@ -51,7 +51,7 @@ const BackLink = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   min-height: 44px;
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   align-self: flex-start;
   transition: color 0.2s, background 0.2s;
 
@@ -77,7 +77,7 @@ const PageTitle = styled.h1`
   font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
@@ -181,7 +181,7 @@ const RankBadge = styled.span<{ $color: string }>`
   justify-content: center;
   min-width: 20px;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   border: 1px solid ${({ $color }) => $color};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
@@ -201,7 +201,7 @@ const SummonerIcon = styled.div`
   flex-shrink: 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -230,7 +230,7 @@ const BarTrack = styled.div`
   height: ${({ theme }) => theme.primitive.spacing["2xs"]};
   width: 100%;
   background: ${({ theme }) => theme.component.table.borderColor};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
   overflow: hidden;
 `;
@@ -239,7 +239,7 @@ const BarFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
   background: ${({ theme }) => theme.semantic.color.accent};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
 `;
 
 // Centered bar for categories where values can be negative (LP gain, LP/game)
@@ -311,7 +311,7 @@ const CategoryNavWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
     opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     &::before,
     &::after {
       display: none;
@@ -329,7 +329,7 @@ const CategoryNav = styled.nav`
     height: 0;
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     flex-wrap: wrap;
     overflow-x: visible;
   }
@@ -341,7 +341,7 @@ const CategoryPill = styled(Link)<{ $active: boolean }>`
   flex-shrink: 0;
   white-space: nowrap;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
   background: ${({ $active, theme }) => $active ? theme.semantic.color.accentBgHover : "transparent"};

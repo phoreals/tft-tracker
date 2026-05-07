@@ -23,6 +23,19 @@ import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { useScrollFade } from "@/hooks/useTabNavigation";
 import { theme, ICON_SIZE } from "@/styles/theme";
 
+// ── Chart constants ──────────────────────────────────────────────
+
+const CHART = {
+  tooltip: {
+    bg:         "rgba(12, 20, 30, 0.92)",
+    border:     `1px solid ${theme.semantic.color.borderDefault}`,
+    radius:     theme.semantic.radius.card,
+    shadow:     theme.semantic.shadow.glassInset,
+    fontFamily: "Space Grotesk",
+    fontSize:   theme.semantic.typography.label.fontSize,
+  },
+};
+
 // ── Category config ──────────────────────────────────────────────
 
 type StatCategory = {
@@ -179,7 +192,7 @@ const Page = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.lg};
   padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.xl};
     padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
   }
@@ -196,7 +209,7 @@ const BackLink = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   min-height: 44px;
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   align-self: flex-start;
   transition: color 0.2s, background 0.2s;
 
@@ -222,7 +235,7 @@ const PageTitle = styled.h1`
   font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
@@ -256,7 +269,7 @@ const DonutWrap = styled.div`
   svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
-    border-radius: ${({ theme }) => theme.primitive.radius.sm};
+    border-radius: ${({ theme }) => theme.semantic.radius.element};
   }
   width: clamp(200px, 80dvw, 460px);
   aspect-ratio: 1;
@@ -316,7 +329,7 @@ const GaugeTrack = styled.div`
   height: ${({ theme }) => theme.primitive.spacing["2xs"]};
   width: 100%;
   background: ${({ theme }) => theme.component.table.borderColor};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   overflow: visible;
   margin-top: ${({ theme }) => theme.primitive.spacing.xs};
 `;
@@ -325,7 +338,7 @@ const GaugeFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
   background: ${({ theme }) => theme.semantic.color.accent};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
 `;
 
 const GaugeRef = styled.div`
@@ -376,7 +389,7 @@ const RankBadge = styled.span<{ $color: string }>`
   justify-content: center;
   min-width: 20px;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   border: 1px solid ${({ $color }) => $color};
   font-family: ${({ theme }) => theme.semantic.font.display};
   font-size: ${({ theme }) => theme.primitive.fontSize.sm};
@@ -419,7 +432,7 @@ const SummonerIcon = styled.div`
   flex-shrink: 0;
   background: ${({ theme }) => theme.component.glassCard.bg};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -467,7 +480,7 @@ const CategoryNavWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
     opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     &::before,
     &::after {
       display: none;
@@ -485,7 +498,7 @@ const CategoryNav = styled.nav`
     height: 0;
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     flex-wrap: wrap;
     overflow-x: visible;
   }
@@ -497,7 +510,7 @@ const CategoryPill = styled(Link)<{ $active: boolean }>`
   flex-shrink: 0;
   white-space: nowrap;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
   background: ${({ $active, theme }) => $active ? theme.semantic.color.accentBgHover : "transparent"};
@@ -693,12 +706,12 @@ export default function StatsDrilldownPage() {
                         const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : "0";
                         return (
                           <div style={{
-                            background: "rgba(12, 20, 30, 0.6)",
-                            backdropFilter: "blur(16px)",
-                            WebkitBackdropFilter: "blur(16px)",
-                            border: `1px solid ${theme.semantic.color.borderDefault}`,
-                            borderRadius: theme.primitive.radius.lg,
-                            boxShadow: theme.semantic.shadow.glassInset,
+                            background: CHART.tooltip.bg,
+                            backdropFilter: `blur(${theme.semantic.blur.standard})`,
+                            WebkitBackdropFilter: `blur(${theme.semantic.blur.standard})`,
+                            border: CHART.tooltip.border,
+                            borderRadius: CHART.tooltip.radius,
+                            boxShadow: CHART.tooltip.shadow,
                             padding: `${theme.primitive.spacing.sm} ${theme.primitive.spacing.md}`,
                             fontFamily: "Space Grotesk",
                             fontSize: theme.semantic.typography.label.fontSize,
@@ -728,7 +741,7 @@ export default function StatsDrilldownPage() {
               <GaugeSection>
                 <DurationPill>{period}</DurationPill>
                 <GaugeValue>{aggregateLabel}</GaugeValue>
-                <GaugeLabel>SQUAD AVG</GaugeLabel>
+                <GaugeLabel>Squad Avg</GaugeLabel>
                 <GaugeTrack>
                   <GaugeFill $pct={typeof aggregateLabel === "string" ? parseFloat(aggregateLabel) : 0} />
                   <GaugeRef />

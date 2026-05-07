@@ -33,9 +33,9 @@ const CHART = {
   },
   tooltip: {
     bg:               "rgba(12, 20, 30, 0.6)",
-    backdropBlur:     "16px",
+    backdropBlur:     theme.semantic.blur.standard,
     border:           `1px solid ${theme.semantic.color.borderDefault}`,
-    radius:           theme.primitive.radius.lg,
+    radius:           theme.semantic.radius.card,
     shadow:           theme.semantic.shadow.glassInset,
     padding:          `${theme.primitive.spacing.sm} ${theme.primitive.spacing.md}`,
     fontFamily:       "Space Grotesk",
@@ -89,10 +89,10 @@ const ChartContainer = styled.div`
   svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
-    border-radius: ${({ theme }) => theme.primitive.radius.sm};
+    border-radius: ${({ theme }) => theme.semantic.radius.element};
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     height: 480px;
   }
 `;
@@ -118,7 +118,7 @@ const LegendChip = styled.button<{ $hidden: boolean }>`
   align-items: center;
   gap: 6px;
   padding: ${({ theme }) => theme.primitive.spacing.xs};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   background: transparent;
   color: ${({ theme }) => theme.semantic.color.textSecondary};
@@ -166,7 +166,7 @@ const ClearChip = styled.button`
   display: inline-flex;
   align-items: center;
   padding: 3px ${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   background: transparent;
   color: ${({ theme }) => theme.semantic.color.accent};

@@ -43,7 +43,7 @@ const CHART = {
   tooltip: {
     bg:         "rgba(12, 20, 30, 0.92)",
     border:     `1px solid ${theme.semantic.color.borderDefault}`,
-    radius:     theme.primitive.radius.lg,
+    radius:     theme.semantic.radius.card,
     shadow:     theme.semantic.shadow.glassInset,
     fontFamily: "Space Grotesk",
     fontSize:   theme.semantic.typography.label.fontSize,
@@ -108,7 +108,7 @@ const Page = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.lg};
   padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.xl};
     padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
   }
@@ -125,7 +125,7 @@ const BackLink = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   min-height: 44px;
   margin-left: -${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   align-self: flex-start;
   transition: color 0.2s, background 0.2s;
 
@@ -151,7 +151,7 @@ const PlayerHeader = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.lg};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-start;
@@ -169,7 +169,7 @@ const ProfileIcon = styled.div`
   width: 64px;
   height: 64px;
   flex-shrink: 0;
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   border: 2px solid ${({ theme }) => theme.semantic.color.borderHover};
   overflow: hidden;
   background: ${({ theme }) => theme.component.glassCard.bg};
@@ -178,7 +178,7 @@ const ProfileIcon = styled.div`
   justify-content: center;
   color: ${({ theme }) => theme.semantic.color.accent};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     width: 80px;
     height: 80px;
   }
@@ -198,11 +198,11 @@ const PlayerName = styled.h1`
   overflow-wrap: break-word;
   word-break: break-word;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
@@ -237,11 +237,11 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.sm}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.sm}) {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     grid-template-columns: repeat(3, 1fr);
   }
 `;
@@ -259,7 +259,7 @@ const BadgeLink = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.semantic.color.accentBgHover};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   text-decoration: none;
   transition: background 0.2s, border-color 0.2s;
 
@@ -291,7 +291,7 @@ const CardSuperlativeLink = styled(Link)`
   padding: 2px ${({ theme }) => theme.primitive.spacing.xs};
   background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   color: ${({ theme }) => theme.semantic.color.accent};
@@ -354,7 +354,7 @@ const PlacementChartWrap = styled.div`
   svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
-    border-radius: ${({ theme }) => theme.primitive.radius.sm};
+    border-radius: ${({ theme }) => theme.semantic.radius.element};
   }
 `;
 
@@ -369,7 +369,7 @@ const PlacementDonutWrap = styled.div`
   svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
-    border-radius: ${({ theme }) => theme.primitive.radius.sm};
+    border-radius: ${({ theme }) => theme.semantic.radius.element};
   }
 `;
 
@@ -416,7 +416,7 @@ const LegendRow = styled.div<{ $isTop4: boolean }>`
 const LegendDot = styled.span<{ $color: string }>`
   width: 8px;
   height: 8px;
-  border-radius: ${({ theme }) => theme.primitive.radius.full};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
   background: ${({ $color }) => $color};
   flex-shrink: 0;
 `;
@@ -490,7 +490,7 @@ const QueueBadge = styled.span<{ $ranked: boolean | undefined }>`
   font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   padding: 1px 5px;
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   border: 1px solid ${({ $ranked, theme }) =>
     $ranked === true
       ? theme.semantic.color.borderHover
@@ -513,7 +513,7 @@ const ShowAllButton = styled.button`
   color: ${({ theme }) => theme.semantic.color.accent};
   background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   padding: ${({ theme }) => theme.primitive.spacing.xs} ${({ theme }) => theme.primitive.spacing.md};
   cursor: pointer;
   transition: all 0.15s;
@@ -540,7 +540,7 @@ const SyncWrap = styled.div`
   align-items: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     align-items: flex-end;
   }
 `;
@@ -552,9 +552,10 @@ const SyncButton = styled.button`
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.glassCard.bg};
-  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   ${({ theme }) => theme.semantic.typography.label};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
@@ -592,7 +593,7 @@ function RankEmblem({ tier, size, color }: { tier: string; size: number; color: 
           display: "inline-block",
           width: size,
           height: size,
-          borderRadius: 2,
+          borderRadius: theme.semantic.radius.micro,
           background: color,
           opacity: 0.85,
           flexShrink: 0,
@@ -964,7 +965,7 @@ export default function PlayerDrilldownPage() {
 
         <GlassCard>
           <StatRow>
-            <StatLabel>1st Place Rate</StatLabel>
+            <StatLabel>Win Rate</StatLabel>
             <DurationPill>{period}</DurationPill>
           </StatRow>
           <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
@@ -1100,8 +1101,8 @@ export default function PlayerDrilldownPage() {
                     return (
                       <div style={{
                         background: "rgba(12, 20, 30, 0.6)",
-                        backdropFilter: "blur(16px)",
-                        WebkitBackdropFilter: "blur(16px)",
+                        backdropFilter: `blur(${theme.semantic.blur.standard})`,
+                        WebkitBackdropFilter: `blur(${theme.semantic.blur.standard})`,
                         border: CHART.tooltip.border,
                         borderRadius: CHART.tooltip.radius,
                         boxShadow: CHART.tooltip.shadow,
@@ -1240,8 +1241,8 @@ export default function PlayerDrilldownPage() {
                       return (
                         <div style={{
                           background: "rgba(12, 20, 30, 0.6)",
-                          backdropFilter: "blur(16px)",
-                          WebkitBackdropFilter: "blur(16px)",
+                          backdropFilter: `blur(${theme.semantic.blur.standard})`,
+                          WebkitBackdropFilter: `blur(${theme.semantic.blur.standard})`,
                           border: CHART.tooltip.border,
                           borderRadius: CHART.tooltip.radius,
                           boxShadow: CHART.tooltip.shadow,

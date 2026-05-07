@@ -2,32 +2,33 @@
 
 import React, { useState } from "react";
 import styled from "styled-components";
+import { theme } from "@/styles/theme";
 
 // ── Styled ───────────────────────────────────────────────────────
 
 const RankFull = styled.span`
   display: none;
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: inline;
   }
 `;
 
 const RankAbbr = styled.span`
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: none;
   }
 `;
 
 const EmblemMobile = styled.span`
   display: inline-flex;
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: none;
   }
 `;
 
 const EmblemDesktop = styled.span`
   display: none;
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: inline-flex;
   }
 `;
@@ -45,7 +46,7 @@ export function RankEmblem({ tier, size, color }: { tier: string; size: number; 
           display: "inline-block",
           width: size,
           height: size,
-          borderRadius: 2,
+          borderRadius: theme.semantic.radius.micro,
           background: color,
           opacity: 0.85,
           flexShrink: 0,

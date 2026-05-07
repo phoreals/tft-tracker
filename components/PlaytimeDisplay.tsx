@@ -20,7 +20,7 @@ const TOOLTIP_STYLE: React.CSSProperties = {
   whiteSpace:  "nowrap",
   background:  "rgba(12, 20, 30, 0.92)",
   border:      `1px solid ${theme.semantic.color.borderDefault}`,
-  borderRadius: theme.primitive.radius.sm,
+  borderRadius: theme.semantic.radius.element,
   padding:     "3px 8px",
   fontFamily:  "Space Grotesk",
   fontSize:    theme.primitive.fontSize.xs,

@@ -17,7 +17,7 @@ Mode is controlled by the **page-level tab** (`selectedTab` prop from `app/page.
 ```
 Component:    LineChart > Line (one per player)
 Container:    ResponsiveContainer width="100%" height="100%"
-Height:       260px mobile / 360px desktop (ChartContainer styled div)
+Height:       360px mobile / 480px desktop (ChartContainer styled div)
 Y-axis:       ticks at 100 LP intervals within data range; tier emblems at 400 LP boundaries
               (IV/III/II/I labels at sub-division marks; Master/GM/Chal emblem only, no divisions)
               width=36px; domain snapped to data range tier boundaries
@@ -39,10 +39,10 @@ Each tick wraps its SVG content in a `<g>` with a transparent 34×20px hit rect 
 
 ### Player Identification & Legend
 
-No in-chart labels or profile picture dots. Player identity is conveyed by a **legend row** below the chart:
-- One `LegendChip` button per player with an 8px colored circle swatch + `gameName`
-- Click a chip to **solo** that player (hides all others); click again to show all; "Show all" chip appears when any are hidden
-- First click on a chip when all are visible hides every other player (solo mode), not just a toggle
+No in-chart labels or dots on data points. Player identity is conveyed by a **legend row** below the chart:
+- One `LegendChip` button per player with a colored line swatch (16×8px SVG showing the actual stroke + dash pattern) + `gameName`
+- Click a chip to **solo** that player (hides all others); click again to show all
+- First click on a chip when all are visible enters solo mode (hides all others), not just a toggle
 - Hidden chips render at 35% opacity; a "Show all" button appears when any players are hidden
 
 ### Hover Highlight
@@ -123,43 +123,47 @@ Content:      When a player is hovered, shows only that player; otherwise shows 
 
 ---
 
-## Placement Per Game (`app/player/[puuid]/page.tsx`)
+## Placement Breakdown (`app/player/[puuid]/page.tsx`)
 
-Shown on the individual player drilldown page. Plots **all stored matches** for one player (not filtered by the selected week tab).
+Shown on the individual player drilldown page. Displays placement distribution across **all stored matches** for one player (not filtered by selected tab). Two views toggled via `ViewToggle`: **Bar** (default) and **Donut**.
 
-### Chart Configuration
+### Bar View
 
 ```
-Component:    ScatterChart > Scatter
+Component:    BarChart (layout="vertical") > Bar
 Container:    ResponsiveContainer width="100%" height="100%"
-Height:       220px mobile / 320px desktop (ChartContainer styled div)
-Y-axis:       reversed, domain [0.5, 8.5], ticks [1..8] formatted as ordinals (1st/2nd…), width 36px
-X-axis:       dataKey="game" (integer index, 1-based), type="number", label "Game #"
-Grid:         CartesianGrid horizontal only
-Reference:    ReferenceLine y=4.5 — top-4 boundary
-Margin:       top: 16, right: 16, bottom: 0, left: 4
+Height:       280px fixed (PlacementChartWrap)
+X-axis:       count of games per placement; no tick marks
+Y-axis:       category axis, labels "1st"…"8th" (ordinals), width 36px
+Grid:         CartesianGrid vertical lines only (horizontal={false})
+Reference:    ReferenceLine x={0} after 4th (dotted, top-4 boundary separator)
+Margin:       top: 0, right: 36, bottom: 4, left: 0
 ```
 
-### Dots
+Each bar is colored per placement using `PLACEMENT_COLORS`:
+- **1st–4th** (top 4): gold hue ramp (`#e5c587` → `#917a48`)
+- **5th–8th** (bottom 4): slate blue ramp (`#8a9bb0` → `#4a5c6a`)
 
-Each dot is a `<circle r=5>` rendered via a custom `shape` prop:
-- **Gold** (`gold300`, opacity 0.9): placement ≤ 4 (top 4)
-- **Grid color** (opacity 0.6): placement 5–8
+Custom tooltip (Recharts `content` prop) shows ordinal + count + percentage, styled via `CHART.tooltip` constants.
 
-Domain `[0.5, 8.5]` (not `[1, 8]`) prevents Recharts from clipping 1st and 8th place ticks at the axis boundary.
+### Donut View
+
+```
+Component:    PieChart > Pie (innerRadius="55%" outerRadius="72%")
+startAngle:   90 (12 o'clock), endAngle: -270
+Labels:       always-visible connector lines, showing ordinal + percentage
+```
+
+Uses the same `PLACEMENT_COLORS` array. Placements with 0 games are filtered from the data. A centered `DonutTotal` label shows total game count.
 
 ### Data Transform
 
-All matches sorted oldest-first. For each match at index `i`:
+Aggregate match array into placement counts:
 ```ts
-{ game: i + 1, placement: match.placement, date: "M/D" }
+const counts = Array(8).fill(0);
+matches.forEach(m => counts[m.placement - 1]++);
+// → [{ placement: 1, label: "1st", count, pct }, …]
 ```
-
-### Custom Tooltip
-
-Rendered via Recharts `content` prop (not a portal). Shows:
-- Label: `Game {n} · M/D`
-- Ordinal placement (e.g. `3rd`), colored gold if top 4
 
 ---
 
@@ -171,4 +175,4 @@ Rendered via Recharts `content` prop (not a portal). Shows:
 4. **`connectNulls`**: enabled on all lines so gaps (days with no data) don't break the line.
 5. **`isAnimationActive={false}`**: disabled on RankChart to prevent re-animation when dot functions recreate on render.
 6. **Responsive height**: `ChartContainer` is a styled div with a fixed height, not a `%` on `ResponsiveContainer` — this avoids the Recharts "height 0" bug when the parent doesn't have an explicit height.
-7. **No Legend in RankChart**: player identity is conveyed by profile picture endpoint labels. No `showLegend` state or `Legend` component.
+7. **No Recharts `Legend` component**: player identity in RankChart is conveyed by a custom `LegendChip` row rendered below the chart (outside Recharts). This is necessary because Recharts `Legend` doesn't support CSS media queries or container queries.

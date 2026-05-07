@@ -15,7 +15,8 @@ const Nav = styled.nav`
   right: 0;
   height: ${({ theme }) => theme.component.bottomNav.height};
   background: ${({ theme }) => theme.component.bottomNav.bg};
-  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.heavy});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.heavy});
   border-top: 1px solid ${({ theme }) => theme.semantic.color.borderSubtle};
   align-items: stretch;
   z-index: 100;

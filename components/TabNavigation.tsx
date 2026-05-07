@@ -38,38 +38,24 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
   top: 0;
   z-index: 20;
   transition: box-shadow 0.2s, border-color 0.2s;
-  ${({ $isSticky }) =>
+  ${({ $isSticky, theme }) =>
     $isSticky
-      ? "-webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);"
+      ? `-webkit-backdrop-filter: blur(${theme.semantic.blur.standard}); backdrop-filter: blur(${theme.semantic.blur.standard});`
       : ""}
   border-bottom: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   box-shadow: ${({ $isSticky, theme }) =>
     $isSticky
       ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}`
       : "none"};
-  margin-left: -${({ theme }) => theme.primitive.spacing.sm};
-  margin-right: -${({ theme }) => theme.primitive.spacing.sm};
-  padding: ${({ theme }) => theme.primitive.spacing.xs}
-    ${({ theme }) => theme.primitive.spacing.sm};
-
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    margin-left: calc(
-      -${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px)
-    );
-    margin-right: calc(
-      -${({ theme }) => theme.primitive.spacing.xl} - var(--bleed-extra, 0px)
-    );
-    padding: ${({ theme }) => theme.primitive.spacing.xs}
-      calc(
-        ${({ theme }) => theme.primitive.spacing.xl} + var(--bleed-extra, 0px)
-      );
-  }
+  margin-left: calc(-1 * var(--content-padding));
+  margin-right: calc(-1 * var(--content-padding));
+  padding: ${({ theme }) => theme.primitive.spacing.xs} var(--content-padding);
 `;
 
 const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   display: none;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: flex;
     align-items: stretch;
     gap: ${({ theme }) => theme.primitive.spacing.xs};
@@ -98,7 +84,7 @@ const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
     }
     &::-webkit-scrollbar-thumb {
       background: transparent;
-      border-radius: ${({ theme }) => theme.primitive.radius.full};
+      border-radius: ${({ theme }) => theme.semantic.radius.pill};
       transition: background 0.2s;
     }
     &:hover::-webkit-scrollbar-thumb {
@@ -112,7 +98,7 @@ const Tab = styled.button<{ $active: boolean }>`
   font-size: ${({ theme }) => theme.primitive.fontSize.md};
   padding: ${({ theme }) => theme.primitive.spacing.xs}
     ${({ theme }) => theme.primitive.spacing.sm};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   border: 1px solid
     ${({ $active, theme }) =>
       $active ? theme.semantic.color.borderHover : "transparent"};
@@ -146,7 +132,7 @@ const Tab = styled.button<{ $active: boolean }>`
 const MobileSelectWrap = styled.div`
   display: block;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: none;
   }
 `;

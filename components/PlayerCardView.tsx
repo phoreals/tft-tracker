@@ -17,7 +17,7 @@ const Grid = styled.div`
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.md};
   }
 `;
@@ -29,11 +29,11 @@ const Card = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing.xs};
   background: ${({ theme }) => theme.semantic.color.borderDim};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     padding: ${({ theme }) => theme.primitive.spacing.md};
   }
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   text-decoration: none;
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 
@@ -59,7 +59,7 @@ const Avatar = styled.div`
   width: 40px;
   height: 40px;
   flex-shrink: 0;
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   overflow: hidden;
   background: ${({ theme }) => theme.component.glassCard.bg};
   border: 1px solid ${({ theme }) => theme.semantic.color.borderHover};
@@ -150,7 +150,7 @@ const SortPill = styled.button<{ $active: boolean }>`
   align-items: center;
   gap: 3px;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   border: 1px solid ${({ $active, theme }) =>
     $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
   background: ${({ $active, theme }) => $active ? theme.semantic.color.accentBgHover : "transparent"};
@@ -199,7 +199,7 @@ function RankEmblem({ tier, color }: { tier: string; color: string }) {
           display: "inline-block",
           width: size,
           height: size,
-          borderRadius: 2,
+          borderRadius: theme.semantic.radius.micro,
           background: color,
           opacity: 0.85,
           flexShrink: 0,

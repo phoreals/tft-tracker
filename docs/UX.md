@@ -48,7 +48,7 @@ Each card has a **duration pill** in the top-right of its header showing the act
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" as the stat value and "Awaiting data" in place of the player chip (muted text, same height as a chip to keep cards uniform). Ties go to the first alphabetically by gameName.
 
-Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width. The chip has `margin-bottom: -xs` to offset its padding and keep the card's bottom spacing visually balanced.
+Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width. The chip has `margin-bottom: -xs` to offset its padding and keep the card's bottom spacing visually balanced. On touch devices (`hover: none`), the chip is `pointer-events: none` — no tap interaction, no border affordance.
 
 When loading or no players are fetched, all 6 cards render with "..." as placeholder values. Cards stretch to equal height in the grid regardless of whether a player chip is present.
 
@@ -56,7 +56,7 @@ On the **Player Drilldown** page, any superlatives the viewed player currently h
 
 ### Summary Cards
 
-Four `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart). Each card has a label + duration pill header (same pill as superlatives) and a fluid-sized stat value (`clamp` between `lg` and `3xl`). Each card is a link — clicking it navigates to a **Stat Drilldown** page (`/stats/[category]`) showing a per-player breakdown with a donut chart or gauge. The cards have the same hover lift effect as superlative cards.
+Four `GlassCard` components show aggregate metrics for the **currently selected tab**. These appear at the **bottom** of the page (below the chart). Each card has a label + duration pill on the same line (flex row, space-between) and a fluid-sized stat value (`clamp` between `lg` and `3xl`). Each card is a link — clicking it navigates to a **Stat Drilldown** page (`/stats/[category]`) showing a per-player breakdown with a donut chart or gauge. The cards have the same hover lift effect as superlative cards.
 
 | Card | "Set 17" | Week tab | Drilldown |
 |------|-----------|---------|-----------|
@@ -78,7 +78,7 @@ Accessed by clicking a summary stat card on the home page. Categories: `games`, 
 Single-column stacked layout. The chart sits above the ranked table at 50% width.
 
 - **Games / Playtime**: donut chart (50% width) showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
-- **Top 4 Rate / Win Rate**: gauge section (50% width) — duration pill (period tag), large squad-average value, "SQUAD AVG" label, and a 4px progress bar with a 50% reference mark. No icon.
+- **Top 4 Rate / Win Rate**: gauge section (50% width) — duration pill (period tag), large squad-average value, "Squad Avg" label, and a 4px progress bar with a 50% reference mark. No icon.
 
 **Donut interaction**: hovering a donut segment expands it outward by 6px with a dark gap stroke. Tooltip snaps instantly between segments (no animation).
 
@@ -220,7 +220,7 @@ Horizontal layout: profile picture on the left, player info on the right.
 The page-level tab (Set / Week N) scopes the **stat cards only**. The rank chart, placement chart, and match history always show the full set history regardless of selected tab.
 
 ### Stat Cards (2-column grid, 3 columns on sm and desktop)
-Games, Top 4 Rate %, 1st Place Rate %, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label on its own line with a duration pill below it (column layout matching home page superlative cards). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
+Games, Top 4 Rate, Win Rate, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label and duration pill on the same line (flex row, space-between). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
 
 ### Placement Breakdown Chart
 Scoped to the selected tab period. Uses a `DurationPill` period tag. A **view toggle** (bar chart / pie chart icons) in the card header switches between two views. Empty state: "No games in this period."

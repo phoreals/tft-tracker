@@ -12,6 +12,8 @@ const Shell = styled.div`
 `;
 
 const Main = styled.main<{ $sidebarOpen: boolean }>`
+  container-type: inline-size;
+  container-name: content;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -26,18 +28,24 @@ const Main = styled.main<{ $sidebarOpen: boolean }>`
 `;
 
 const Content = styled.div`
+  --content-padding: ${({ theme }) => theme.primitive.spacing.sm};
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 0 ${({ theme }) => theme.primitive.spacing.sm};
+  padding: 0 var(--content-padding);
   padding-bottom: calc(${({ theme }) => theme.component.bottomNav.height} + ${({ theme }) => theme.primitive.spacing.md});
   max-width: 1440px;
   margin: 0 auto;
   width: 100%;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
-    padding: 0 ${({ theme }) => theme.primitive.spacing.xl};
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
+    --content-padding: ${({ theme }) => theme.primitive.spacing.xl};
     padding-bottom: ${({ theme }) => theme.primitive.spacing.xl};
+  }
+
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
+    --content-padding: ${({ theme }) => theme.primitive.spacing["2xl"]};
+    padding-bottom: ${({ theme }) => theme.primitive.spacing["2xl"]};
   }
 `;
 

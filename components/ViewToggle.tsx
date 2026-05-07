@@ -10,7 +10,7 @@ const Wrap = styled.div`
   align-items: center;
   gap: 2px;
   background: ${({ theme }) => theme.semantic.color.borderDim};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   padding: 2px;
 `;
 
@@ -20,7 +20,7 @@ const Btn = styled.button<{ $active: boolean }>`
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: calc(${({ theme }) => theme.primitive.radius.sm} - 2px);
+  border-radius: calc(${({ theme }) => theme.semantic.radius.element} - 2px);
   border: none;
   background: ${({ $active, theme }) =>
     $active ? theme.component.glassCard.bg : "transparent"};

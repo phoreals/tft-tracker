@@ -70,6 +70,7 @@ export const primitive = {
   },
 
   radius: {
+    xs: "2px",
     sm: "4px",
     md: "6px",
     lg: "8px",
@@ -77,10 +78,23 @@ export const primitive = {
     full: "9999px",
   },
 
+  blur: {
+    sm: "12px",
+    md: "16px",
+    lg: "24px",
+    xl: "48px",
+  },
+
   breakpoint: {
     sm: "640px",
     md: "768px",
     lg: "1024px",
+  },
+
+  container: {
+    sm: "500px",
+    md: "700px",
+    lg: "900px",
   },
 } as const;
 
@@ -92,7 +106,7 @@ export const semantic = {
     // Surfaces
     bgPrimary: primitive.color.neutral900,
     bgElevated: primitive.color.neutral950,
-    bgCard: "rgba(12, 20, 30, 0.7)",
+    bgCard: "rgba(12, 20, 30, 0.48)",
     bgHover: "rgba(229, 197, 135, 0.05)",
     bgInput: "rgba(7, 15, 25, 0.5)",
 
@@ -136,6 +150,21 @@ export const semantic = {
     glowGold: "0 0 15px rgba(229, 197, 135, 0.15)",
     glowCyan: "0 0 15px rgba(0, 251, 251, 0.15)",
     buttonGold: "0 10px 15px -3px rgba(229, 197, 135, 0.1)",
+  },
+
+  blur: {
+    subtle: primitive.blur.sm,   // small inline elements (icons, chips)
+    standard: primitive.blur.md, // tooltips, sticky bars
+    card: primitive.blur.lg,     // glass cards, overlays, dropdowns
+    heavy: primitive.blur.xl,    // navigation chrome (sidebar)
+  },
+
+  radius: {
+    micro: primitive.radius.xs,    // bar chart bars, rank fallback squares
+    element: primitive.radius.sm,  // chips, icons, small interactive elements
+    control: primitive.radius.md,  // inputs, buttons, dropdowns, pills
+    card: primitive.radius.lg,     // cards, overlays, toasts, tooltips
+    pill: primitive.radius.full,   // fully rounded pills, badges, dots
   },
 
   font: {
@@ -187,9 +216,8 @@ export const component = {
     bg: semantic.color.bgCard,
     border: semantic.color.borderDefault,
     shadow: semantic.shadow.glassInset,
-    radius: primitive.radius.lg,
+    radius: semantic.radius.card,
     padding: primitive.spacing.lg,
-    backdropBlur: "24px",
   },
 
   table: {

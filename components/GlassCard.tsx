@@ -7,7 +7,6 @@ import { ICON_SIZE } from "@/styles/theme";
 
 const Card = styled(motion.div)<{ $spaceBetween?: boolean }>`
   background: ${({ theme }) => theme.component.glassCard.bg};
-  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
   border: 1px solid ${({ theme }) => theme.component.glassCard.border};
   border-radius: ${({ theme }) => theme.component.glassCard.radius};
   padding: ${({ theme }) => theme.primitive.spacing.sm};
@@ -19,7 +18,7 @@ const Card = styled(motion.div)<{ $spaceBetween?: boolean }>`
   position: relative;
   overflow: hidden;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     padding: ${({ theme }) => theme.component.glassCard.padding};
     gap: ${({ theme }) => theme.primitive.spacing.lg};
   }

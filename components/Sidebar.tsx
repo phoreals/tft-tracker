@@ -38,7 +38,8 @@ const Aside = styled.aside<{ $expanded: boolean }>`
   width: ${({ $expanded, theme }) =>
     $expanded ? theme.component.sidebar.width : theme.component.sidebar.collapsedWidth};
   background: ${({ theme }) => theme.component.sidebar.bg};
-  backdrop-filter: blur(48px);
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.heavy});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.heavy});
   border-right: 1px solid ${({ theme }) => theme.component.sidebar.borderColor};
   z-index: 60;
   overflow: hidden;

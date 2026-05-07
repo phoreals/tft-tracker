@@ -168,7 +168,7 @@ error: string             — validation/API error message
 2. **Styled components are defined above the React component** in the same file, grouped under a `// ── Styled ──` comment.
 3. **Transient props** use the `$prefix` convention (e.g. `$active`, `$elite`, `$spinning`) to prevent DOM forwarding.
 4. **No CSS classes or className** — everything is styled-components except `globals.css` (resets + keyframes).
-5. **Responsive**: mobile-first. Base styles target mobile; `@media (min-width: md)` adds desktop layout. Three breakpoint tokens: `sm` (640px), `md` (768px), `lg` (1024px).
+5. **Responsive**: mobile-first with **container queries**. The `Content` wrapper in `NavigationShell` is a container query context (`container-name: content`). All content components use `@container content (min-width: ...)` with container breakpoint tokens (`sm` 500px, `md` 700px, `lg` 900px) so layouts respond to actual content width, not viewport width. This prevents the 768-900px viewport squish when the sidebar is open. Viewport `@media` breakpoints (`sm` 640px, `md` 768px, `lg` 1024px) are only used for navigation chrome (sidebar visibility, bottom nav, main margin). Device-feature queries (`hover: hover`, `hover: none`, `prefers-reduced-motion`) remain `@media`.
 6. **Horizontal scroll containers**: use the negative-margin bleed technique to extend a scrollable area to card edges while preserving trailing scroll padding:
    ```css
    margin-left: -${spacing.md}; margin-right: -${spacing.md};

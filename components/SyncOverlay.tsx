@@ -56,15 +56,15 @@ const Backdrop = styled.div`
 
 const Card = styled.div<{ $tone: "muted" | "warn" | "error" }>`
   background: ${({ theme }) => theme.component.glassCard.bg};
-  -webkit-backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
-  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
   border: 1px solid ${({ $tone, theme }) =>
     $tone === "error"
       ? `${theme.semantic.color.danger}66`
       : $tone === "warn"
         ? theme.semantic.color.accent
         : theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.lg};
+  border-radius: ${({ theme }) => theme.semantic.radius.card};
   box-shadow: ${({ theme }) => theme.semantic.shadow.glassInset},
     ${({ $tone, theme }) =>
       $tone === "error"
@@ -120,7 +120,7 @@ const IconButton = styled.button`
   min-height: 44px;
   min-width: 44px;
   border: none;
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   background: transparent;
   color: ${({ theme }) => theme.semantic.color.textMuted};
   cursor: pointer;

@@ -23,7 +23,7 @@ const Page = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.lg};
   padding: ${({ theme }) => theme.primitive.spacing.lg} 0;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     gap: ${({ theme }) => theme.primitive.spacing.xl};
     padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
   }
@@ -34,7 +34,7 @@ const PageHeader = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.lg};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-end;
@@ -52,7 +52,7 @@ const PageTitle = styled.h1`
   overflow-wrap: break-word;
   word-break: break-word;
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;
@@ -71,9 +71,10 @@ const SyncButton = styled.button`
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   padding: ${({ theme }) => theme.primitive.spacing.sm};
   background: ${({ theme }) => theme.component.glassCard.bg};
-  backdrop-filter: blur(${({ theme }) => theme.component.glassCard.backdropBlur});
+  -webkit-backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
+  backdrop-filter: blur(${({ theme }) => theme.semantic.blur.card});
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-  border-radius: ${({ theme }) => theme.primitive.radius.md};
+  border-radius: ${({ theme }) => theme.semantic.radius.control};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   ${({ theme }) => theme.semantic.typography.label};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
@@ -110,7 +111,7 @@ const SyncWrap = styled.div`
   align-items: flex-start;
   gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     align-items: flex-end;
   }
 `;
@@ -121,19 +122,20 @@ const StatsGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.lg}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     grid-template-columns: repeat(4, 1fr);
   }
 `;
 
 const StatRow = styled.div`
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
 `;
 
@@ -170,7 +172,7 @@ const SuperlativesGrid = styled.div`
   grid-template-columns: repeat(2, 1fr);
   gap: ${({ theme }) => theme.primitive.spacing.sm};
 
-  @media (min-width: ${({ theme }) => theme.primitive.breakpoint.sm}) {
+  @container content (min-width: ${({ theme }) => theme.primitive.container.sm}) {
     grid-template-columns: repeat(3, 1fr);
   }
 `;
@@ -183,7 +185,7 @@ const PlayerChip = styled(Link)`
   padding: ${({ theme }) => theme.primitive.spacing.xs};
   margin-left: -${({ theme }) => theme.primitive.spacing.xs};
   margin-bottom: -${({ theme }) => theme.primitive.spacing.xs};
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   text-decoration: none;
   color: inherit;
   position: relative;
@@ -191,20 +193,18 @@ const PlayerChip = styled(Link)`
   transition: background 0.2s;
   max-width: calc(100% + ${({ theme }) => theme.primitive.spacing.xs});
 
-  &:hover {
-    background: ${({ theme }) => theme.semantic.color.accentBgHover};
+  @media (hover: hover) {
+    &:hover {
+      background: ${({ theme }) => theme.semantic.color.accentBgHover};
+    }
+
+    &:active {
+      background: ${({ theme }) => theme.semantic.color.accentBgActive};
+    }
   }
 
   @media (hover: none) {
-    &:hover {
-      background: none;
-    }
-    border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
-    padding: calc(${({ theme }) => theme.primitive.spacing.xs} - 1px);
-  }
-
-  &:active {
-    background: ${({ theme }) => theme.semantic.color.accentBgActive};
+    pointer-events: none;
   }
 
   &:focus-visible {
@@ -217,7 +217,7 @@ const ChipIcon = styled.div`
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-  border-radius: ${({ theme }) => theme.primitive.radius.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
   overflow: hidden;
   background: ${({ theme }) => theme.component.glassCard.bg};
   display: flex;
@@ -235,7 +235,7 @@ const ChipName = styled.span`
   white-space: nowrap;
   min-width: 0;
 
-  @media (max-width: ${({ theme }) => theme.primitive.breakpoint.sm}) {
+  @container content (max-width: ${({ theme }) => theme.primitive.container.sm}) {
     font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   }
 `;
