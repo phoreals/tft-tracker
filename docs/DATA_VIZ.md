@@ -59,17 +59,20 @@ Each player gets a unique combination of **color** (from `LINE_COLORS`) and **st
 **Color palette** — 10 visually distinct hues spread across the wheel, avoiding rank-tier badge colors (iron through challenger):
 
 ```ts
+// Colors ordered so perceptually similar hues alternate solid (indices 0–4, 10)
+// vs dashed (indices 5–9). Critical close pairs are always on opposite sides.
 const LINE_COLORS = [
-  "#f472b6", // pink
-  "#60a5fa", // blue
-  "#fb923c", // orange
-  "#a3e635", // lime
-  "#2dd4bf", // teal
-  "#38bdf8", // sky
-  "#fbbf24", // amber
-  "#4ade80", // mint
-  "#f87171", // rose
-  "#818cf8", // indigo
+  "#f87171", // rose      — solid   (0)
+  "#fbbf24", // amber     — solid   (1)  close to orange
+  "#a3e635", // lime      — solid   (2)
+  "#2dd4bf", // teal      — solid   (3)  close to sky, mint
+  "#60a5fa", // blue      — solid   (4)  close to sky, indigo
+  "#fb923c", // orange    — dashed  (5)  close to rose, amber
+  "#4ade80", // mint      — dashed  (6)  close to teal
+  "#38bdf8", // sky       — dashed  (7)  close to blue, teal
+  "#818cf8", // indigo    — dashed  (8)  close to blue
+  "#f472b6", // pink      — dashed  (9)  close to rose, fuchsia
+  "#e879f9", // fuchsia   — solid  (10)  close to pink
 ];
 ```
 

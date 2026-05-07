@@ -45,7 +45,7 @@ components/
 
 hooks/
 ├── usePlayerRows.ts        Data + sort logic for player stats. Returns sortedRows, sortKey, sortDir, toggleSort.
-├── useSelectedTab.ts       URL-aware tab state. Reads ?tab= param, falls back to current week.
+├── useSelectedTab.ts       URL-aware tab state. Reads and writes ?tab= via useSearchParams + router.replace so tab survives client-side navigation. Requires the Suspense boundary in app/layout.tsx.
 └── useTabNavigation.ts     useFullBleedSticky + useScrollFade hooks for the sticky tab bar.
 
 styles/

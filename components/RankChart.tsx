@@ -49,17 +49,22 @@ const CHART = {
 // Muted palette anchored to the app's brand colors: warm gold (#e5c587) and
 // cool cyan (#66fdfd). Colors arc from warm amber → sage → teal → periwinkle → mauve,
 // all desaturated to feel cohesive on the dark glass background.
+// Colors are ordered so that perceptually similar hues alternate between
+// solid (indices 0–4, 10) and dashed (indices 5–9). Critical close pairs:
+// sky↔blue (14°), orange↔amber (20°), blue↔indigo (22°), rose↔orange (25°),
+// teal↔sky (25°), fuchsia↔pink (32°), mint↔teal (32°), pink↔rose (38°).
 export const LINE_COLORS = [
-  "#f472b6", // pink
-  "#60a5fa", // blue
-  "#fb923c", // orange
-  "#a3e635", // lime
-  "#2dd4bf", // teal
-  "#38bdf8", // sky
-  "#fbbf24", // amber
-  "#4ade80", // mint
-  "#f87171", // rose
-  "#818cf8", // indigo
+  "#f87171", // rose      — solid    (0)
+  "#fbbf24", // amber     — solid    (1)  close to orange
+  "#a3e635", // lime      — solid    (2)
+  "#2dd4bf", // teal      — solid    (3)  close to sky, mint
+  "#60a5fa", // blue      — solid    (4)  close to sky, indigo
+  "#fb923c", // orange    — dashed   (5)  close to rose, amber
+  "#4ade80", // mint      — dashed   (6)  close to teal
+  "#38bdf8", // sky       — dashed   (7)  close to blue, teal
+  "#818cf8", // indigo    — dashed   (8)  close to blue
+  "#f472b6", // pink      — dashed   (9)  close to rose, fuchsia
+  "#e879f9", // fuchsia   — solid   (10)  close to pink
 ];
 
 // Secondary visual differentiator: players 6–10 (indices 5–9) get a dashed stroke
@@ -71,11 +76,12 @@ export const LINE_DASH_PATTERNS = [
   "",
   "",
   "",
-  "8 4",       // 6: long dash    ── ── ──
+  "4 4",       // 6: even dash    ─ ─ ─ ─
   "3 3",       // 7: short dash   – – – –
   "1 4",       // 8: dotted       ·  ·  ·
   "8 3 2 3",   // 9: dash-dot     ──·──·
   "12 3",      // 10: extra long  ────────
+  "",          // 11: solid (fuchsia — distinct enough by color alone)
 ];
 
 // ── Styled ───────────────────────────────────────────────────────

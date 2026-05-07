@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { StyledComponentsRegistry } from "@/styles/StyledComponentsRegistry";
 import { NavigationShell } from "@/components/NavigationShell";
@@ -17,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <StyledComponentsRegistry>
-          <NavigationShell>{children}</NavigationShell>
+          <NavigationShell><Suspense>{children}</Suspense></NavigationShell>
         </StyledComponentsRegistry>
       </body>
     </html>
