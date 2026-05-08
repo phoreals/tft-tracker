@@ -13,6 +13,7 @@ import { DurationPill } from "@/components/DurationPill";
 import { LINE_COLORS } from "@/components/RankChart";
 import {
   formatPlaytime,
+  formatPlaytimeHours,
   getSetWeeks,
   getLeaderboardColor,
   computePlayerStats,
@@ -44,6 +45,8 @@ const CHART = {
   },
   grid:         theme.component.table.borderColor,
   accent:       theme.semantic.color.accent,
+  sleep:        theme.primitive.color.neutral700,
+  free:         theme.primitive.color.neutral600,
 };
 
 // ── Unified category config ─────────────────────────────────────
@@ -61,10 +64,14 @@ type UnifiedCategory = {
   filter: (s: PlayerStat) => boolean;
   hasNegative: boolean;
   extraChart: {
-    title: (periodLabel: string) => string;
+    type: "bar";
+    title: (period: string, dateRange: string) => string;
     getValue: (value: number, periodSec: number) => number;
     formatLabel: (v: number) => string;
     domainStep: number;
+  } | {
+    type: "donuts";
+    title: (period: string, dateRange: string) => string;
   } | null;
 };
 
@@ -80,7 +87,8 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
     filter: (s) => s.games > 0,
     hasNegative: false,
     extraChart: {
-      title: () => "Games per day",
+      type: "bar",
+      title: (period) => `Games per day — ${period}`,
       getValue: (value, periodSec) => value / (periodSec / 86400),
       formatLabel: (v) => `${v.toFixed(1)}/day`,
       domainStep: 1,
@@ -97,10 +105,8 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
     filter: (s) => s.time > 0,
     hasNegative: false,
     extraChart: {
-      title: (periodLabel) => `% of ${periodLabel} in TFT`,
-      getValue: (value, periodSec) => (value / periodSec) * 100,
-      formatLabel: (v) => `${v.toFixed(1)}%`,
-      domainStep: 5,
+      type: "donuts",
+      title: (period) => `% of ${period} in TFT`,
     },
   },
   "top4-rate": {
@@ -557,9 +563,25 @@ const SummonerIcon = styled.div`
 const SummonerLink = styled(Link)`
   text-decoration: none;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
-  transition: color 0.15s;
-  &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
-  &:active { opacity: 0.7; }
+  transition: color 0.15s, background 0.15s;
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
+  margin: -${({ theme }) => theme.primitive.spacing["2xs"]} -${({ theme }) => theme.primitive.spacing.xs};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
+
+  @media (hover: hover) {
+    &:hover {
+      color: ${({ theme }) => theme.semantic.color.accent};
+      background: ${({ theme }) => theme.semantic.color.accentBgHover};
+    }
+    &:active {
+      background: ${({ theme }) => theme.semantic.color.accentBgActive};
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
 `;
 
 const TagSpan = styled.span`
@@ -720,6 +742,128 @@ const PeriodChartWrap = styled.div<{ $h: number }>`
   height: ${({ $h }) => $h}px;
 `;
 
+const DonutGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: ${({ theme }) => theme.primitive.spacing.lg};
+  justify-items: center;
+`;
+
+const MiniDonutCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+`;
+
+const MiniDonutWrap = styled.div`
+  position: relative;
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const MiniDonutCenter = styled.div`
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+`;
+
+const MiniDonutCenterValue = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.md};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  line-height: 1;
+`;
+
+const MiniDonutCenterLabel = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize["2xs"]};
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+`;
+
+const MiniDonutChip = styled(Link)`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.xs};
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s;
+  max-width: 100%;
+
+  @media (hover: hover) {
+    &:hover {
+      background: ${({ theme }) => theme.semantic.color.accentBgHover};
+    }
+    &:active {
+      background: ${({ theme }) => theme.semantic.color.accentBgActive};
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
+`;
+
+const MiniDonutChipIcon = styled.div`
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: ${({ theme }) => theme.semantic.radius.element};
+  overflow: hidden;
+  background: ${({ theme }) => theme.component.glassCard.bg};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+`;
+
+const MiniDonutChipName = styled.span`
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  color: ${({ theme }) => theme.semantic.color.textSecondary};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+`;
+
+const ChartLegend = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: ${({ theme }) => theme.primitive.spacing.md};
+  flex-wrap: wrap;
+`;
+
+const LegendItem = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  color: ${({ theme }) => theme.semantic.color.textMuted};
+`;
+
+const LegendDot = styled.span<{ $color: string }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${({ $color }) => $color};
+  flex-shrink: 0;
+`;
+
 // ── Helpers ──────────────────────────────────────────────────────
 
 function formatShortDate(ts: number): string {
@@ -739,6 +883,7 @@ export default function StatsDrilldownPage() {
   const [sortCol, setSortCol] = useState<"name" | "value">("value");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const [miniActiveIndex, setMiniActiveIndex] = useState<Record<string, number | undefined>>({});
 
   const cat = UNIFIED_CATEGORIES[slug];
   const weeks = useMemo(() => getSetWeeks(), []);
@@ -762,6 +907,7 @@ export default function StatsDrilldownPage() {
 
   const periodSec = win ? (Math.min(win.end, Date.now()) - win.start) / 1000 : 0;
   const periodLabel = isSet ? "the set" : "the week";
+  const periodDateRange = win ? `${formatShortDate(win.start)} – ${formatShortDate(Math.min(win.end, Date.now()))}` : "";
 
   const stats = useMemo(() => {
     if (players.length === 0) return [];
@@ -806,13 +952,33 @@ export default function StatsDrilldownPage() {
   const maxVal = ranked.length > 0 ? Math.max(...ranked.map((r) => Math.abs(r.value))) : 1;
 
   const extraChartRows = useMemo(() => {
-    if (!cat?.extraChart || periodSec <= 0) return [];
+    const ec = cat?.extraChart;
+    if (ec?.type !== "bar" || periodSec <= 0) return [];
+    const filtered = ranked.filter((r) => r.value > 0);
+    return filtered.map((r, i) => ({
+      puuid: r.stat.player.puuid,
+      gameName: r.stat.player.gameName,
+      chartValue: parseFloat(ec.getValue(r.value, periodSec).toFixed(2)),
+      rankColor: getLeaderboardColor(i + 1, filtered.length),
+    }));
+  }, [ranked, periodSec, cat]);
+
+  const donutGridRows = useMemo(() => {
+    if (cat?.extraChart?.type !== "donuts" || periodSec <= 0) return [];
+    const sleepSec = periodSec / 3;
     return ranked
       .filter((r) => r.value > 0)
       .map((r) => ({
         puuid: r.stat.player.puuid,
         gameName: r.stat.player.gameName,
-        chartValue: parseFloat(cat.extraChart!.getValue(r.value, periodSec).toFixed(2)),
+        tagLine: r.stat.player.tagLine,
+        profileIconId: r.stat.player.profileIconId,
+        pct: parseFloat(((r.value / periodSec) * 100).toFixed(1)),
+        segments: [
+          { name: "TFT", value: r.value },
+          { name: "Free", value: Math.max(periodSec - r.value - sleepSec, 0) },
+          { name: "Sleep", value: sleepSec },
+        ],
       }));
   }, [ranked, periodSec, cat]);
 
@@ -825,7 +991,7 @@ export default function StatsDrilldownPage() {
     ? cat.formatTotal(total / ranked.length)
     : "—";
 
-  const extraChartStep = cat?.extraChart?.domainStep ?? 5;
+  const extraChartStep = (cat?.extraChart?.type === "bar" ? cat.extraChart.domainStep : 5);
   const extraChartDomainMax = extraChartRows.length > 0
     ? Math.max(Math.ceil(Math.max(...extraChartRows.map((r) => r.chartValue)) / extraChartStep) * extraChartStep, extraChartStep)
     : 10;
@@ -934,6 +1100,7 @@ export default function StatsDrilldownPage() {
                             fontFamily: "Space Grotesk",
                             fontSize: theme.semantic.typography.label.fontSize,
                             pointerEvents: "none",
+                            whiteSpace: "nowrap",
                             display: "flex",
                             alignItems: "center",
                             gap: 8,
@@ -959,7 +1126,6 @@ export default function StatsDrilldownPage() {
 
             {cat.chartMode === "gauge" && (
               <GaugeSection>
-                <DurationPill>{period}</DurationPill>
                 <GaugeValue>{aggregateLabel}</GaugeValue>
                 <GaugeLabel>Squad Avg</GaugeLabel>
                 <GaugeTrack>
@@ -1056,8 +1222,8 @@ export default function StatsDrilldownPage() {
         </GlassCard>
       )}
 
-      {cat?.extraChart && !loading && extraChartRows.length > 0 && (
-        <GlassCard prominent title={cat.extraChart.title(periodLabel)} titleExtra={<DurationPill>{period}</DurationPill>}>
+      {cat?.extraChart?.type === "bar" && !loading && extraChartRows.length > 0 && (
+        <GlassCard prominent title={cat.extraChart.title(period, periodDateRange)}>
           <PeriodChartWrap $h={extraChartH}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={extraChartRows} layout="vertical" margin={{ top: 4, right: 64, bottom: 4, left: 0 }}>
@@ -1077,17 +1243,123 @@ export default function StatsDrilldownPage() {
                   tickLine={false}
                   tick={CHART.tick}
                 />
-                <Bar dataKey="chartValue" radius={[0, 4, 4, 0]} isAnimationActive={false} maxBarSize={20} fill={CHART.accent} fillOpacity={0.85}>
+                <Bar dataKey="chartValue" radius={[0, 4, 4, 0]} isAnimationActive={false} maxBarSize={20}>
+                  {extraChartRows.map((r) => (
+                    <Cell key={r.puuid} fill={r.rankColor} fillOpacity={0.85} />
+                  ))}
                   <LabelList
                     dataKey="chartValue"
                     position="right"
-                    formatter={(v: unknown) => (typeof v === "number" ? cat.extraChart!.formatLabel(v) : "")}
+                    formatter={(v: unknown) => (typeof v === "number" && cat.extraChart?.type === "bar" ? cat.extraChart.formatLabel(v) : "")}
                     style={{ fontFamily: CHART.tick.fontFamily, fontSize: CHART.tick.fontSize, fill: theme.semantic.color.textMuted }}
                   />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </PeriodChartWrap>
+        </GlassCard>
+      )}
+
+      {cat?.extraChart?.type === "donuts" && !loading && donutGridRows.length > 0 && (
+        <GlassCard prominent title={cat.extraChart.title(period, periodDateRange)}>
+          <DonutGrid>
+            {donutGridRows.map((r) => (
+              <MiniDonutCard key={r.puuid}>
+                <MiniDonutWrap>
+                  <PieChart width={200} height={200}>
+                    <Pie
+                      data={r.segments}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="55%"
+                      outerRadius="85%"
+                      strokeWidth={0}
+                      startAngle={90}
+                      endAngle={-270}
+                      isAnimationActive={false}
+                      {...{ activeIndex: miniActiveIndex[r.puuid] } as Record<string, unknown>}
+                      activeShape={(props: PieSectorDataItem) => (
+                        <Sector
+                          {...props}
+                          outerRadius={(props.outerRadius ?? 0) + 4}
+                          stroke="rgba(12, 20, 30, 0.7)"
+                          strokeWidth={2}
+                        />
+                      )}
+                      onMouseEnter={(_, i) => setMiniActiveIndex((prev) => ({ ...prev, [r.puuid]: i }))}
+                      onMouseLeave={() => setMiniActiveIndex((prev) => ({ ...prev, [r.puuid]: undefined }))}
+                    >
+                      <Cell fill={CHART.accent} />
+                      <Cell fill={CHART.free} />
+                      <Cell fill={CHART.sleep} />
+                    </Pie>
+                    <RechartsTooltip
+                      wrapperStyle={{ zIndex: 10, transition: "none" }}
+                      animationDuration={0}
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const seg = payload[0] as { name: string; value: number };
+                        const segTotal = r.segments.reduce((s, d) => s + d.value, 0);
+                        const segPct = segTotal > 0 ? ((seg.value / segTotal) * 100).toFixed(1) : "0";
+                        const segColor = seg.name === "TFT" ? CHART.accent : seg.name === "Sleep" ? CHART.sleep : CHART.free;
+                        return (
+                          <div style={{
+                            background: CHART.tooltip.bg,
+                            backdropFilter: `blur(${theme.semantic.blur.standard})`,
+                            WebkitBackdropFilter: `blur(${theme.semantic.blur.standard})`,
+                            border: CHART.tooltip.border,
+                            borderRadius: CHART.tooltip.radius,
+                            boxShadow: CHART.tooltip.shadow,
+                            padding: `${theme.primitive.spacing.sm} ${theme.primitive.spacing.md}`,
+                            fontFamily: "Space Grotesk",
+                            fontSize: theme.semantic.typography.label.fontSize,
+                            pointerEvents: "none",
+                            whiteSpace: "nowrap",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                          }}>
+                            <LegendDot $color={segColor} />
+                            <span style={{ color: theme.primitive.color.neutral200 }}>{seg.name === "TFT" ? "TFT" : seg.name === "Sleep" ? "Sleep" : "Free time"}</span>
+                            <span style={{ color: theme.semantic.color.textMuted, marginLeft: "auto", paddingLeft: 12, flexShrink: 0 }}>
+                              {formatPlaytimeHours(seg.value)} · {segPct}%
+                            </span>
+                          </div>
+                        );
+                      }}
+                    />
+                  </PieChart>
+                  <MiniDonutCenter>
+                    <MiniDonutCenterValue>{r.pct}%</MiniDonutCenterValue>
+                    <MiniDonutCenterLabel>in TFT</MiniDonutCenterLabel>
+                  </MiniDonutCenter>
+                </MiniDonutWrap>
+                <MiniDonutChip href={`/player/${r.puuid}`}>
+                  <MiniDonutChipIcon>
+                    {r.profileIconId ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${r.profileIconId}.jpg`}
+                        alt=""
+                        width={20}
+                        height={20}
+                        style={{ display: "block" }}
+                      />
+                    ) : (
+                      <User size={12} />
+                    )}
+                  </MiniDonutChipIcon>
+                  <MiniDonutChipName>{r.gameName}<TagSpan>#{r.tagLine}</TagSpan></MiniDonutChipName>
+                </MiniDonutChip>
+              </MiniDonutCard>
+            ))}
+          </DonutGrid>
+          <ChartLegend>
+            <LegendItem><LegendDot $color={CHART.accent} />TFT</LegendItem>
+            <LegendItem><LegendDot $color={CHART.free} />Free time</LegendItem>
+            <LegendItem><LegendDot $color={CHART.sleep} />Sleep (8h/day)</LegendItem>
+          </ChartLegend>
         </GlassCard>
       )}
     </Page>

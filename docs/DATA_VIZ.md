@@ -170,6 +170,50 @@ matches.forEach(m => counts[m.placement - 1]++);
 
 ---
 
+## Mini Donut Grid (`app/stats/[category]/page.tsx` — playtime only)
+
+A responsive CSS grid of per-player donut charts showing how TFT playtime fits into the total period. Only rendered for the `playtime` category via `extraChart.type: "donuts"`.
+
+### Chart Configuration
+
+```
+Component:    PieChart > Pie (one per player, in a CSS grid)
+Size:         200×200px fixed (MiniDonutWrap)
+Grid:         auto-fill, minmax(220px, 1fr), centered
+Pie:          innerRadius="55%", outerRadius="85%", startAngle=90, endAngle=-270
+Segments:     3 per donut — TFT (accent gold), Free time (neutral600), Sleep (neutral700)
+Active shape: outerRadius + 4px, dark gap stroke, per-donut hover state
+Tooltip:      glassmorphic, shows segment name + formatted hours + percentage
+Center:       percentage value + "IN TFT" label
+Below donut:  player chip (20px profile icon + gameName#tagLine, links to player page)
+Legend:       row below the grid — gold dot "TFT", neutral dot "Free time", dark dot "Sleep (8h/day)"
+```
+
+### Data Transform
+
+```ts
+sleepSec = periodSec / 3          // 8 hours/day
+freeSec  = periodSec - tftSec - sleepSec
+// → [{ name: "TFT", value }, { name: "Free", value }, { name: "Sleep", value }]
+```
+
+---
+
+## Games Per Day Bar Chart (`app/stats/[category]/page.tsx` — games only)
+
+Horizontal bar chart showing each player's daily game rate. Only rendered for the `games` category via `extraChart.type: "bar"`.
+
+```
+Component:    BarChart layout="vertical" > Bar
+Height:       dynamic (rows × 44 + 24, min 120px)
+Bar color:    per-player, using getLeaderboardColor gradient (gold 1st → slate last)
+Labels:       LabelList position="right", formatted as "X.X/day"
+Grid:         CartesianGrid vertical only
+X domain:     [0, ceil(max / 1) * 1] rounded to nearest integer
+```
+
+---
+
 ## Design Conventions Across All Charts
 
 1. **No axis lines or tick lines** — use `axisLine={false} tickLine={false}` on both axes. The grid provides visual reference instead.
@@ -179,3 +223,4 @@ matches.forEach(m => counts[m.placement - 1]++);
 5. **`isAnimationActive={false}`**: disabled on RankChart to prevent re-animation when dot functions recreate on render.
 6. **Responsive height**: `ChartContainer` is a styled div with a fixed height, not a `%` on `ResponsiveContainer` — this avoids the Recharts "height 0" bug when the parent doesn't have an explicit height.
 7. **No Recharts `Legend` component**: player identity in RankChart is conveyed by a custom `LegendChip` row rendered below the chart (outside Recharts). This is necessary because Recharts `Legend` doesn't support CSS media queries or container queries.
+8. **Gold accent for focus/hover**: bar chart fills and interactive focus highlights use the gold accent color (`CHART.accent` / `theme.semantic.color.accent`). Donut `activeShape` strokes use a dark gap (`rgba(12, 20, 30, 0.7)`) to separate the expanded segment from its neighbors — not gold.

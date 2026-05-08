@@ -93,8 +93,13 @@ Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player dr
 
 **Inline bar behavior**: For categories where values are always non-negative (games, playtime, top4-rate, win-rate), the bar fills left-to-right proportional to the leader. For categories that can produce negative values (highest-lp, best-lp-per-game), a **centered bar** is used: positive values extend gold to the right, negative values extend red to the left.
 
-### Playtime Period Chart
-Only visible for the `playtime` category. A separate `GlassCard` below the main card shows a horizontal bar chart with each player's playtime as a % of the total period (week or set). Bars are colored per player. X-axis shows percentage, Y-axis shows player names.
+### Extra Charts
+
+Two categories render a separate `GlassCard` below the main card:
+
+**Playtime — "% of [period] in TFT"** (`extraChart.type: "donuts"`): A responsive grid of mini donut charts, one per player. Each donut has three segments: TFT playtime (gold accent), free time (medium slate), and sleep (dark slate, 8 hours/day). Center shows the TFT percentage with an "IN TFT" label. Each donut has an active hover state (segment expands with dark gap stroke) and a glassmorphic tooltip showing segment name, formatted hours+minutes, and percentage. Below each donut is a player chip (profile icon + name#tag, links to player drilldown). A legend row at the bottom labels the three segment colors.
+
+**Games — "Games per day — [period]"** (`extraChart.type: "bar"`): A horizontal bar chart showing each player's daily game rate. Bars are colored using the leaderboard gradient (gold→slate, matching the rank badges in the table). Labels on the right show the rate (e.g. "1.4/day").
 
 ### Player Performance Table
 
