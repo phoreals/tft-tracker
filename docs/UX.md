@@ -48,11 +48,11 @@ Each card has a **duration pill** in the top-right of its header showing the act
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" as the stat value and "Awaiting data" in place of the player chip (muted text, same height as a chip to keep cards uniform). Ties go to the first alphabetically by gameName.
 
-Each card is clickable and links to a **Superlative Drilldown** page (`/superlative/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width. The chip has `margin-bottom: -xs` to offset its padding and keep the card's bottom spacing visually balanced. On touch devices (`hover: none`), the chip is `pointer-events: none` — no tap interaction, no border affordance.
+Each card is clickable and links to the **Stat Drilldown** page (`/stats/[category]`) showing a ranked leaderboard table for that stat. The card has a hover lift effect (`translateY(-2px)`). The player chip within each card is a separate link to the player's drilldown page — it sits above the card link (`z-index: 1`, `stopPropagation`) so clicking the chip navigates to the player, while clicking elsewhere on the card navigates to the superlative drilldown. The chip uses `align-self: flex-start` so its hover highlight hugs the icon + name rather than stretching to the card's full width. The chip has `margin-bottom: -xs` to offset its padding and keep the card's bottom spacing visually balanced. On touch devices (`hover: none`), the chip is `pointer-events: none` — no tap interaction, no border affordance.
 
 When loading or no players are fetched, all 6 cards render with "..." as placeholder values. Cards stretch to equal height in the grid regardless of whether a player chip is present.
 
-On the **Player Drilldown** page, any superlatives the viewed player currently holds appear as pill badges below the stat cards, linking to the corresponding superlative drilldown page.
+On the **Player Drilldown** page, any superlatives the viewed player currently holds appear as pill badges below the stat cards, linking to the corresponding stat drilldown page.
 
 ### Summary Cards
 
@@ -67,25 +67,34 @@ Four `GlassCard` components show aggregate metrics for the **currently selected 
 
 ## Stat Drilldown (`/stats/[category]`)
 
-Accessed by clicking a summary stat card on the home page. Categories: `games`, `playtime`, `top4-rate`, `win-rate`.
+Accessed by clicking a summary stat card or a superlative card on the home page. Six categories: `games`, `playtime`, `top4-rate`, `win-rate`, `highest-lp`, `best-lp-per-game`.
 
 ### Layout
 - Back link to Home (preserves `?tab=` parameter)
 - Page title = category label
 - Same sticky tab bar (Set 17 / Week 1–N)
 
-### Content
-Single-column stacked layout. The chart sits above the ranked table at 50% width.
+### Category Navigation
+A horizontal pill bar above the content shows all 6 categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally.
 
-- **Games / Playtime**: donut chart (50% width) showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
-- **Top 4 Rate / Win Rate**: gauge section (50% width) — duration pill (period tag), large squad-average value, "Squad Avg" label, and a 4px progress bar with a 50% reference mark. No icon.
+### Content
+Single-column stacked layout. Chart section (when present) sits above the sortable ranked table.
+
+- **Games / Playtime** (`chartMode: "donut"`): donut chart showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
+- **Top 4 Rate / Win Rate** (`chartMode: "gauge"`): gauge section — duration pill, large squad-average value, "Squad Avg" label, and a 4px progress bar with a 50% reference mark.
+- **LP Gain / LP per Game** (`chartMode: "none"`): no chart, table only.
 
 **Donut interaction**: hovering a donut segment expands it outward by 6px with a dark gap stroke. Tooltip snaps instantly between segments (no animation).
 
-**Ranked table** (all categories): Rank (#), Summoner (profile icon + name), Value (formatted stat), Percentage (share of total for games/playtime, or the rate itself for top4-rate/win-rate). Leader row has a subtle gold background. Rank badges use the same `getLeaderboardColor` gradient as superlative drilldowns. No inline bars.
+### Ranked Table
+Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). Share categories (games, playtime) also show a % share column. The leader's row has a subtle gold background highlight. Rank badges use `getLeaderboardColor` gradient (gold→slate). Badge colors reflect natural rank (by value), not display order.
 
-### Category Navigation
-A horizontal pill bar above the content shows all 4 stat categories. The active category is highlighted. Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally.
+**Sorting**: the Summoner and Value column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. Default: value descending.
+
+**Inline bar behavior**: For categories where values are always non-negative (games, playtime, top4-rate, win-rate), the bar fills left-to-right proportional to the leader. For categories that can produce negative values (highest-lp, best-lp-per-game), a **centered bar** is used: positive values extend gold to the right, negative values extend red to the left.
+
+### Playtime Period Chart
+Only visible for the `playtime` category. A separate `GlassCard` below the main card shows a horizontal bar chart with each player's playtime as a % of the total period (week or set). Bars are colored per player. X-axis shows percentage, Y-axis shows player names.
 
 ### Player Performance Table
 
@@ -172,24 +181,6 @@ All player rows use uniform `borderDim` borders with gold `borderHover` on hover
 **Rank abbreviation on mobile**: Rank strings are abbreviated to save horizontal space — e.g. `Gold II 47 LP → G2 47LP`, `Master 185 LP → M 185LP`. The "Peak:" and "Low:" sub-line labels in the player performance table are always written in full regardless of viewport.
 
 
-## Superlative Drilldown (`/superlative/[category]`)
-
-Accessed by clicking a superlative card on the Weekly Stats page. Category slugs: `most-games`, `best-top4`, `most-wins`, `most-time`, `highest-lp`, `best-lp-per-game`.
-
-### Layout
-- Back link to Home
-- Page title = category label (e.g. "Most Games")
-- Same sticky tab bar as other pages (Set 17 / Week 1–N)
-
-### Category Navigation
-A horizontal pill bar above the Rankings card shows all 6 superlative categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally.
-
-### Rankings Table
-Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). The leader's row has a subtle gold background highlight. Rank badges use a smooth color gradient from brand gold (1st) to dim slate (last) via `getLeaderboardColor(rank, total)` in `lib/utils.ts`. The gradient keeps the gold hue through top ranks then desaturates to cool neutral. Badge colors reflect natural rank (by value), not display order — re-sorting the table doesn't change badge colors.
-
-The "Summoner" header is left-aligned with the sort chevron to its right. The value column header (e.g. "Most Games") is right-aligned with the sort chevron to its left, keeping the label flush against the right edge. Both headers use `white-space: nowrap`.
-
-**Inline bar behavior**: For categories where values are always non-negative (most-games, best-top4, most-wins, most-time), the bar fills left-to-right proportional to the leader. For categories that can produce negative values (highest-lp, best-lp-per-game), a **centered bar** is used: a vertical center line divides the track, positive values extend gold to the right, negative values extend red to the left. The bar switches to centered mode automatically if any value in the current dataset is negative.
 
 ## Interaction States
 
@@ -220,7 +211,7 @@ Horizontal layout: profile picture on the left, player info on the right.
 The page-level tab (Set / Week N) scopes the **stat cards only**. The rank chart, placement chart, and match history always show the full set history regardless of selected tab.
 
 ### Stat Cards (2-column grid, 3 columns on sm and desktop)
-Games, Top 4 Rate, Win Rate, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label and duration pill on the same line (flex row, space-between). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding superlative drilldown.
+Games, Top 4 Rate, Win Rate, Time Played, LP Gain, LP / Game — all scoped to the selected tab window. LP Gain shows the delta between earliest history snapshot and current rank (e.g. "+45 LP" or "-20 LP"). LP / Game shows per-game LP efficiency (e.g. "+4.3 LP/g"). Both show "—" when insufficient history data. Each card header shows the label and duration pill on the same line (flex row, space-between). Any superlatives the player currently leads appear as pill badges in a `BadgeRow` below the stats grid, linking to the corresponding stat drilldown.
 
 ### Placement Breakdown Chart
 Scoped to the selected tab period. Uses a `DurationPill` period tag. A **view toggle** (bar chart / pie chart icons) in the card header switches between two views. Empty state: "No games in this period."

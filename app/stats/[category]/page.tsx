@@ -5,19 +5,22 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import styled from "styled-components";
 import { ArrowLeft, User } from "lucide-react";
-import { PieChart, Pie, Cell, Sector, Tooltip as RechartsTooltip, ResponsiveContainer, type PieSectorDataItem } from "recharts";
+import { PieChart, Pie, Cell, Sector, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, LabelList, CartesianGrid, type PieSectorDataItem } from "recharts";
+import { SortChevron } from "@/components/SortChevron";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
 import { DurationPill } from "@/components/DurationPill";
 import { LINE_COLORS } from "@/components/RankChart";
 import {
   formatPlaytime,
-  percentOf,
   getSetWeeks,
   getLeaderboardColor,
+  computePlayerStats,
   SET_START,
   SET_END,
   SET_LABEL,
+  type PlayerStatInput,
+  type PlayerStat,
 } from "@/lib/utils";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { useScrollFade } from "@/hooks/useTabNavigation";
@@ -34,82 +37,152 @@ const CHART = {
     fontFamily: "Space Grotesk",
     fontSize:   theme.semantic.typography.label.fontSize,
   },
-};
-
-// ── Category config ──────────────────────────────────────────────
-
-type StatCategory = {
-  title: string;
-  isShare: boolean;
-  getValue: (matches: MatchData[]) => number;
-  formatValue: (n: number) => string;
-  formatTotal: (n: number) => string;
-};
-
-const STAT_CATEGORIES: Record<string, StatCategory> = {
-  games: {
-    title: "Games Played",
-    isShare: true,
-    getValue: (ms) => ms.length,
-    formatValue: (n) => String(n),
-    formatTotal: (n) => String(n),
+  tick: {
+    fill:       theme.primitive.color.neutral200,
+    fontSize:   parseInt(theme.primitive.fontSize.xs),
+    fontFamily: "Space Grotesk",
   },
-  playtime: {
-    title: "Squad Playtime",
+  grid:         theme.component.table.borderColor,
+  accent:       theme.semantic.color.accent,
+};
+
+// ── Unified category config ─────────────────────────────────────
+
+type ChartMode = "donut" | "gauge" | "none";
+
+type UnifiedCategory = {
+  slug: string;
+  title: string;
+  key: "games" | "time" | "top4Rate" | "winRate" | "lpDiff" | "lpPerGame";
+  chartMode: ChartMode;
+  isShare: boolean;
+  format: (v: number) => string;
+  formatTotal: (v: number) => string;
+  filter: (s: PlayerStat) => boolean;
+  hasNegative: boolean;
+  extraChart: {
+    title: (periodLabel: string) => string;
+    getValue: (value: number, periodSec: number) => number;
+    formatLabel: (v: number) => string;
+    domainStep: number;
+  } | null;
+};
+
+const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
+  "games": {
+    slug: "games",
+    title: "Games Played",
+    key: "games",
+    chartMode: "donut",
     isShare: true,
-    getValue: (ms) => ms.reduce((s, m) => s + m.duration, 0),
-    formatValue: formatPlaytime,
+    format: (v) => String(v),
+    formatTotal: (v) => String(v),
+    filter: (s) => s.games > 0,
+    hasNegative: false,
+    extraChart: {
+      title: () => "Games per day",
+      getValue: (value, periodSec) => value / (periodSec / 86400),
+      formatLabel: (v) => `${v.toFixed(1)}/day`,
+      domainStep: 1,
+    },
+  },
+  "playtime": {
+    slug: "playtime",
+    title: "Squad Playtime",
+    key: "time",
+    chartMode: "donut",
+    isShare: true,
+    format: formatPlaytime,
     formatTotal: formatPlaytime,
+    filter: (s) => s.time > 0,
+    hasNegative: false,
+    extraChart: {
+      title: (periodLabel) => `% of ${periodLabel} in TFT`,
+      getValue: (value, periodSec) => (value / periodSec) * 100,
+      formatLabel: (v) => `${v.toFixed(1)}%`,
+      domainStep: 5,
+    },
   },
   "top4-rate": {
+    slug: "top4-rate",
     title: "Avg Top 4 Rate",
+    key: "top4Rate",
+    chartMode: "gauge",
     isShare: false,
-    getValue: (ms) => (ms.length > 0 ? (ms.filter((m) => m.placement <= 4).length / ms.length) * 100 : 0),
-    formatValue: (n) => `${n.toFixed(1)}%`,
-    formatTotal: (n) => `${n.toFixed(1)}%`,
+    format: (v) => `${v.toFixed(1)}%`,
+    formatTotal: (v) => `${v.toFixed(1)}%`,
+    filter: (s) => s.games > 0,
+    hasNegative: false,
+    extraChart: null,
   },
   "win-rate": {
+    slug: "win-rate",
     title: "Squad Win Rate",
+    key: "winRate",
+    chartMode: "gauge",
     isShare: false,
-    getValue: (ms) => (ms.length > 0 ? (ms.filter((m) => m.placement === 1).length / ms.length) * 100 : 0),
-    formatValue: (n) => `${n.toFixed(1)}%`,
-    formatTotal: (n) => `${n.toFixed(1)}%`,
+    format: (v) => `${v.toFixed(1)}%`,
+    formatTotal: (v) => `${v.toFixed(1)}%`,
+    filter: (s) => s.games > 0,
+    hasNegative: false,
+    extraChart: null,
+  },
+  "highest-lp": {
+    slug: "highest-lp",
+    title: "Highest LP Gain",
+    key: "lpDiff",
+    chartMode: "none",
+    isShare: false,
+    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,
+    formatTotal: (v) => `${v >= 0 ? "+" : ""}${v} LP`,
+    filter: (s) => s.lpDiff !== null,
+    hasNegative: true,
+    extraChart: null,
+  },
+  "best-lp-per-game": {
+    slug: "best-lp-per-game",
+    title: "Most Efficient Climb",
+    key: "lpPerGame",
+    chartMode: "none",
+    isShare: false,
+    format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,
+    formatTotal: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,
+    filter: (s) => s.lpPerGame !== null,
+    hasNegative: true,
+    extraChart: null,
   },
 };
 
 // ── Types ────────────────────────────────────────────────────────
 
-interface MatchData {
-  matchId: string;
-  placement: number;
-  duration: number;
-  timestamp: number;
-}
-
-interface PlayerData {
-  puuid: string;
-  gameName: string;
-  tagLine: string;
-  profileIconId?: number;
-  matches: MatchData[];
+interface PlayerData extends PlayerStatInput {
+  current: {
+    tier: string;
+    rank: string;
+    lp: number;
+    wins: number;
+    losses: number;
+    lastUpdated: string;
+  } | null;
 }
 
 type DonutPatternType = "solid" | "diag-right" | "horizontal" | "dots" | "diag-left" | "crosshatch";
 
 const DONUT_PATTERN_TYPES: DonutPatternType[] = [
   "solid", "solid", "solid", "solid", "solid",
-  "diag-right",  // 6:  /////
-  "horizontal",  // 7:  =====
-  "dots",        // 8:  · · ·
-  "diag-left",   // 9:  \\\\\
-  "crosshatch",  // 10: #####
+  "diag-right",
+  "horizontal",
+  "dots",
+  "diag-left",
+  "crosshatch",
 ];
+
+// ── Donut pattern helpers ───────────────────────────────────────
 
 function renderPatternDef(puuid: string, color: string, type: DonutPatternType): React.ReactElement | null {
   if (type === "solid") return null;
   const id = `dp-${puuid}-${type}`;
-  // Background tinted with the same hue as the stroke for visual cohesion
-  const bgFill = `${color}33`; // 20% opacity of line color
+  const bgFill = `${color}33`;
   const bg8 = <rect width="8" height="8" fill={bgFill} />;
   let content: React.ReactElement;
   switch (type) {
@@ -171,17 +244,12 @@ function ColorDot({ color, patternType }: { color: string; patternType: DonutPat
   );
 }
 
-interface PlayerRow {
-  puuid: string;
-  gameName: string;
-  tagLine: string;
-  profileIconId?: number;
+interface RankedRow {
+  stat: PlayerStat;
   value: number;
-  label: string;
   color: string;
-  playerIndex: number;
   patternType: DonutPatternType;
-  games: number;
+  playerIndex: number;
 }
 
 // ── Styled ───────────────────────────────────────────────────────
@@ -253,6 +321,8 @@ const ContentGrid = styled.div`
   gap: ${({ theme }) => theme.primitive.spacing.lg};
 `;
 
+// ── Donut styled ────────────────────────────────────────────────
+
 const DonutSection = styled.div`
   display: flex;
   flex-direction: column;
@@ -264,9 +334,7 @@ const DonutSection = styled.div`
 const DonutWrap = styled.div`
   position: relative;
   touch-action: pan-y;
-
-  svg:focus,
-  svg *:focus {
+  svg:focus, svg *:focus {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
     border-radius: ${({ theme }) => theme.semantic.radius.element};
@@ -302,6 +370,8 @@ const DonutLabel = styled.span`
   margin-top: 3px;
   text-align: center;
 `;
+
+// ── Gauge styled ────────────────────────────────────────────────
 
 const GaugeSection = styled.div`
   display: flex;
@@ -363,6 +433,8 @@ const GaugeRefLabel = styled.span`
   white-space: nowrap;
 `;
 
+// ── Table styled ────────────────────────────────────────────────
+
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
@@ -383,6 +455,47 @@ const Thead = styled.thead`
   }
 `;
 
+const SortIcon = styled.span<{ $active: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : "currentColor"};
+  opacity: ${({ $active }) => ($active ? 1 : 0)};
+  transition: opacity 0.15s, color 0.15s;
+`;
+
+const SortTh = styled.th<{ $active: boolean }>`
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted} !important;
+
+  &:hover {
+    color: ${({ theme }) => theme.semantic.color.textPrimary} !important;
+  }
+
+  &:hover ${SortIcon} {
+    opacity: 0.5;
+  }
+
+  &:hover ${SortIcon}[data-active="true"] {
+    opacity: 1;
+  }
+
+  &:active {
+    opacity: 0.7;
+  }
+`;
+
+const SortThInner = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+`;
+
 const RankBadge = styled.span<{ $color: string }>`
   display: inline-flex;
   align-items: center;
@@ -400,6 +513,7 @@ const RankBadge = styled.span<{ $color: string }>`
 const Tbody = styled.tbody`
   tr {
     border-bottom: 1px solid ${({ theme }) => theme.component.table.borderColor};
+    transition: background 0.15s;
   }
 
   @media (hover: hover) {
@@ -440,11 +554,69 @@ const SummonerIcon = styled.div`
   color: ${({ theme }) => theme.semantic.color.accent};
 `;
 
+const SummonerLink = styled(Link)`
+  text-decoration: none;
+  color: ${({ theme }) => theme.semantic.color.textPrimary};
+  transition: color 0.15s;
+  &:hover { color: ${({ theme }) => theme.semantic.color.accent}; }
+  &:active { opacity: 0.7; }
+`;
+
+const TagSpan = styled.span`
+  color: ${({ theme }) => theme.semantic.color.textDisabled};
+  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.regular};
+`;
+
+const BarTrack = styled.div`
+  height: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  width: 100%;
+  background: ${({ theme }) => theme.component.table.borderColor};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  overflow: hidden;
+`;
+
+const BarFill = styled.div<{ $pct: number }>`
+  height: 100%;
+  width: ${({ $pct }) => $pct}%;
+  background: ${({ theme }) => theme.semantic.color.accent};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
+`;
+
+const BiBarTrack = styled.div`
+  position: relative;
+  height: ${({ theme }) => theme.primitive.spacing["2xs"]};
+  width: 100%;
+  background: ${({ theme }) => theme.component.table.borderColor};
+  margin-top: ${({ theme }) => theme.primitive.spacing["2xs"]};
+`;
+
+const BiBarCenter = styled.div`
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: ${({ theme }) => theme.semantic.color.borderHover};
+  z-index: 1;
+`;
+
+const BiBarFill = styled.div<{ $pct: number; $positive: boolean }>`
+  position: absolute;
+  height: 100%;
+  top: 0;
+  background: ${({ $positive, theme }) =>
+    $positive ? theme.semantic.color.accent : theme.semantic.color.danger};
+  ${({ $positive, $pct }) =>
+    $positive
+      ? `left: 50%; width: ${$pct / 2}%;`
+      : `right: 50%; width: ${$pct / 2}%;`}
+`;
 
 const LeaderRow = styled.tr`
   background: ${({ theme }) => theme.semantic.color.accentBgSubtle} !important;
 `;
-
 
 const LoadingText = styled.p`
   ${({ theme }) => theme.semantic.typography.label};
@@ -543,6 +715,11 @@ const CategoryPill = styled(Link)<{ $active: boolean }>`
   }
 `;
 
+const PeriodChartWrap = styled.div<{ $h: number }>`
+  width: 100%;
+  height: ${({ $h }) => $h}px;
+`;
+
 // ── Helpers ──────────────────────────────────────────────────────
 
 function formatShortDate(ts: number): string {
@@ -559,13 +736,15 @@ export default function StatsDrilldownPage() {
   const { category: slug } = useParams<{ category: string }>();
   const [players, setPlayers] = useState<PlayerData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortCol, setSortCol] = useState<"name" | "value">("value");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
-  const cat = STAT_CATEGORIES[slug];
+  const cat = UNIFIED_CATEGORIES[slug];
   const weeks = useMemo(() => getSetWeeks(), []);
   const [selectedTab, setSelectedTab] = useSelectedTab();
   const catNavRef = useRef<HTMLElement>(null);
   const { fadeLeft: catFadeLeft, fadeRight: catFadeRight } = useScrollFade(catNavRef as React.RefObject<HTMLDivElement>);
-  const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetch("/api/players", { cache: "no-store" })
@@ -581,44 +760,79 @@ export default function StatsDrilldownPage() {
   const weekNumber = (weeks[selectedTab as number] ?? weeks[weeks.length - 1])?.weekNumber;
   const period = isSet ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
 
-  // Period duration in seconds, capped at now so set tab doesn't divide by future time
   const periodSec = win ? (Math.min(win.end, Date.now()) - win.start) / 1000 : 0;
   const periodLabel = isSet ? "the set" : "the week";
 
-  const { rows, total } = useMemo(() => {
-    if (!cat) return { rows: [], total: 0 };
+  const stats = useMemo(() => {
+    if (players.length === 0) return [];
+    return computePlayerStats(players, win);
+  }, [players, win]);
 
-    const computed: PlayerRow[] = players.map((p, i) => {
-      const ms = p.matches.filter((m) => m.timestamp >= win.start && m.timestamp < win.end);
-      const value = cat.getValue(ms);
-      return {
-        puuid: p.puuid,
-        gameName: p.gameName,
-        tagLine: p.tagLine,
-        profileIconId: p.profileIconId,
-        value,
-        label: cat.formatValue(value),
+  const ranked = useMemo((): RankedRow[] => {
+    if (!cat) return [];
+    return stats
+      .map((s, i) => ({
+        stat: s,
+        value: (s[cat.key] as number) ?? 0,
         color: LINE_COLORS[i % LINE_COLORS.length],
-        playerIndex: i,
         patternType: DONUT_PATTERN_TYPES[i % DONUT_PATTERN_TYPES.length],
-        games: ms.length,
-      };
+        playerIndex: i,
+      }))
+      .filter((r) => cat.filter(r.stat))
+      .sort((a, b) => b.value - a.value);
+  }, [stats, cat]);
+
+  const toggleSort = (col: "name" | "value") => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortCol(col);
+      setSortDir(col === "name" ? "asc" : "desc");
+    }
+  };
+
+  const sortedRanked = useMemo(() => {
+    if (sortCol === "value") {
+      return sortDir === "desc" ? ranked : [...ranked].reverse();
+    }
+    return [...ranked].sort((a, b) => {
+      const an = a.stat.player.gameName.toLowerCase();
+      const bn = b.stat.player.gameName.toLowerCase();
+      return sortDir === "asc" ? an.localeCompare(bn) : bn.localeCompare(an);
     });
+  }, [ranked, sortCol, sortDir]);
 
-    const sorted = [...computed].sort((a, b) => b.value - a.value);
-    const rawTotal = computed.reduce((s, r) => s + r.value, 0);
+  const total = useMemo(() => ranked.reduce((s, r) => s + r.value, 0), [ranked]);
+  const maxVal = ranked.length > 0 ? Math.max(...ranked.map((r) => Math.abs(r.value))) : 1;
 
-    return { rows: sorted, total: rawTotal };
-  }, [players, win, cat]);
+  const extraChartRows = useMemo(() => {
+    if (!cat?.extraChart || periodSec <= 0) return [];
+    return ranked
+      .filter((r) => r.value > 0)
+      .map((r) => ({
+        puuid: r.stat.player.puuid,
+        gameName: r.stat.player.gameName,
+        chartValue: parseFloat(cat.extraChart!.getValue(r.value, periodSec).toFixed(2)),
+      }));
+  }, [ranked, periodSec, cat]);
 
   if (!cat) return <LoadingText>Category not found.</LoadingText>;
 
-  const hasData = rows.some((r) => r.value > 0);
+  const hasData = ranked.some((r) => r.value > 0);
   const aggregateLabel = cat.isShare
     ? cat.formatTotal(total)
-    : rows.length > 0
-    ? cat.formatTotal(total / rows.length)
+    : ranked.length > 0
+    ? cat.formatTotal(total / ranked.length)
     : "—";
+
+  const extraChartStep = cat?.extraChart?.domainStep ?? 5;
+  const extraChartDomainMax = extraChartRows.length > 0
+    ? Math.max(Math.ceil(Math.max(...extraChartRows.map((r) => r.chartValue)) / extraChartStep) * extraChartStep, extraChartStep)
+    : 10;
+  const extraChartH = Math.max(extraChartRows.length * 44 + 24, 120);
+
+  // Donut data: only rows with positive values
+  const donutData = ranked.filter((r) => r.value > 0);
 
   return (
     <Page>
@@ -631,10 +845,10 @@ export default function StatsDrilldownPage() {
         <PageTitle>{cat.title}</PageTitle>
         <PageSubtitle>
           {isSet ? (
-            <><strong>{SET_LABEL}</strong>{"\u2002·\u2002"}{formatShortDate(SET_START)}{"\u2009\u2013\u2009"}{formatShortDate(SET_END)}</>
+            <><strong>{SET_LABEL}</strong>{" · "}{formatShortDate(SET_START)}{" – "}{formatShortDate(SET_END)}</>
           ) : (() => {
             const w = weeks[selectedTab as number];
-            return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
+            return w ? <><strong>{w.label}</strong>{" · "}{formatShortDate(w.start)}{" – "}{formatShortDate(w.end)}</> : null;
           })()}
         </PageSubtitle>
       </div>
@@ -643,7 +857,7 @@ export default function StatsDrilldownPage() {
 
       <CategoryNavWrap $fadeLeft={catFadeLeft} $fadeRight={catFadeRight}>
       <CategoryNav ref={catNavRef} aria-label="Stat categories">
-        {Object.entries(STAT_CATEGORIES).map(([key, c]) => (
+        {Object.entries(UNIFIED_CATEGORIES).map(([key, c]) => (
           <CategoryPill
             key={key}
             href={`/stats/${key}?tab=${selectedTab}`}
@@ -660,23 +874,23 @@ export default function StatsDrilldownPage() {
       ) : !hasData ? (
         <LoadingText>No data for this time period.</LoadingText>
       ) : (
-        <GlassCard prominent>
+        <GlassCard prominent title={cat.title} titleExtra={<DurationPill>{period}</DurationPill>}>
           <ContentGrid>
-            {/* Left: chart */}
-            {cat.isShare ? (
+            {/* Chart section */}
+            {cat.chartMode === "donut" && (
               <DonutSection>
                 <DonutWrap>
                   <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <defs>
-                      {rows.filter((r) => r.value > 0 && r.patternType !== "solid").map((r) =>
-                        renderPatternDef(r.puuid, r.color, r.patternType)
+                      {donutData.filter((r) => r.patternType !== "solid").map((r) =>
+                        renderPatternDef(r.stat.player.puuid, r.color, r.patternType)
                       )}
                     </defs>
                     <Pie
-                      data={rows.filter((r) => r.value > 0)}
+                      data={donutData}
                       dataKey="value"
-                      nameKey="gameName"
+                      nameKey="stat.player.gameName"
                       cx="50%"
                       cy="50%"
                       innerRadius="55%"
@@ -695,8 +909,8 @@ export default function StatsDrilldownPage() {
                       onMouseEnter={(_, i) => setActiveIndex(i)}
                       onMouseLeave={() => setActiveIndex(undefined)}
                     >
-                      {rows.filter((r) => r.value > 0).map((r) => (
-                        <Cell key={r.puuid} fill={getFill(r.puuid, r.color, r.patternType)} />
+                      {donutData.map((r) => (
+                        <Cell key={r.stat.player.puuid} fill={getFill(r.stat.player.puuid, r.color, r.patternType)} />
                       ))}
                     </Pie>
                     <RechartsTooltip
@@ -704,10 +918,10 @@ export default function StatsDrilldownPage() {
                       animationDuration={0}
                       content={({ active, payload }) => {
                         if (!active || !payload?.length) return null;
-                        const item = payload[0] as { name: string; value: number };
-                        const row = rows.find((r) => r.gameName === item.name);
+                        const entry = payload[0];
+                        const row = donutData.find((r) => r.value === entry?.value);
                         if (!row) return null;
-                        const pct = total > 0 ? ((item.value / total) * 100).toFixed(1) : "0";
+                        const pct = total > 0 ? ((row.value / total) * 100).toFixed(1) : "0";
                         return (
                           <div style={{
                             background: CHART.tooltip.bg,
@@ -725,9 +939,9 @@ export default function StatsDrilldownPage() {
                             gap: 8,
                           }}>
                             <ColorDot color={row.color} patternType={row.patternType} />
-                            <span style={{ color: theme.primitive.color.neutral200 }}>{item.name}</span>
+                            <span style={{ color: theme.primitive.color.neutral200 }}>{row.stat.player.gameName}</span>
                             <span style={{ color: theme.semantic.color.textMuted, marginLeft: "auto", paddingLeft: 12, flexShrink: 0 }}>
-                              {cat.formatValue(item.value)} · {pct}%
+                              {cat.format(row.value)} · {pct}%
                             </span>
                           </div>
                         );
@@ -741,7 +955,9 @@ export default function StatsDrilldownPage() {
                   </DonutCenter>
                 </DonutWrap>
               </DonutSection>
-            ) : (
+            )}
+
+            {cat.chartMode === "gauge" && (
               <GaugeSection>
                 <DurationPill>{period}</DurationPill>
                 <GaugeValue>{aggregateLabel}</GaugeValue>
@@ -754,35 +970,50 @@ export default function StatsDrilldownPage() {
               </GaugeSection>
             )}
 
-            {/* Right: ranked table */}
+            {/* Ranked table */}
             <Table>
               <Thead>
                 <tr>
                   <th style={{ width: 28 }} />
-                  <th>Summoner</th>
-                  <th style={{ textAlign: "right" }}>{cat.title}</th>
-                  <th style={{ textAlign: "right" }}>%</th>
-                  {slug === "playtime" && (
-                    <th style={{ textAlign: "right" }}>% of {periodLabel}</th>
+                  <SortTh $active={sortCol === "name"} onClick={() => toggleSort("name")}>
+                    <SortThInner>
+                      Summoner
+                      <SortIcon $active={sortCol === "name"} data-active={sortCol === "name" || undefined}>
+                        <SortChevron direction={sortCol === "name" ? sortDir : "desc"} />
+                      </SortIcon>
+                    </SortThInner>
+                  </SortTh>
+                  <SortTh $active={sortCol === "value"} onClick={() => toggleSort("value")} style={{ textAlign: "right" }}>
+                    <SortThInner style={{ justifyContent: "flex-end" }}>
+                      <SortIcon $active={sortCol === "value"} data-active={sortCol === "value" || undefined}>
+                        <SortChevron direction={sortCol === "value" ? sortDir : "desc"} />
+                      </SortIcon>
+                      {cat.title}
+                    </SortThInner>
+                  </SortTh>
+                  {cat.isShare && (
+                    <th style={{ textAlign: "right" }}>%</th>
                   )}
                 </tr>
               </Thead>
               <Tbody>
-                {rows.map((r, i) => {
-                  const isLead = i === 0;
+                {sortedRanked.map((r, i) => {
+                  const naturalRank = ranked.indexOf(r) + 1;
+                  const isLead = naturalRank === 1;
                   const Row = isLead ? LeaderRow : "tr";
+                  const barPct = maxVal > 0 ? (Math.abs(r.value) / maxVal) * 100 : 0;
                   return (
-                    <Row key={r.puuid}>
+                    <Row key={r.stat.player.puuid}>
                       <td>
-                        <RankBadge $color={getLeaderboardColor(i + 1, rows.length)}>{i + 1}</RankBadge>
+                        <RankBadge $color={getLeaderboardColor(naturalRank, ranked.length)}>{i + 1}</RankBadge>
                       </td>
                       <td>
                         <SummonerCell>
                           <SummonerIcon>
-                            {r.profileIconId ? (
+                            {r.stat.player.profileIconId ? (
                               // eslint-disable-next-line @next/next/no-img-element
                               <img
-                                src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${r.profileIconId}.jpg`}
+                                src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${r.stat.player.profileIconId}.jpg`}
                                 alt=""
                                 width={32}
                                 height={32}
@@ -794,21 +1025,26 @@ export default function StatsDrilldownPage() {
                           </SummonerIcon>
                           <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                             <ColorDot color={r.color} patternType={r.patternType} />
-                            <span>{r.gameName}<span style={{ color: theme.semantic.color.textDisabled, fontSize: "0.85em", fontWeight: 400 }}>#{r.tagLine}</span></span>
+                            <SummonerLink href={`/player/${r.stat.player.puuid}`}>
+                              {r.stat.player.gameName}<TagSpan>#{r.stat.player.tagLine}</TagSpan>
+                            </SummonerLink>
                           </span>
                         </SummonerCell>
                       </td>
                       <td style={{ textAlign: "right" }}>
-                        {r.label}
+                        <div>{cat.format(r.value)}</div>
+                        {cat.hasNegative ? (
+                          <BiBarTrack>
+                            <BiBarCenter />
+                            <BiBarFill $pct={barPct} $positive={r.value >= 0} />
+                          </BiBarTrack>
+                        ) : (
+                          <BarTrack><BarFill $pct={barPct} /></BarTrack>
+                        )}
                       </td>
-                      <td style={{ textAlign: "right", color: theme.semantic.color.textMuted, whiteSpace: "nowrap" }}>
-                        {cat.isShare
-                          ? `${total > 0 ? ((r.value / total) * 100).toFixed(1) : "0.0"}%`
-                          : r.label}
-                      </td>
-                      {slug === "playtime" && (
+                      {cat.isShare && (
                         <td style={{ textAlign: "right", color: theme.semantic.color.textMuted, whiteSpace: "nowrap" }}>
-                          {periodSec > 0 ? `${((r.value / periodSec) * 100).toFixed(1)}%` : "—"}
+                          {total > 0 ? `${((r.value / total) * 100).toFixed(1)}%` : "0.0%"}
                         </td>
                       )}
                     </Row>
@@ -817,6 +1053,41 @@ export default function StatsDrilldownPage() {
               </Tbody>
             </Table>
           </ContentGrid>
+        </GlassCard>
+      )}
+
+      {cat?.extraChart && !loading && extraChartRows.length > 0 && (
+        <GlassCard prominent title={cat.extraChart.title(periodLabel)} titleExtra={<DurationPill>{period}</DurationPill>}>
+          <PeriodChartWrap $h={extraChartH}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={extraChartRows} layout="vertical" margin={{ top: 4, right: 64, bottom: 4, left: 0 }}>
+                <CartesianGrid horizontal={false} stroke={CHART.grid} />
+                <XAxis
+                  type="number"
+                  domain={[0, extraChartDomainMax]}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={CHART.tick}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="gameName"
+                  width={96}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={CHART.tick}
+                />
+                <Bar dataKey="chartValue" radius={[0, 4, 4, 0]} isAnimationActive={false} maxBarSize={20} fill={CHART.accent} fillOpacity={0.85}>
+                  <LabelList
+                    dataKey="chartValue"
+                    position="right"
+                    formatter={(v: unknown) => (typeof v === "number" ? cat.extraChart!.formatLabel(v) : "")}
+                    style={{ fontFamily: CHART.tick.fontFamily, fontSize: CHART.tick.fontSize, fill: theme.semantic.color.textMuted }}
+                  />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </PeriodChartWrap>
         </GlassCard>
       )}
     </Page>

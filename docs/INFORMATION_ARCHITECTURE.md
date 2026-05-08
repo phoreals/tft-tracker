@@ -16,16 +16,18 @@
   ├── Seed squad button    (conditional, only when empty)
   └── Tracked player list  Cards with rank, W/L, delete
 
-/superlative/[category]    Superlative Drilldown
+/stats/[category]          Stat Drilldown (6 categories)
   ├── Tab bar (sticky)     Set 17 | Week 1 … Week N
-  ├── Bar chart            Horizontal bars, all players ranked by stat
-  └── Rankings table       #, Summoner, Value + progress bar
+  ├── Category pills       games, playtime, top4-rate, win-rate, highest-lp, best-lp-per-game
+  ├── Chart                Donut (share cats), Gauge (rate cats), or none (LP cats)
+  ├── Rankings table       Sortable: #, Summoner, Value + inline bar, % share
+  └── Period chart         (playtime only) horizontal bar: % of period in TFT
 
 /player/[puuid]            Player Drilldown
   ├── Tab bar (sticky)     "Set 17" | Week 1 … Week N
   ├── Header               Profile icon, name, rank badge with emblem
   ├── Stat cards (6)       Games, Top 4 Rate, Win Rate, Time Played, LP Gain, LP/Game
-  ├── Superlative badges   Pill badges for categories this player leads (links to /)
+  ├── Superlative badges   Pill badges for categories this player leads (links to /stats/)
   ├── Rank over time       Full history line chart, selected week highlighted
   ├── Placement chart      Per-game placement line chart (tab-scoped)
   └── Match history        Scrollable list, newest first
@@ -92,7 +94,7 @@ Active state indicated by:
 |-----|------|-------------|
 | `/` | Weekly Stats | `GET /api/players` (all player data) |
 | `/players` | Manage Players | `GET /api/players` (player list only) |
-| `/superlative/[category]` | Superlative Drilldown | `GET /api/players` (all players, ranked by stat) |
+| `/stats/[category]` | Stat Drilldown | `GET /api/players` (all players, ranked by stat) |
 | `/player/[puuid]` | Player Drilldown | `GET /api/players` (filtered client-side by puuid) |
 
 The Weekly Stats and Manage Players pages fetch the same endpoint. The Player Drilldown page also fetches all players and filters to the one matching the URL `puuid` parameter — there is no per-player endpoint.

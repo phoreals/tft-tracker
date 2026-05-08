@@ -522,7 +522,7 @@ export default function WeeklyStatsPage() {
           ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.title, period: "···", value: "...", player: null }))
           : superlatives
         ).map((s) => (
-          <SuperlativeCardLink key={s.slug} href={`/superlative/${s.slug}?tab=${selectedTab}`}>
+          <SuperlativeCardLink key={s.slug} href={`/stats/${s.slug}?tab=${selectedTab}`}>
             <GlassCard spaceBetween>
               <StatRow>
                 <StatLabel>{s.label}</StatLabel>

@@ -47,9 +47,10 @@ const StickyTabWrap = styled.div<{ $isSticky: boolean }>`
     $isSticky
       ? `0 4px 16px ${theme.semantic.color.accentBgSubtle}`
       : "none"};
-  margin-left: calc(-1 * var(--content-padding));
-  margin-right: calc(-1 * var(--content-padding));
-  padding: ${({ theme }) => theme.primitive.spacing.xs} var(--content-padding);
+  --full-bleed: calc(var(--content-padding) + (100cqw - 100%) / 2);
+  margin-left: calc(-1 * var(--full-bleed));
+  margin-right: calc(-1 * var(--full-bleed));
+  padding: ${({ theme }) => theme.primitive.spacing.xs} var(--full-bleed);
 `;
 
 const TabBar = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`

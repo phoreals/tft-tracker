@@ -1017,7 +1017,7 @@ export default function PlayerDrilldownPage() {
       {playerSuperlatives.length > 0 && (
         <BadgeRow>
           {playerSuperlatives.map((s) => (
-            <BadgeLink key={s.slug} href={`/superlative/${s.slug}`}>
+            <BadgeLink key={s.slug} href={`/stats/${s.slug}`}>
               <BadgeLabel>{s.label}</BadgeLabel>
               <BadgeValue>{s.value}</BadgeValue>
             </BadgeLink>
