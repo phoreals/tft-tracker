@@ -119,7 +119,7 @@ const SortIcon = styled.span<{ $active: boolean }>`
   flex-shrink: 0;
   color: ${({ $active, theme }) =>
     $active ? theme.semantic.color.accent : "currentColor"};
-  opacity: ${({ $active }) => ($active ? 1 : 0)};
+  opacity: ${({ $active }) => ($active ? 1 : 0.3)};
   transition: opacity 0.15s, color 0.15s;
 `;
 

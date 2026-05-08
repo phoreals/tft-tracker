@@ -19,6 +19,7 @@ const Main = styled.main<{ $sidebarOpen: boolean }>`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: clip;
   transition: margin-left 0.3s ease;
 
   @media (min-width: ${({ theme }) => theme.primitive.breakpoint.md}) {

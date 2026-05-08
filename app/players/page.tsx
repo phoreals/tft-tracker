@@ -89,17 +89,13 @@ const Page = styled.div`
 
 const PageTitle = styled.h1`
   ${({ theme }) => theme.semantic.typography.heading};
-  font-size: ${({ theme }) => theme.primitive.fontSize["2xl"]};
+  font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   margin-bottom: ${({ theme }) => theme.primitive.spacing.xs};
   overflow-wrap: break-word;
   word-break: break-word;
 
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
-    font-size: ${({ theme }) => theme.primitive.fontSize["3xl"]};
-  }
-
-  @container content (min-width: ${({ theme }) => theme.primitive.container.lg}) {
     font-size: ${({ theme }) => theme.primitive.fontSize["4xl"]};
   }
 `;

@@ -44,14 +44,19 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { gameName, tagLine } = body as {
-    gameName: string;
-    tagLine: string;
-  };
+  const gameName = typeof body.gameName === "string" ? body.gameName.trim() : "";
+  const tagLine = typeof body.tagLine === "string" ? body.tagLine.trim() : "";
 
   if (!gameName || !tagLine) {
     return NextResponse.json(
       { error: "gameName and tagLine are required" },
+      { status: 400 }
+    );
+  }
+
+  if (gameName.length > 16 || tagLine.length > 5) {
+    return NextResponse.json(
+      { error: "Invalid Riot ID format" },
       { status: 400 }
     );
   }

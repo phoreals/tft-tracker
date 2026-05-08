@@ -268,7 +268,7 @@ const SuperlativeCardLink = styled(Link)`
 
   &:active {
     transform: translateY(0);
-    background: rgba(229, 197, 135, 0.04);
+    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
 
   &:focus-visible {

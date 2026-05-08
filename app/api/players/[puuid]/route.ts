@@ -52,6 +52,9 @@ export async function DELETE(
   { params }: { params: Promise<{ puuid: string }> }
 ) {
   const { puuid } = await params;
+  if (!puuid || puuid.length < 30 || puuid.length > 80) {
+    return NextResponse.json({ error: "Invalid puuid" }, { status: 400 });
+  }
   await removePlayer(puuid);
   return NextResponse.json({ success: true });
 }
