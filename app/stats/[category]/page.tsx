@@ -180,11 +180,7 @@ type DonutPatternType = "solid" | "diag-right" | "horizontal" | "dots" | "diag-l
 
 const DONUT_PATTERN_TYPES: DonutPatternType[] = [
   "solid", "solid", "solid", "solid", "solid",
-  "diag-right",
-  "horizontal",
-  "dots",
-  "diag-left",
-  "crosshatch",
+  "solid", "solid", "solid", "solid", "solid",
 ];
 
 // ── Donut pattern helpers ───────────────────────────────────────
@@ -1159,8 +1155,7 @@ export default function StatsDrilldownPage() {
                       animationDuration={0}
                       content={({ active, payload }) => {
                         if (!active || !payload?.length) return null;
-                        const entry = payload[0];
-                        const row = donutData.find((r) => r.value === entry?.value);
+                        const row = payload[0]?.payload as RankedRow | undefined;
                         if (!row) return null;
                         const pct = total > 0 ? ((row.value / total) * 100).toFixed(1) : "0";
                         return (
@@ -1251,7 +1246,7 @@ export default function StatsDrilldownPage() {
                   return (
                     <Row key={r.stat.player.puuid}>
                       <td>
-                        <RankBadge $color={getLeaderboardColor(naturalRank, ranked.length)}>{i + 1}</RankBadge>
+                        <RankBadge $color={getLeaderboardColor(naturalRank, ranked.length)}>{naturalRank}</RankBadge>
                       </td>
                       <td>
                         <SummonerLink href={`/player/${r.stat.player.puuid}`}>
