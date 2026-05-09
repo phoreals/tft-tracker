@@ -17,7 +17,17 @@
       "Bash(zipinfo /Users/dvu40/test-dev/tft-tracker.zip)",
       "Bash(zip -r tft-tracker.zip tft-tracker --exclude \"tft-tracker/node_modules/*\" --exclude \"tft-tracker/.next/*\")",
       "Bash(npm install:*)",
-      "Bash(zip -r tft-tracker.zip tft-tracker/ --exclude \"tft-tracker/node_modules/*\" --exclude \"tft-tracker/.next/*\")"
+      "Bash(zip -r tft-tracker.zip tft-tracker/ --exclude \"tft-tracker/node_modules/*\" --exclude \"tft-tracker/.next/*\")",
+      "Read(//Users/dvu40/test-dev/**)",
+      "Bash(zip -r /Users/dvu40/tft-tracker.zip tft-tracker -x \"tft-tracker/node_modules/*\" \"tft-tracker/.next/*\" \"tft-tracker/.env*\" \"tft-tracker/.claude/*\")",
+      "Read(//tmp/**)",
+      "Bash(rm:*)",
+      "Bash(cat /Users/dvu40/test-dev/tft-tracker/app/player/[puuid]/page.tsx)",
+      "Bash(rm /Users/dvu40/test-dev/tft-tracker/app/superlative/\\\\[category\\\\]/page.tsx)",
+      "Bash(rmdir /Users/dvu40/test-dev/tft-tracker/app/superlative/\\\\[category\\\\])",
+      "Bash(rm /Users/dvu40/test-dev/tft-tracker-20260508.zip)",
+      "Bash(zip -r /Users/dvu40/test-dev/tft-tracker-20260508.zip . -x \".next/*\" \"node_modules/*\" \".claude/*\")",
+      "Bash(zip -r /Users/dvu40/test-dev/tft-tracker-20260509.zip . -x \".next/*\" \"node_modules/*\" \".claude/*\")"
     ]
   }
 }

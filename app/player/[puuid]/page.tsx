@@ -994,7 +994,7 @@ export default function PlayerDrilldownPage() {
         </StatCardLink>
 
         <StatCardLink href={`/stats/best-lp-per-game?tab=${selectedTab}`}>
-          <GlassCard title="LP / Game" titleExtra={<DurationPill>{period}</DurationPill>}>
+          <GlassCard title="Avg LP Per Game" titleExtra={<DurationPill>{period}</DurationPill>}>
             <StatValue>{lpPerGame !== null ? `${lpPerGame >= 0 ? "+" : ""}${lpPerGame.toFixed(1)} LP/g` : "—"}</StatValue>
           </GlassCard>
         </StatCardLink>

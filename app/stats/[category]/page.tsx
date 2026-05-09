@@ -57,6 +57,7 @@ type ChartMode = "donut" | "gauge" | "none";
 type UnifiedCategory = {
   slug: string;
   title: string;
+  navLabel?: string;
   key: "games" | "time" | "top4Rate" | "winRate" | "lpDiff" | "lpPerGame";
   chartMode: ChartMode;
   isShare: boolean;
@@ -121,19 +122,7 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
     formatTotal: (v) => `${v.toFixed(1)}%`,
     filter: (s) => s.games > 0,
     hasNegative: false,
-    extraChart: {
-      type: "bar",
-      title: () => "Top 4 Rate",
-      getValue: (v) => v,
-      formatLabel: (v) => `${v.toFixed(1)}%`,
-      domainStep: 10,
-      getRefValue: (rows) => {
-        const totalGames = rows.reduce((s, r) => s + r.stat.games, 0);
-        if (totalGames === 0) return null;
-        const weighted = rows.reduce((s, r) => s + r.value * r.stat.games, 0) / totalGames;
-        return { value: parseFloat(weighted.toFixed(1)), label: `${weighted.toFixed(1)}% weighted avg` };
-      },
-    },
+    extraChart: null,
   },
   "win-rate": {
     slug: "win-rate",
@@ -145,19 +134,7 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
     formatTotal: (v) => `${v.toFixed(1)}%`,
     filter: (s) => s.games > 0,
     hasNegative: false,
-    extraChart: {
-      type: "bar",
-      title: () => "Win Rate",
-      getValue: (v) => v,
-      formatLabel: (v) => `${v.toFixed(1)}%`,
-      domainStep: 5,
-      getRefValue: (rows) => {
-        const totalGames = rows.reduce((s, r) => s + r.stat.games, 0);
-        if (totalGames === 0) return null;
-        const weighted = rows.reduce((s, r) => s + r.value * r.stat.games, 0) / totalGames;
-        return { value: parseFloat(weighted.toFixed(1)), label: `${weighted.toFixed(1)}% weighted avg` };
-      },
-    },
+    extraChart: null,
   },
   "highest-lp": {
     slug: "highest-lp",
@@ -173,7 +150,8 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
   },
   "best-lp-per-game": {
     slug: "best-lp-per-game",
-    title: "LP / Game",
+    title: "Avg LP Per Game",
+    navLabel: "LP / Game",
     key: "lpPerGame",
     chartMode: "none",
     isShare: false,
@@ -1127,7 +1105,7 @@ export default function StatsDrilldownPage() {
             href={`/stats/${key}?tab=${selectedTab}`}
             $active={key === slug}
           >
-            {c.title}
+            {c.navLabel ?? c.title}
           </CategoryPill>
         ))}
       </CategoryNav>

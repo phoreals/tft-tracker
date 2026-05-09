@@ -54,7 +54,7 @@ const Title = styled.h3<{ $prominent?: boolean }>`
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     flex-direction: row;
     align-items: center;
-    gap: ${({ theme }) => theme.primitive.spacing.sm};
+    gap: ${({ theme }) => theme.primitive.spacing.xs};
   }
 `;
 
