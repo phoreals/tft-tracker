@@ -98,7 +98,7 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
   },
   "playtime": {
     slug: "playtime",
-    title: "Squad Playtime",
+    title: "Playtime",
     key: "time",
     chartMode: "donut",
     isShare: true,
@@ -113,7 +113,7 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
   },
   "top4-rate": {
     slug: "top4-rate",
-    title: "Avg Top 4 Rate",
+    title: "Top 4 Rate",
     key: "top4Rate",
     chartMode: "gauge",
     isShare: false,
@@ -137,7 +137,7 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
   },
   "win-rate": {
     slug: "win-rate",
-    title: "Squad Win Rate",
+    title: "Win Rate",
     key: "winRate",
     chartMode: "gauge",
     isShare: false,
@@ -161,7 +161,7 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
   },
   "highest-lp": {
     slug: "highest-lp",
-    title: "Highest LP Gain",
+    title: "LP Gain",
     key: "lpDiff",
     chartMode: "none",
     isShare: false,
@@ -173,7 +173,7 @@ const UNIFIED_CATEGORIES: Record<string, UnifiedCategory> = {
   },
   "best-lp-per-game": {
     slug: "best-lp-per-game",
-    title: "Most Efficient Climb",
+    title: "LP / Game",
     key: "lpPerGame",
     chartMode: "none",
     isShare: false,
@@ -439,9 +439,11 @@ const GaugeToggle = styled.button<{ $active: boolean }>`
   cursor: pointer;
   transition: all 0.15s;
 
-  &:hover {
-    border-color: ${({ theme }) => theme.semantic.color.borderHover};
-    color: ${({ theme }) => theme.semantic.color.textPrimary};
+  @media (hover: hover) {
+    &:hover {
+      border-color: ${({ theme }) => theme.semantic.color.borderHover};
+      color: ${({ theme }) => theme.semantic.color.textPrimary};
+    }
   }
 `;
 
@@ -492,7 +494,7 @@ const GaugeRefLabel = styled.span`
 // ── Table styled ────────────────────────────────────────────────
 
 const Table = styled.table`
-  width: 100%;
+  min-width: 100%;
   border-collapse: collapse;
 `;
 
@@ -507,6 +509,9 @@ const Thead = styled.thead`
   }
   th:first-child {
     padding-left: ${({ theme }) => theme.primitive.spacing.xs};
+    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
+  }
+  th:last-child {
     padding-right: ${({ theme }) => theme.primitive.spacing.xs};
   }
 `;
@@ -583,9 +588,13 @@ const Tbody = styled.tbody`
     font-family: ${({ theme }) => theme.semantic.font.display};
     font-size: ${({ theme }) => theme.primitive.fontSize.sm};
     color: ${({ theme }) => theme.semantic.color.textPrimary};
+    white-space: nowrap;
   }
   td:first-child {
     padding-left: ${({ theme }) => theme.primitive.spacing.xs};
+    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
+  }
+  td:last-child {
     padding-right: ${({ theme }) => theme.primitive.spacing.xs};
   }
 `;
@@ -611,9 +620,10 @@ const SummonerIcon = styled.div`
 `;
 
 const SummonerLink = styled(Link)`
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
+  width: fit-content;
   text-decoration: none;
   color: ${({ theme }) => theme.semantic.color.textPrimary};
   transition: color 0.15s, background 0.15s;
@@ -700,46 +710,29 @@ const LoadingText = styled.p`
   padding: ${({ theme }) => theme.primitive.spacing.xl} 0;
 `;
 
-const CategoryNavWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
-  position: relative;
-
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 48px;
-    z-index: 1;
-    pointer-events: none;
-    transition: opacity 0.15s;
-  }
-
-  &::before {
-    left: 0;
-    background: linear-gradient(to right, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
-    opacity: ${({ $fadeLeft }) => ($fadeLeft ? 1 : 0)};
-  }
-
-  &::after {
-    right: 0;
-    background: linear-gradient(to left, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
-    opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
-  }
-
-  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
-    &::before,
-    &::after {
-      display: none;
-    }
-  }
-`;
-
-const CategoryNav = styled.nav`
+const CategoryNav = styled.nav<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   display: flex;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   overflow-x: auto;
   flex-wrap: nowrap;
+  mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+    if ($fadeLeft)
+      return "linear-gradient(to right, transparent, black 48px)";
+    if ($fadeRight)
+      return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+    return "none";
+  }};
+  -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+    if ($fadeLeft)
+      return "linear-gradient(to right, transparent, black 48px)";
+    if ($fadeRight)
+      return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+    return "none";
+  }};
 
   &::-webkit-scrollbar {
     height: 0;
@@ -748,6 +741,8 @@ const CategoryNav = styled.nav`
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     flex-wrap: wrap;
     overflow-x: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
   }
 `;
 
@@ -790,36 +785,26 @@ const CategoryPill = styled(Link)<{ $active: boolean }>`
   }
 `;
 
-const TableFade = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
-  position: relative;
-
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 3px;
-    width: 48px;
-    z-index: 1;
-    pointer-events: none;
-    transition: opacity 0.15s;
-  }
-
-  &::before {
-    left: 0;
-    background: linear-gradient(to right, ${({ theme }) => theme.component.glassCard.bg}, transparent);
-    opacity: ${({ $fadeLeft }) => ($fadeLeft ? 1 : 0)};
-  }
-
-  &::after {
-    right: 0;
-    background: linear-gradient(to left, ${({ theme }) => theme.component.glassCard.bg}, transparent);
-    opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
-  }
-`;
-
-const TableWrap = styled.div`
+const TableWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   overflow-x: auto;
+  mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+    if ($fadeLeft)
+      return "linear-gradient(to right, transparent, black 48px)";
+    if ($fadeRight)
+      return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+    return "none";
+  }};
+  -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+    if ($fadeLeft)
+      return "linear-gradient(to right, transparent, black 48px)";
+    if ($fadeRight)
+      return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+    return "none";
+  }};
 
   &::-webkit-scrollbar {
     height: 3px;
@@ -1135,8 +1120,7 @@ export default function StatsDrilldownPage() {
 
       <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 
-      <CategoryNavWrap $fadeLeft={catFadeLeft} $fadeRight={catFadeRight}>
-      <CategoryNav ref={catNavRef} aria-label="Stat categories">
+      <CategoryNav ref={catNavRef} aria-label="Stat categories" $fadeLeft={catFadeLeft} $fadeRight={catFadeRight}>
         {Object.entries(UNIFIED_CATEGORIES).map(([key, c]) => (
           <CategoryPill
             key={key}
@@ -1147,7 +1131,6 @@ export default function StatsDrilldownPage() {
           </CategoryPill>
         ))}
       </CategoryNav>
-      </CategoryNavWrap>
 
       {loading ? (
         <LoadingText>Loading...</LoadingText>
@@ -1255,8 +1238,7 @@ export default function StatsDrilldownPage() {
             )}
 
             {/* Ranked table */}
-            <TableFade $fadeLeft={tableFadeLeft} $fadeRight={tableFadeRight}>
-            <TableWrap ref={tableWrapRef}>
+            <TableWrap ref={tableWrapRef} $fadeLeft={tableFadeLeft} $fadeRight={tableFadeRight}>
             <Table>
               <Thead>
                 <tr>
@@ -1335,7 +1317,6 @@ export default function StatsDrilldownPage() {
               </Tbody>
             </Table>
             </TableWrap>
-            </TableFade>
           </ContentGrid>
         </GlassCard>
       )}

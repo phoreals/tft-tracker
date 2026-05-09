@@ -240,12 +240,12 @@ export type SuperlativeCategory = {
 };
 
 export const SUPERLATIVE_CATEGORIES: SuperlativeCategory[] = [
-  { slug: "games",            title: "Most Games",           label: (s, w) => s ? `Most Games ${SET_LABEL}` : `Most Games ${w ? `Week ${w}` : "This Week"}`,                        key: "games",     format: (v) => String(v),                                      filter: (s) => s.games > 0 },
-  { slug: "top4-rate",        title: "Best Top 4%",          label: (s, w) => s ? `Best Top 4% ${SET_LABEL}` : `Best Top 4% ${w ? `Week ${w}` : "This Week"}`,                 key: "top4Rate",  format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
-  { slug: "win-rate",         title: "Best Win Rate (1st)",  label: (s, w) => s ? `Best Win Rate (1st) ${SET_LABEL}` : `Best Win Rate (1st) ${w ? `Week ${w}` : "This Week"}`,  key: "winRate",   format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
-  { slug: "playtime",         title: "Most Time Played",     label: (s, w) => s ? `Most Time Played ${SET_LABEL}` : `Most Time Played ${w ? `Week ${w}` : "This Week"}`,       key: "time",      format: (v) => formatPlaytime(v),                              filter: (s) => s.time > 0 },
-  { slug: "highest-lp",       title: "Highest LP Gain",      label: (s, w) => s ? `Highest LP Gain ${SET_LABEL}` : `Highest LP Gain ${w ? `Week ${w}` : "This Week"}`,         key: "lpDiff",    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,                  filter: (s) => s.lpDiff !== null },
-  { slug: "best-lp-per-game", title: "Most Efficient Climb", label: (s, w) => s ? `Most Efficient Climb ${SET_LABEL}` : `Most Efficient Climb ${w ? `Week ${w}` : "This Week"}`, key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },
+  { slug: "games",            title: "Most Games",      label: (s, w) => s ? `Most Games ${SET_LABEL}` : `Most Games ${w ? `Week ${w}` : "This Week"}`,           key: "games",     format: (v) => String(v),                                      filter: (s) => s.games > 0 },
+  { slug: "top4-rate",        title: "Best Top 4 Rate", label: (s, w) => s ? `Best Top 4 Rate ${SET_LABEL}` : `Best Top 4 Rate ${w ? `Week ${w}` : "This Week"}`,     key: "top4Rate",  format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
+  { slug: "win-rate",         title: "Best Win Rate",   label: (s, w) => s ? `Best Win Rate ${SET_LABEL}` : `Best Win Rate ${w ? `Week ${w}` : "This Week"}`,         key: "winRate",   format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
+  { slug: "playtime",         title: "Most Playtime",   label: (s, w) => s ? `Most Playtime ${SET_LABEL}` : `Most Playtime ${w ? `Week ${w}` : "This Week"}`,         key: "time",      format: (v) => formatPlaytime(v),                              filter: (s) => s.time > 0 },
+  { slug: "highest-lp",       title: "Most LP Gained",  label: (s, w) => s ? `Most LP Gained ${SET_LABEL}` : `Most LP Gained ${w ? `Week ${w}` : "This Week"}`,       key: "lpDiff",    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,                  filter: (s) => s.lpDiff !== null },
+  { slug: "best-lp-per-game", title: "Best LP / Game",  label: (s, w) => s ? `Best LP / Game ${SET_LABEL}` : `Best LP / Game ${w ? `Week ${w}` : "This Week"}`,       key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },
 ];
 
 export function findLeader(stats: PlayerStat[], cat: SuperlativeCategory): PlayerStat | null {

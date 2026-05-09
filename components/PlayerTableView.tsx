@@ -14,53 +14,38 @@ import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
 // ── Styled ───────────────────────────────────────────────────────
 
-/* Outer: positions fade overlays above the scroll content but not the scrollbar. */
-const TableFade = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
+const TableWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
+  overflow-x: auto;
   margin-left: -${({ theme }) => theme.primitive.spacing.md};
   margin-right: -${({ theme }) => theme.primitive.spacing.md};
-  position: relative;
-
-  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
-    margin-left: -${({ theme }) => theme.primitive.spacing.lg};
-    margin-right: -${({ theme }) => theme.primitive.spacing.lg};
-  }
-
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    /* Stop above the scrollbar (3px track) */
-    bottom: 3px;
-    width: 48px;
-    z-index: 1;
-    pointer-events: none;
-    transition: opacity 0.15s;
-  }
-
-  &::before {
-    left: 0;
-    background: linear-gradient(to right, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
-    opacity: ${({ $fadeLeft }) => ($fadeLeft ? 1 : 0)};
-  }
-
-  &::after {
-    right: 0;
-    background: linear-gradient(to left, ${({ theme }) => theme.semantic.color.bgPrimary}, transparent);
-    opacity: ${({ $fadeRight }) => ($fadeRight ? 1 : 0)};
-  }
-`;
-
-/* Inner: scrollable container with hidden scrollbar that appears on hover. */
-const TableWrap = styled.div`
-  overflow-x: auto;
   padding-left: ${({ theme }) => theme.primitive.spacing.md};
   padding-right: ${({ theme }) => theme.primitive.spacing.md};
 
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
+    margin-left: -${({ theme }) => theme.primitive.spacing.lg};
+    margin-right: -${({ theme }) => theme.primitive.spacing.lg};
     padding-left: ${({ theme }) => theme.primitive.spacing.lg};
     padding-right: ${({ theme }) => theme.primitive.spacing.lg};
   }
+
+  mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+    if ($fadeLeft)
+      return "linear-gradient(to right, transparent, black 48px)";
+    if ($fadeRight)
+      return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+    return "none";
+  }};
+  -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 48px, black calc(100% - 48px), transparent 100%)";
+    if ($fadeLeft)
+      return "linear-gradient(to right, transparent, black 48px)";
+    if ($fadeRight)
+      return "linear-gradient(to right, black calc(100% - 48px), transparent 100%)";
+    return "none";
+  }};
 
   &::-webkit-scrollbar {
     height: 3px;
@@ -73,7 +58,6 @@ const TableWrap = styled.div`
     background: ${({ theme }) => theme.semantic.color.borderDefault};
   }
 
-  /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
   &:hover {
@@ -108,6 +92,12 @@ const Thead = styled.thead`
       padding: ${({ theme }) => theme.primitive.spacing.md} ${({ theme }) => theme.primitive.spacing.lg};
       font-size: ${({ theme }) => theme.primitive.fontSize.sm};
     }
+  }
+  th:first-child {
+    padding-left: ${({ theme }) => theme.primitive.spacing.xs};
+  }
+  th:last-child {
+    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
   }
 `;
 
@@ -176,6 +166,12 @@ const Tbody = styled.tbody`
     @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
       padding: 20px ${({ theme }) => theme.primitive.spacing.lg};
     }
+  }
+  td:first-child {
+    padding-left: ${({ theme }) => theme.primitive.spacing.xs};
+  }
+  td:last-child {
+    padding-right: ${({ theme }) => theme.primitive.spacing.xs};
   }
 `;
 
@@ -339,8 +335,7 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
   };
 
   return (
-    <TableFade $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
-    <TableWrap ref={wrapRef}>
+    <TableWrap ref={wrapRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight}>
       <Table>
         <Thead>
           <tr>
@@ -411,6 +406,5 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
         </Tbody>
       </Table>
     </TableWrap>
-    </TableFade>
   );
 }

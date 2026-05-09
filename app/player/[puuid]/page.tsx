@@ -232,6 +232,32 @@ const RankBadge = styled.div<{ $color: string }>`
 
 // ── Stats styled components ───────────────────────────────────────
 
+const StatCardLink = styled(Link)`
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  border-radius: ${({ theme }) => theme.component.glassCard.radius};
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px ${({ theme }) => theme.semantic.color.accentBgSubtle};
+    }
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: 2px;
+  }
+
+  & > * { width: 100%; }
+`;
+
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -305,24 +331,10 @@ const CardSuperlativeLink = styled(Link)`
   }
 `;
 
-const StatRow = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
-`;
-
-const StatLabel = styled.span`
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  color: ${({ theme }) => theme.semantic.color.textMuted};
-`;
-
-
 
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xl};
+  font-size: clamp(20px, 4vw, ${({ theme }) => theme.primitive.fontSize["3xl"]});
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
@@ -951,53 +963,41 @@ export default function PlayerDrilldownPage() {
       <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
 
       <StatsGrid>
-        <GlassCard>
-          <StatRow>
-            <StatLabel>Games</StatLabel>
-            <DurationPill>{period}</DurationPill>
-          </StatRow>
-          <StatValue>{totalGames}</StatValue>
-        </GlassCard>
+        <StatCardLink href={`/stats/games?tab=${selectedTab}`}>
+          <GlassCard title="Games" titleExtra={<DurationPill>{period}</DurationPill>}>
+            <StatValue>{totalGames}</StatValue>
+          </GlassCard>
+        </StatCardLink>
 
-        <GlassCard>
-          <StatRow>
-            <StatLabel>Top 4 Rate</StatLabel>
-            <DurationPill>{period}</DurationPill>
-          </StatRow>
-          <StatValue>{percentOf(top4, totalGames)}%<StatCount>({top4})</StatCount></StatValue>
-        </GlassCard>
+        <StatCardLink href={`/stats/top4-rate?tab=${selectedTab}`}>
+          <GlassCard title="Top 4 Rate" titleExtra={<DurationPill>{period}</DurationPill>}>
+            <StatValue>{percentOf(top4, totalGames)}%<StatCount>({top4})</StatCount></StatValue>
+          </GlassCard>
+        </StatCardLink>
 
-        <GlassCard>
-          <StatRow>
-            <StatLabel>Win Rate</StatLabel>
-            <DurationPill>{period}</DurationPill>
-          </StatRow>
-          <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
-        </GlassCard>
+        <StatCardLink href={`/stats/win-rate?tab=${selectedTab}`}>
+          <GlassCard title="Win Rate" titleExtra={<DurationPill>{period}</DurationPill>}>
+            <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
+          </GlassCard>
+        </StatCardLink>
 
-        <GlassCard>
-          <StatRow>
-            <StatLabel>Time Played</StatLabel>
-            <DurationPill>{period}</DurationPill>
-          </StatRow>
-          <StatValue><PlaytimeDisplay seconds={totalDuration} variant="full" /></StatValue>
-        </GlassCard>
+        <StatCardLink href={`/stats/playtime?tab=${selectedTab}`}>
+          <GlassCard title="Time Played" titleExtra={<DurationPill>{period}</DurationPill>}>
+            <StatValue><PlaytimeDisplay seconds={totalDuration} variant="full" /></StatValue>
+          </GlassCard>
+        </StatCardLink>
 
-        <GlassCard>
-          <StatRow>
-            <StatLabel>LP Gain</StatLabel>
-            <DurationPill>{period}</DurationPill>
-          </StatRow>
-          <StatValue>{lpDiff !== null ? `${lpDiff >= 0 ? "+" : ""}${lpDiff} LP` : "—"}</StatValue>
-        </GlassCard>
+        <StatCardLink href={`/stats/highest-lp?tab=${selectedTab}`}>
+          <GlassCard title="LP Gain" titleExtra={<DurationPill>{period}</DurationPill>}>
+            <StatValue>{lpDiff !== null ? `${lpDiff >= 0 ? "+" : ""}${lpDiff} LP` : "—"}</StatValue>
+          </GlassCard>
+        </StatCardLink>
 
-        <GlassCard>
-          <StatRow>
-            <StatLabel>LP / Game</StatLabel>
-            <DurationPill>{period}</DurationPill>
-          </StatRow>
-          <StatValue>{lpPerGame !== null ? `${lpPerGame >= 0 ? "+" : ""}${lpPerGame.toFixed(1)} LP/g` : "—"}</StatValue>
-        </GlassCard>
+        <StatCardLink href={`/stats/best-lp-per-game?tab=${selectedTab}`}>
+          <GlassCard title="LP / Game" titleExtra={<DurationPill>{period}</DurationPill>}>
+            <StatValue>{lpPerGame !== null ? `${lpPerGame >= 0 ? "+" : ""}${lpPerGame.toFixed(1)} LP/g` : "—"}</StatValue>
+          </GlassCard>
+        </StatCardLink>
       </StatsGrid>
 
       {playerSuperlatives.length > 0 && (

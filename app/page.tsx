@@ -131,19 +131,6 @@ const StatsGrid = styled.div`
   }
 `;
 
-const StatRow = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
-`;
-
-const StatLabel = styled.span`
-  ${({ theme }) => theme.semantic.typography.label};
-  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
-  color: ${({ theme }) => theme.semantic.color.textMuted};
-`;
 
 
 const NoDataLabel = styled.span`
@@ -158,7 +145,7 @@ const NoDataLabel = styled.span`
 
 const StatValue = styled.span`
   font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: clamp(${({ theme }) => theme.primitive.fontSize.lg}, 4vw, ${({ theme }) => theme.primitive.fontSize["3xl"]});
+  font-size: clamp(20px, 4vw, ${({ theme }) => theme.primitive.fontSize["3xl"]});
   font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
   color: ${({ theme }) => theme.semantic.color.textPrimary};
 `;
@@ -523,11 +510,7 @@ export default function WeeklyStatsPage() {
           : superlatives
         ).map((s) => (
           <SuperlativeCardLink key={s.slug} href={`/stats/${s.slug}?tab=${selectedTab}`}>
-            <GlassCard spaceBetween>
-              <StatRow>
-                <StatLabel>{s.label}</StatLabel>
-                <DurationPill>{s.period}</DurationPill>
-              </StatRow>
+            <GlassCard spaceBetween title={s.label} titleExtra={<DurationPill>{s.period}</DurationPill>}>
               <StatValue>{renderStatValue(s.value)}</StatValue>
               {s.player ? (
                 <PlayerChip href={`/player/${s.player.puuid}`} title={`${s.player.gameName}#${s.player.tagLine}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
@@ -581,31 +564,19 @@ export default function WeeklyStatsPage() {
 
       <StatsGrid>
         <SuperlativeCardLink href={`/stats/games?tab=${selectedTab}`}>
-          <GlassCard>
-            <StatRow>
-              <StatLabel>Games</StatLabel>
-              <DurationPill>{loading ? "···" : period}</DurationPill>
-            </StatRow>
+          <GlassCard title="Squad Games" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
           </GlassCard>
         </SuperlativeCardLink>
 
         <SuperlativeCardLink href={`/stats/playtime?tab=${selectedTab}`}>
-          <GlassCard>
-            <StatRow>
-              <StatLabel>Squad Playtime</StatLabel>
-              <DurationPill>{loading ? "···" : period}</DurationPill>
-            </StatRow>
+          <GlassCard title="Squad Playtime" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>{loading ? "..." : <PlaytimeDisplay seconds={summaryStats.playtime} variant="full" />}</StatValue>
           </GlassCard>
         </SuperlativeCardLink>
 
         <SuperlativeCardLink href={`/stats/top4-rate?tab=${selectedTab}`}>
-          <GlassCard>
-            <StatRow>
-              <StatLabel>Avg Top 4 Rate</StatLabel>
-              <DurationPill>{loading ? "···" : period}</DurationPill>
-            </StatRow>
+          <GlassCard title="Squad Top 4 Rate" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>
               {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.top4 / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}
             </StatValue>
@@ -613,11 +584,7 @@ export default function WeeklyStatsPage() {
         </SuperlativeCardLink>
 
         <SuperlativeCardLink href={`/stats/win-rate?tab=${selectedTab}`}>
-          <GlassCard>
-            <StatRow>
-              <StatLabel>Squad Win Rate</StatLabel>
-              <DurationPill>{loading ? "···" : period}</DurationPill>
-            </StatRow>
+          <GlassCard title="Squad Win Rate" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>
               {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.firsts / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}
             </StatValue>

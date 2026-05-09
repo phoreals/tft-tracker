@@ -36,11 +36,11 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 | Card | Metric |
 |------|--------|
 | **Most Games** | Highest scoped game count |
-| **Best Top 4%** | Highest top-4 rate (min 1 game) |
-| **Best Win Rate (1st)** | Highest % of 1st-place finishes |
-| **Most Time Played** | Highest scoped playtime |
-| **Highest LP Gain** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
-| **Most Efficient Climb** | Highest LP gain per game played |
+| **Best Top 4 Rate** | Highest top-4 rate (min 1 game) |
+| **Best Win Rate** | Highest % of 1st-place finishes |
+| **Most Playtime** | Highest scoped playtime |
+| **Most LP Gained** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
+| **Best LP / Game** | Highest LP gain per game played |
 
 Each card has a **duration pill** in the top-right of its header showing the active time window — "Set 17" (gold accent pill) or "Week N". The card label is the category name only (e.g. "Most Games"); the period is communicated by the pill alone.
 
@@ -60,9 +60,9 @@ Four `GlassCard` components show aggregate metrics for the **currently selected 
 
 | Card | "Set 17" | Week tab | Drilldown |
 |------|-----------|---------|-----------|
-| **Games** | Total games for the full set | Games for the selected week | `/stats/games` |
+| **Squad Games** | Total games for the full set | Games for the selected week | `/stats/games` |
 | **Squad Playtime** | Total playtime for the full set | Playtime for the selected week | `/stats/playtime` |
-| **Avg Top 4 Rate** | Top-4 rate for the full set | Top-4 rate for the selected week | `/stats/top4-rate` |
+| **Squad Top 4 Rate** | Top-4 rate for the full set | Top-4 rate for the selected week | `/stats/top4-rate` |
 | **Squad Win Rate** | 1st-place rate for the full set | 1st-place rate for the selected week | `/stats/win-rate` |
 
 ## Stat Drilldown (`/stats/[category]`)
@@ -87,7 +87,11 @@ Single-column stacked layout. Chart section (when present) sits above the sortab
 **Donut interaction**: hovering a donut segment expands it outward by 6px with a dark gap stroke. Tooltip snaps instantly between segments (no animation).
 
 ### Ranked Table
-Columns: Rank (#), Summoner (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). Share categories (games, playtime) also show a % share column. The leader's row has a subtle gold background highlight. Rank badges use `getLeaderboardColor` gradient (gold→slate). Badge colors reflect natural rank (by value), not display order.
+Columns: Rank (#), Summoner chip (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). Share categories (games, playtime) also show a % share column. The leader's row has a subtle gold background highlight. Rank badges use `getLeaderboardColor` gradient (gold→slate). Badge colors reflect natural rank (by value), not display order.
+
+**Summoner chip**: the entire summoner cell (icon + colour dot + name) is wrapped in a link with chip-style hover highlight (gold tinted background, 8px horizontal padding). Width is `fit-content` so the highlight hugs the content.
+
+**Table padding**: first and last columns have 8px horizontal padding. The table uses `min-width: 100%` so it overflows on narrow screens, triggering horizontal scroll with `mask-image` fade indicators. The row hover background fills the full row width, giving 8px of breathing room from the content on each side.
 
 **Sorting**: the Summoner and Value column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. Default: value descending.
 

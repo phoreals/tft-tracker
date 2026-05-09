@@ -90,6 +90,8 @@ border: 1px solid rgba(229, 197, 135, 0.1);  /* subtle gold border */
 
 `GlassCard` uses a semi-transparent background (`bgCard`) with border and inset shadow but **no** `backdrop-filter` — the body background is nearly solid, so blur has no visible effect. Omitting it avoids creating a stacking context that would block `backdrop-filter` on child elements (e.g. chart tooltips).
 
+`GlassCard` has a `prominent` variant used for cards that contain charts and ranked tables (the main drilldown content cards). Prominent cards differ from regular cards in three ways: title is `textPrimary` colour (white) instead of `textMuted`, font size is `base` (16px) instead of `sm` (12px), and vertical padding is one tier larger. The title + DurationPill tag stay on one row on all screen sizes for prominent cards; non-prominent cards stack the tag below the title on mobile.
+
 The sticky tab bar uses a lighter variant — no background color, `backdrop-filter: blur(standard)` (16px) only when sticky, a gold `border-bottom`, and a subtle glow. This lets page content show through while remaining visually distinct.
 
 All blur values come from the semantic blur token scale: `subtle` (12px), `standard` (16px), `card` (24px), `heavy` (48px). Both `-webkit-backdrop-filter` and `backdrop-filter` are always set for Safari compatibility.

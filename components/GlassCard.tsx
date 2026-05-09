@@ -5,11 +5,14 @@ import styled from "styled-components";
 import { motion } from "motion/react";
 import { ICON_SIZE } from "@/styles/theme";
 
-const Card = styled(motion.div)<{ $spaceBetween?: boolean }>`
+const Card = styled(motion.div)<{ $spaceBetween?: boolean; $prominent?: boolean }>`
   background: ${({ theme }) => theme.component.glassCard.bg};
   border: 1px solid ${({ theme }) => theme.component.glassCard.border};
   border-radius: ${({ theme }) => theme.component.glassCard.radius};
-  padding: ${({ theme }) => theme.primitive.spacing.sm};
+  padding: ${({ $prominent, theme }) =>
+    $prominent
+      ? `${theme.primitive.spacing.md} ${theme.primitive.spacing.sm}`
+      : theme.primitive.spacing.sm};
   box-shadow: ${({ theme }) => theme.component.glassCard.shadow};
   display: flex;
   flex-direction: column;
@@ -19,7 +22,10 @@ const Card = styled(motion.div)<{ $spaceBetween?: boolean }>`
   overflow: hidden;
 
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
-    padding: ${({ theme }) => theme.component.glassCard.padding};
+    padding: ${({ $prominent, theme }) =>
+      $prominent
+        ? `${theme.primitive.spacing.lg} ${theme.component.glassCard.padding}`
+        : theme.component.glassCard.padding};
     gap: ${({ theme }) => theme.primitive.spacing.lg};
   }
 `;
@@ -35,13 +41,21 @@ const Header = styled.div`
 const Title = styled.h3<{ $prominent?: boolean }>`
   ${({ theme }) => theme.semantic.typography.label};
   font-size: ${({ $prominent, theme }) =>
-    $prominent ? theme.primitive.fontSize.md : theme.primitive.fontSize.sm};
-  color: ${({ theme }) => theme.semantic.color.textPrimary};
+    $prominent ? theme.primitive.fontSize.base : theme.primitive.fontSize.sm};
+  color: ${({ $prominent, theme }) =>
+    $prominent ? theme.semantic.color.textPrimary : theme.semantic.color.textMuted};
   display: flex;
-  align-items: center;
+  flex-direction: ${({ $prominent }) => $prominent ? "row" : "column"};
+  align-items: ${({ $prominent }) => $prominent ? "center" : "flex-start"};
   gap: ${({ theme }) => theme.primitive.spacing.xs};
   min-width: 0;
   flex: 1;
+
+  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
+    flex-direction: row;
+    align-items: center;
+    gap: ${({ theme }) => theme.primitive.spacing.sm};
+  }
 `;
 
 const IconWrapper = styled.span`
@@ -76,6 +90,7 @@ export function GlassCard({
   return (
     <Card
       $spaceBetween={spaceBetween}
+      $prominent={prominent}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}

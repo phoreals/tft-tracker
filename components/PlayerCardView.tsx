@@ -27,7 +27,7 @@ const Card = styled(Link)`
   flex-direction: column;
   gap: ${({ theme }) => theme.primitive.spacing.sm};
   padding: ${({ theme }) => theme.primitive.spacing.xs};
-  background: ${({ theme }) => theme.semantic.color.borderDim};
+  background: rgba(255, 255, 255, 0.02);
 
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     padding: ${({ theme }) => theme.primitive.spacing.md};
@@ -35,6 +35,7 @@ const Card = styled(Link)`
   border: 1px solid ${({ theme }) => theme.semantic.color.borderDefault};
   border-radius: ${({ theme }) => theme.semantic.radius.control};
   text-decoration: none;
+  box-shadow: 0 0 12px rgba(229, 197, 135, 0.08);
   transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 
   &:hover {

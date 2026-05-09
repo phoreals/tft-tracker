@@ -147,7 +147,7 @@ export const semantic = {
 
   shadow: {
     glassInset: "inset 0 0 20px rgba(229, 197, 135, 0.05)",
-    glowGold: "0 0 15px rgba(229, 197, 135, 0.15)",
+    glowGold: "0 0 20px rgba(229, 197, 135, 0.25)",
     glowCyan: "0 0 15px rgba(0, 251, 251, 0.15)",
     buttonGold: "0 10px 15px -3px rgba(229, 197, 135, 0.1)",
   },
