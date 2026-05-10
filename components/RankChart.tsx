@@ -684,7 +684,9 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                     }
                   : { r: 2.5, fill: color, strokeWidth: 0 };
                 const lineStyle = animating
-                  ? { strokeDasharray: `${pLen}`, strokeDashoffset: `${pLen * (1 - linesProg)}` }
+                  ? pLen > 0
+                    ? { strokeDasharray: `${pLen}`, strokeDashoffset: `${pLen * (1 - linesProg)}` }
+                    : { strokeDasharray: "0 99999" }
                   : undefined;
                 return (
                   <Line
