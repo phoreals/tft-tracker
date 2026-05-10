@@ -667,7 +667,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                 const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
                 const strokeW = anyHovered ? (isHovered ? 2.5 : 1) : 2;
                 const pLen = pathLengths.current[visIdx] ?? 0;
-                const animating = linesProg < 1 && pLen > 0;
+                const animating = linesProg < 1;
                 const dotProp = animating
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ? (props: any) => {
