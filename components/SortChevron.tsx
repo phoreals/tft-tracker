@@ -31,13 +31,19 @@ export function SortChevron({ direction, variant = "numeric", size = 9 }: SortCh
   };
 
   if (variant === "alpha") {
-    // Stacked "A" over "Z" for asc (A→Z), "Z" over "A" for desc (Z→A).
-    const top = direction === "desc" ? "Z" : "A";
-    const bottom = direction === "desc" ? "A" : "Z";
+    // "AZ" side by side + arrow between: A↓Z for desc, A↑Z for asc.
+    const aw = Math.round(size * 2);
+    const ah = size;
+    const arrowPath = direction === "asc"
+      ? "M8.5,7 L8.5,2 L7,3.5 M8.5,2 L10,3.5"
+      : "M8.5,2 L8.5,7 L7,5.5 M8.5,7 L10,5.5";
     return (
-      <svg width={w} height={h} viewBox="0 0 6 9" display="block" fill="currentColor" stroke="none">
-        <text x="3" y="3.8" fontSize="4" fontWeight="700" fontFamily="Space Grotesk, sans-serif" textAnchor="middle">{top}</text>
-        <text x="3" y="8.2" fontSize="4" fontWeight="700" fontFamily="Space Grotesk, sans-serif" textAnchor="middle">{bottom}</text>
+      <svg width={aw} height={ah} viewBox="0 0 17 9" display="block" fill="currentColor" stroke="none">
+        <text x="0" y="7.5" fontSize="7.5" fontWeight="700" fontFamily="Space Grotesk, sans-serif">A</text>
+        <g fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
+          <path d={arrowPath} />
+        </g>
+        <text x="11.5" y="7.5" fontSize="7.5" fontWeight="700" fontFamily="Space Grotesk, sans-serif">Z</text>
       </svg>
     );
   }
