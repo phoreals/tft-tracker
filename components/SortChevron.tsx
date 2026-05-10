@@ -11,11 +11,10 @@ import React from "react";
 
 interface SortChevronProps {
   direction: "asc" | "desc" | "none";
-  variant?: "numeric" | "alpha";
   size?: number;
 }
 
-export function SortChevron({ direction, variant = "numeric", size = 9 }: SortChevronProps) {
+export function SortChevron({ direction, size = 9 }: SortChevronProps) {
   const h = size;
   const w = Math.round(size * 0.67);
 
@@ -29,24 +28,6 @@ export function SortChevron({ direction, variant = "numeric", size = 9 }: SortCh
     strokeLinejoin: "miter" as const,
     display: "block" as const,
   };
-
-  if (variant === "alpha") {
-    // "AZ" side by side + arrow between: A↓Z for desc, A↑Z for asc.
-    const aw = Math.round(size * 2);
-    const ah = size;
-    const arrowPath = direction === "asc"
-      ? "M8.5,7 L8.5,2 L7,3.5 M8.5,2 L10,3.5"
-      : "M8.5,2 L8.5,7 L7,5.5 M8.5,7 L10,5.5";
-    return (
-      <svg width={aw} height={ah} viewBox="0 0 17 9" display="block" fill="currentColor" stroke="none">
-        <text x="0" y="7.5" fontSize="7.5" fontWeight="700" fontFamily="Space Grotesk, sans-serif">A</text>
-        <g fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">
-          <path d={arrowPath} />
-        </g>
-        <text x="11.5" y="7.5" fontSize="7.5" fontWeight="700" fontFamily="Space Grotesk, sans-serif">Z</text>
-      </svg>
-    );
-  }
 
   if (direction === "asc") {
     // Arrowhead at top, stem runs to bottom.
