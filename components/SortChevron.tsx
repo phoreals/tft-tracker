@@ -11,10 +11,11 @@ import React from "react";
 
 interface SortChevronProps {
   direction: "asc" | "desc" | "none";
+  variant?: "numeric" | "alpha";
   size?: number;
 }
 
-export function SortChevron({ direction, size = 9 }: SortChevronProps) {
+export function SortChevron({ direction, variant = "numeric", size = 9 }: SortChevronProps) {
   const h = size;
   const w = Math.round(size * 0.67);
 
@@ -28,6 +29,27 @@ export function SortChevron({ direction, size = 9 }: SortChevronProps) {
     strokeLinejoin: "miter" as const,
     display: "block" as const,
   };
+
+  if (variant === "alpha") {
+    // Staggered horizontal lines — short/medium/long for asc (A→Z),
+    // reversed for desc (Z→A). Visually distinct from numeric arrows.
+    if (direction === "asc") {
+      return (
+        <svg {...shared} strokeWidth="1.5" strokeLinecap="round">
+          <line x1="0.75" y1="1.5" x2="2.5" y2="1.5" />
+          <line x1="0.75" y1="4.5" x2="4" y2="4.5" />
+          <line x1="0.75" y1="7.5" x2="5.25" y2="7.5" />
+        </svg>
+      );
+    }
+    return (
+      <svg {...shared} strokeWidth="1.5" strokeLinecap="round">
+        <line x1="0.75" y1="1.5" x2="5.25" y2="1.5" />
+        <line x1="0.75" y1="4.5" x2="4" y2="4.5" />
+        <line x1="0.75" y1="7.5" x2="2.5" y2="7.5" />
+      </svg>
+    );
+  }
 
   if (direction === "asc") {
     // Arrowhead at top, stem runs to bottom.

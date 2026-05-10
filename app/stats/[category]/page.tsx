@@ -1220,7 +1220,7 @@ export default function StatsDrilldownPage() {
                     <SortThInner>
                       Summoner
                       <SortIcon $active={sortCol === "name"} data-active={sortCol === "name" || undefined}>
-                        <SortChevron direction={sortCol === "name" ? sortDir : "desc"} />
+                        <SortChevron direction={sortCol === "name" ? sortDir : "asc"} variant="alpha" />
                       </SortIcon>
                     </SortThInner>
                   </SortTh>

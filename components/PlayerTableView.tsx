@@ -315,14 +315,12 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
   const ariaSort = (key: SortKey): "ascending" | "descending" | "none" =>
     sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none";
 
-  const renderSortLabel = (key: SortKey, label: string, iconLeft = false) => {
+  const renderSortLabel = (key: SortKey, label: string, iconLeft = false, variant: "numeric" | "alpha" = "numeric") => {
     const isActive = sortKey === key;
-    // For inactive columns: show "desc" chevron on hover — previewing what the first click will do.
-    // For active columns: show current direction.
-    const direction = isActive ? sortDir : "desc";
+    const direction = isActive ? sortDir : (variant === "alpha" ? "asc" : "desc");
     const icon = (
       <SortIcon $active={isActive} data-active={isActive ? "true" : undefined}>
-        <SortChevron direction={direction} />
+        <SortChevron direction={direction} variant={variant} />
       </SortIcon>
     );
     return (
@@ -340,7 +338,7 @@ export function PlayerTableView({ rows, sortKey, sortDir, toggleSort, isSet }: P
         <Thead>
           <tr>
             <SortTh $active={sortKey === "name"} aria-sort={ariaSort("name")} tabIndex={0} onClick={() => toggleSort("name")} onKeyDown={sortKeyDown("name")}>
-              {renderSortLabel("name", "Summoner")}
+              {renderSortLabel("name", "Summoner", false, "alpha")}
             </SortTh>
             <SortTh $active={sortKey === "rankLP"} aria-sort={ariaSort("rankLP")} tabIndex={0} onClick={() => toggleSort("rankLP")} onKeyDown={sortKeyDown("rankLP")}>
               {renderSortLabel("rankLP", "Rank")}
