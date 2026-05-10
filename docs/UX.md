@@ -107,7 +107,9 @@ Two categories render a separate `GlassCard` below the main card:
 
 ### Player Performance Table
 
-A `GlassCard` with a **duration pill** (period tag) after the title text and a **view toggle** (table / card) in the header action area. Data and sort state live in `usePlayerRows`; the active view is managed by `PlayerTable`.
+A `GlassCard` with a **duration pill** (period tag) after the title text, a **day stepper**, and a **view toggle** in the header action area. Data and sort state live in `usePlayerRows`; the active view is managed by `PlayerTable`.
+
+**Day stepper**: left/right chevron buttons with a date label between them (e.g. "5/7"), styled as a pill row matching the ViewToggle container. Steps one day at a time through the selected period, showing cumulative stats "as of" that date. Left arrow disabled at the period start; right arrow disabled at the end (full period). When showing the full period the label reads "All". Resets to "All" on tab change. On mobile the stepper wraps to a second line below the card title; on desktop it sits inline. When stepping is active, `isSet` is forced to `false` so scoped stats are shown instead of set totals. Implemented via an optional `endOverride` timestamp passed to `usePlayerRows`.
 
 **View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 

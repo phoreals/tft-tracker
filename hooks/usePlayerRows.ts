@@ -51,6 +51,7 @@ export function usePlayerRows(
   players: PlayerRowInput[],
   selectedTab: "set" | number,
   weeks: { label: string; start: number; end: number }[],
+  endOverride?: number,
 ) {
   const [sortKey, setSortKey] = useState<SortKey | null>("rankLP");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -59,6 +60,7 @@ export function usePlayerRows(
   const win = isSet
     ? { start: SET_START, end: SET_END }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
+  const effectiveEnd = endOverride ?? win.end;
 
   const rows = useMemo(
     () =>
@@ -70,7 +72,7 @@ export function usePlayerRows(
         const totalDuration = setMatches.reduce((s, m) => s + m.duration, 0);
 
         const scopedMatches = p.matches.filter(
-          (m) => m.timestamp >= win.start && m.timestamp < win.end,
+          (m) => m.timestamp >= win.start && m.timestamp < effectiveEnd,
         );
         const scopedGames = scopedMatches.length;
         const scopedTop4 = scopedMatches.filter((m) => m.placement <= 4).length;
@@ -104,7 +106,7 @@ export function usePlayerRows(
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [players, selectedTab, weeks],
+    [players, selectedTab, weeks, endOverride],
   );
 
   const toggleSort = (key: SortKey) => {
