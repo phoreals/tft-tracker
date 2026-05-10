@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   LineChart,
@@ -101,7 +101,9 @@ const ChartContainer = styled.div`
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     height: 480px;
   }
+
 `;
+
 
 const EmptyState = styled.div`
   display: flex;
@@ -195,6 +197,7 @@ const ClearChip = styled.button`
     outline-offset: 2px;
   }
 `;
+
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -433,6 +436,12 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const TooltipContent = useMemo(() => makePortalTooltip(mousePos, hoveredPlayerRef, playerNamesRef), []);
 
+  // ── Playback state ──
+  const [playing, setPlaying] = useState(false);
+  const [playbackProgress, setPlaybackProgress] = useState<number | null>(null); // 0–1 continuous
+  const playbackStartRef = useRef<number | null>(null);
+  const playbackOffsetRef = useRef(0);
+
   const toggleHidden = (name: string) => {
     setHiddenPlayers((prev) => {
       // All visible: solo this player (hide everyone else)
@@ -510,6 +519,77 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
 
   const hasData = chartData.length > 0;
 
+  // ── Playback animation ──
+  const PLAYBACK_DURATION_MS = 2000;
+
+  useEffect(() => {
+    if (!playing) {
+      playbackStartRef.current = null;
+      return;
+    }
+    const startOffset = playbackOffsetRef.current;
+    const remaining = 1 - startOffset;
+    let raf: number;
+    const animate = (now: number) => {
+      if (playbackStartRef.current === null) playbackStartRef.current = now;
+      const elapsed = now - playbackStartRef.current;
+      const linear = Math.min(elapsed / (PLAYBACK_DURATION_MS * remaining), 1);
+      // ease-in-out: slow start, fast middle, gentle stop
+      const eased = linear < 0.5
+        ? 2 * linear * linear
+        : 1 - Math.pow(-2 * linear + 2, 2) / 2;
+      const progress = Math.min(startOffset + eased * remaining, 1);
+      setPlaybackProgress(progress);
+      if (progress >= 1) {
+        setPlaying(false);
+      } else {
+        raf = requestAnimationFrame(animate);
+      }
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing]);
+
+  // Hide lines until animation starts, then play once chart scrolls into view
+  const hasAutoPlayed = useRef(false);
+  useEffect(() => {
+    if (!hasData || hasAutoPlayed.current) return;
+    setPlaybackProgress(0);
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAutoPlayed.current) {
+          hasAutoPlayed.current = true;
+          playbackOffsetRef.current = 0;
+          setPlaying(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasData]);
+
+  const linesProg = playbackProgress;
+  const pbStart = chartData.length >= 2 ? chartData[0].ts as number : 0;
+  const pbEnd = chartData.length >= 2 ? chartData[chartData.length - 1].ts as number : 0;
+  const pbRange = pbEnd - pbStart;
+
+  // Measure actual SVG path lengths so dashoffset draws at the correct rate.
+  const pathLengths = useRef<number[]>([]);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const lines = el.querySelectorAll(".recharts-line");
+    pathLengths.current = Array.from(lines).map((line) => {
+      const path = line.querySelector<SVGPathElement>(".recharts-line-curve");
+      return path ? path.getTotalLength() : 0;
+    });
+  });
+
   // The highlighted week — always the selected week, or the latest week for "This Set".
   const highlightWeek = selectedTab === "set"
     ? (weeks[weeks.length - 1] ?? null)
@@ -578,7 +658,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                 wrapperStyle={{ background: "none", border: "none", boxShadow: "none", padding: 0, pointerEvents: "none" }}
               />
 
-              {visiblePlayers.map((p) => {
+              {visiblePlayers.map((p, visIdx) => {
                 const globalIdx = players.indexOf(p);
                 const colors = lineColors ?? LINE_COLORS;
                 const color = colors[globalIdx % colors.length];
@@ -587,6 +667,25 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                 const anyHovered = hoveredPlayer !== null;
                 const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
                 const strokeW = anyHovered ? (isHovered ? 2.5 : 1) : 2;
+                const pLen = pathLengths.current[visIdx] ?? 0;
+                const dotProp = linesProg !== null
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  ? (props: any) => {
+                      if (!props || props.cx == null || props.cy == null) return <g key={props?.key} />;
+                      const pointTs = props.payload?.ts as number | undefined;
+                      if (pointTs === undefined) return <g key={props.key} />;
+                      const frac = pbRange > 0 ? (pointTs - pbStart) / pbRange : 0;
+                      const fadeEnd = frac + 0.01;
+                      const dotOpacity = linesProg < frac ? 0
+                        : linesProg >= fadeEnd ? 1
+                        : (linesProg - frac) / (fadeEnd - frac);
+                      if (dotOpacity <= 0) return <g key={props.key} />;
+                      return <circle key={props.key} cx={props.cx} cy={props.cy} r={2.5} fill={color} opacity={dotOpacity} />;
+                    }
+                  : { r: 2.5, fill: color, strokeWidth: 0 };
+                const lineStyle = linesProg !== null && pLen > 0
+                  ? { strokeDasharray: `${pLen}`, strokeDashoffset: `${pLen * (1 - linesProg)}` }
+                  : undefined;
                 return (
                   <Line
                     key={p.gameName}
@@ -595,8 +694,9 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                     stroke={color}
                     strokeWidth={strokeW}
                     strokeOpacity={opacity}
-                    strokeDasharray={dashPattern || undefined}
-                    dot={{ r: 2.5, fill: color, strokeWidth: 0 }}
+                    strokeDasharray={lineStyle ? undefined : (dashPattern || undefined)}
+                    style={lineStyle}
+                    dot={dotProp}
                     activeDot={{ r: 4, stroke: theme.semantic.color.accent, strokeWidth: 2 }}
                     connectNulls
                     isAnimationActive={false}
@@ -611,6 +711,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                   />
                 );
               })}
+
             </LineChart>
           </ResponsiveContainer>
         )}

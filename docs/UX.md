@@ -142,6 +142,7 @@ A Recharts `LineChart` inside a `GlassCard` with a **duration pill** (period tag
 - **Legend** below the chart — one chip per player with colored circle swatch; click to solo/toggle; "Show all" button when any hidden
 - Hovering a line dims all others; tooltip follows cursor and portals to `document.body` for correct blur
 - Line colors avoid rank-tier hues; 10-color palette (pink, blue, orange, lime, teal, sky, amber, mint, rose, indigo)
+- **Draw-in animation**: lines draw themselves via `stroke-dashoffset` over 2 seconds with ease-in-out when the chart scrolls into view. Dots fade in at each data point as the line reaches them. Plays once per page load.
 
 Empty state: "No rank history yet. Sync to start tracking."
 

@@ -120,6 +120,18 @@ Entries:      colored dot · gameName (flex:1) · [tier emblem] · abbreviated r
 Content:      When a player is hovered, shows only that player; otherwise shows all players sorted by LP desc
 ```
 
+### Draw-in Animation
+
+Lines and dots animate on first load using SVG `stroke-dashoffset`:
+
+- **Trigger**: `IntersectionObserver` fires when the chart container is 30% visible. Lines start hidden (`playbackProgress = 0`, full dashoffset) as soon as data arrives.
+- **Lines**: each `<Line>` gets inline `strokeDasharray` = actual measured path length and `strokeDashoffset` that decreases to 0 over 2 seconds. Path lengths are measured via `useEffect` + `getTotalLength()` on each `.recharts-line-curve` SVG path.
+- **Dots**: each dot fades in (opacity 0→1 over 1% of progress) at the linear timestamp fraction along the timeline. Slight timing offset from the path-length-based line is imperceptible at 2s speed.
+- **Easing**: ease-in-out curve (`2t²` first half, `1 - (-2t+2)²/2` second half) via `requestAnimationFrame`.
+- **Duration**: fixed 2 seconds.
+- **Plays once**: `hasAutoPlayed` ref prevents replay on re-renders or tab changes.
+- **Dash patterns**: during playback, the per-player `strokeDasharray` pattern (solid/dashed) is temporarily overridden by the draw animation; it restores after playback completes (`playbackProgress = 1`, `style` removed).
+
 ### Empty State
 
 "No rank history yet. Sync to start tracking."
