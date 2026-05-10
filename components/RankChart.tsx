@@ -662,12 +662,13 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                 const colors = lineColors ?? LINE_COLORS;
                 const color = colors[globalIdx % colors.length];
                 const dashPattern = LINE_DASH_PATTERNS[globalIdx % LINE_DASH_PATTERNS.length];
-                const isHovered = hoveredPlayer === p.gameName;
-                const anyHovered = hoveredPlayer !== null;
-                const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
-                const strokeW = anyHovered ? (isHovered ? 2.5 : 1) : 2;
                 const pLen = pathLengths.current[visIdx] ?? 0;
                 const animating = linesProg < 1;
+                const isHovered = hoveredPlayer === p.gameName;
+                const anyHovered = hoveredPlayer !== null;
+                const baseOpacity = animating ? linesProg : 1;
+                const opacity = anyHovered ? (isHovered ? baseOpacity : 0.2 * baseOpacity) : baseOpacity;
+                const strokeW = anyHovered ? (isHovered ? 2.5 : 1) : 2;
                 const dotProp = animating
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ? (props: any) => {
