@@ -170,6 +170,33 @@ matches.forEach(m => counts[m.placement - 1]++);
 
 ---
 
+## Squad Donut (`app/stats/[category]/page.tsx` — games & playtime)
+
+Shown on the stat drilldown page for categories with `chartMode: "donut"` (games, playtime). Displays a single donut chart showing each player's share of the squad total.
+
+### Chart Configuration
+
+```
+Component:    PieChart > Pie (single donut)
+Container:    ResponsiveContainer width="100%" height="100%"
+Height:       inherits from DonutWrap (square, centered)
+Pie:          innerRadius="55%", outerRadius="80%", startAngle=90, endAngle=-270
+Segments:     one per player with value > 0, solid fill
+Active shape: outerRadius + 6px, dark gap stroke (rgba(12, 20, 30, 0.7))
+Tooltip:      glassmorphic, shows color dot + gameName + formatted value + percentage
+Center:       aggregate total value + "SQUAD TOTAL" label
+```
+
+### Color Assignment
+
+Segments use `LINE_COLORS` (same palette as the rank chart), indexed by the player's position in the original player list. This makes a player's color consistent across all charts in the app. No patterns — all segments are solid fills.
+
+### Tooltip
+
+Uses `payload[0].payload` (the original `RankedRow` object) directly rather than searching by value equality — this avoids incorrect lookups when two players share the same stat value.
+
+---
+
 ## Mini Donut Grid (`app/stats/[category]/page.tsx` — playtime only)
 
 A responsive CSS grid of per-player donut charts showing how TFT playtime fits into the total period. Only rendered for the `playtime` category via `extraChart.type: "donuts"`.
@@ -181,7 +208,7 @@ Component:    PieChart > Pie (one per player, in a CSS grid)
 Size:         200×200px fixed (MiniDonutWrap)
 Grid:         auto-fill, minmax(220px, 1fr), centered
 Pie:          innerRadius="55%", outerRadius="85%", startAngle=90, endAngle=-270
-Segments:     3 per donut — TFT (accent gold), Free time (neutral600), Sleep (neutral700)
+Segments:     3 per donut — TFT (player's LINE_COLORS color), Free time (neutral600), Sleep (neutral700)
 Active shape: outerRadius + 4px, dark gap stroke, per-donut hover state
 Tooltip:      glassmorphic, shows segment name + formatted hours + percentage
 Center:       percentage value + "IN TFT" label

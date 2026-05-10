@@ -35,12 +35,12 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 
 | Card | Metric |
 |------|--------|
-| **Most Games** | Highest scoped game count |
+| **Most Games Played** | Highest scoped game count |
 | **Best Top 4 Rate** | Highest top-4 rate (min 1 game) |
 | **Best Win Rate** | Highest % of 1st-place finishes |
 | **Most Playtime** | Highest scoped playtime |
 | **Most LP Gained** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
-| **Best LP / Game** | Highest LP gain per game played |
+| **Avg LP Per Game** | Highest LP gain per game played |
 
 Each card has a **duration pill** in the top-right of its header showing the active time window — "Set 17" (gold accent pill) or "Week N". The card label is the category name only (e.g. "Most Games"); the period is communicated by the pill alone.
 
@@ -67,7 +67,7 @@ Four `GlassCard` components show aggregate metrics for the **currently selected 
 
 ## Stat Drilldown (`/stats/[category]`)
 
-Accessed by clicking a summary stat card or a superlative card on the home page. Six categories: `games`, `playtime`, `top4-rate`, `win-rate`, `highest-lp`, `best-lp-per-game`.
+Accessed by clicking a summary stat card or a superlative card on the home page. Six categories: `games`, `playtime`, `top4-rate`, `win-rate`, `highest-lp`, `best-lp-per-game`. Categories may specify a `navLabel` for the pill bar when a shorter label is needed (e.g. "LP / Game" instead of "Avg LP Per Game").
 
 ### Layout
 - Back link to Home (preserves `?tab=` parameter)
@@ -80,14 +80,14 @@ A horizontal pill bar above the content shows all 6 categories. The active categ
 ### Content
 Single-column stacked layout. Chart section (when present) sits above the sortable ranked table.
 
-- **Games / Playtime** (`chartMode: "donut"`): donut chart showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage.
-- **Top 4 Rate / Win Rate** (`chartMode: "gauge"`): gauge section — duration pill, large squad-average value, "Squad Avg" label, and a 4px progress bar with a 50% reference mark.
-- **LP Gain / LP per Game** (`chartMode: "none"`): no chart, table only.
+- **Games / Playtime** (`chartMode: "donut"`): donut chart showing per-player share. Center label = total. Recharts tooltip shows individual value + percentage. Donut segments use `LINE_COLORS` (same palette as the rank chart) for visual consistency across views.
+- **Top 4 Rate / Win Rate** (`chartMode: "gauge"`): gauge section — large squad-average value, "Squad Avg" label, and a 4px progress bar with a 50% reference mark.
+- **LP Gain / Avg LP Per Game** (`chartMode: "none"`): no chart, table only.
 
 **Donut interaction**: hovering a donut segment expands it outward by 6px with a dark gap stroke. Tooltip snaps instantly between segments (no animation).
 
 ### Ranked Table
-Columns: Rank (#), Summoner chip (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). Share categories (games, playtime) also show a % share column. The leader's row has a subtle gold background highlight. Rank badges use `getLeaderboardColor` gradient (gold→slate). Badge colors reflect natural rank (by value), not display order.
+Columns: Rank (#), Summoner chip (profile icon + gameName#tagLine, links to player drilldown), Value (formatted stat + inline bar). Share categories (games, playtime) also show a % share column. The leader's row has a subtle gold background highlight. Rank badge numbers and colors always reflect natural rank (by value), not display order — reverse-sorting the table reorders rows but each player keeps their true rank number and color.
 
 **Summoner chip**: the entire summoner cell (icon + colour dot + name) is wrapped in a link with chip-style hover highlight (gold tinted background, 8px horizontal padding). Width is `fit-content` so the highlight hugs the content.
 
@@ -101,9 +101,9 @@ Columns: Rank (#), Summoner chip (profile icon + gameName#tagLine, links to play
 
 Two categories render a separate `GlassCard` below the main card:
 
-**Playtime — "% of [period] in TFT"** (`extraChart.type: "donuts"`): A responsive grid of mini donut charts, one per player. Each donut has three segments: TFT playtime (gold accent), free time (medium slate), and sleep (dark slate, 8 hours/day). Center shows the TFT percentage with an "IN TFT" label. Each donut has an active hover state (segment expands with dark gap stroke) and a glassmorphic tooltip showing segment name, formatted hours+minutes, and percentage. Below each donut is a player chip (profile icon + name#tag, links to player drilldown). A legend row at the bottom labels the three segment colors.
+**Playtime — "% of Time in TFT"** (`extraChart.type: "donuts"`): A responsive grid of mini donut charts, one per player. Each donut has three segments: TFT playtime (player's `LINE_COLORS` color), free time (medium slate), and sleep (dark slate, 8 hours/day). Center shows the TFT percentage with an "IN TFT" label. Each donut has an active hover state (segment expands with dark gap stroke) and a glassmorphic tooltip showing segment name, formatted hours+minutes, and percentage. Below each donut is a player chip (profile icon + name#tag, links to player drilldown). A legend row at the bottom labels the three segment colors.
 
-**Games — "Games per day — [period]"** (`extraChart.type: "bar"`): A horizontal bar chart showing each player's daily game rate. Bars are colored using the leaderboard gradient (gold→slate, matching the rank badges in the table). Labels on the right show the rate (e.g. "1.4/day").
+**Games — "Games Per Day"** (`extraChart.type: "bar"`): A horizontal bar chart showing each player's daily game rate. Bars are colored using the leaderboard gradient (gold→slate via `getLeaderboardColor`). Labels on the right show the rate (e.g. "1.4/day").
 
 ### Player Performance Table
 
