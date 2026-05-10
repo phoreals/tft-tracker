@@ -438,7 +438,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
 
   // ── Playback state ──
   const [playing, setPlaying] = useState(false);
-  const [playbackProgress, setPlaybackProgress] = useState<number | null>(null); // 0–1 continuous
+  const [playbackProgress, setPlaybackProgress] = useState(0); // 0–1
   const playbackStartRef = useRef<number | null>(null);
   const playbackOffsetRef = useRef(0);
 
@@ -551,11 +551,10 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing]);
 
-  // Hide lines until animation starts, then play once chart scrolls into view
+  // Play once the chart scrolls into view
   const hasAutoPlayed = useRef(false);
   useEffect(() => {
     if (!hasData || hasAutoPlayed.current) return;
-    setPlaybackProgress(0);
     const el = containerRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -573,7 +572,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
     return () => observer.disconnect();
   }, [hasData]);
 
-  const linesProg = playbackProgress;
+  const linesProg = playbackProgress; // 0–1
   const pbStart = chartData.length >= 2 ? chartData[0].ts as number : 0;
   const pbEnd = chartData.length >= 2 ? chartData[chartData.length - 1].ts as number : 0;
   const pbRange = pbEnd - pbStart;
@@ -668,7 +667,8 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                 const opacity = anyHovered ? (isHovered ? 1 : 0.2) : 1;
                 const strokeW = anyHovered ? (isHovered ? 2.5 : 1) : 2;
                 const pLen = pathLengths.current[visIdx] ?? 0;
-                const dotProp = linesProg !== null
+                const animating = linesProg < 1 && pLen > 0;
+                const dotProp = animating
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ? (props: any) => {
                       if (!props || props.cx == null || props.cy == null) return <g key={props?.key} />;
@@ -683,7 +683,7 @@ export function RankChart({ players, selectedTab, weeks, hideLegend, lineColors,
                       return <circle key={props.key} cx={props.cx} cy={props.cy} r={2.5} fill={color} opacity={dotOpacity} />;
                     }
                   : { r: 2.5, fill: color, strokeWidth: 0 };
-                const lineStyle = linesProg !== null && pLen > 0
+                const lineStyle = animating
                   ? { strokeDasharray: `${pLen}`, strokeDashoffset: `${pLen * (1 - linesProg)}` }
                   : undefined;
                 return (

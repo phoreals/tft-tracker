@@ -28,7 +28,8 @@
       "Bash(rm /Users/dvu40/test-dev/tft-tracker-20260508.zip)",
       "Bash(zip -r /Users/dvu40/test-dev/tft-tracker-20260508.zip . -x \".next/*\" \"node_modules/*\" \".claude/*\")",
       "Bash(zip -r /Users/dvu40/test-dev/tft-tracker-20260509.zip . -x \".next/*\" \"node_modules/*\" \".claude/*\")",
-      "Bash(zipinfo -1 /Users/dvu40/test-dev/tft-tracker-20260510.zip)"
+      "Bash(zipinfo -1 /Users/dvu40/test-dev/tft-tracker-20260510.zip)",
+      "Bash(zip -r tft-tracker-20260510.zip tft-tracker -x \"tft-tracker/.next/*\" \"tft-tracker/node_modules/*\" \"tft-tracker/.claude/*\")"
     ]
   }
 }
