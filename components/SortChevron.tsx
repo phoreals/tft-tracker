@@ -31,22 +31,13 @@ export function SortChevron({ direction, variant = "numeric", size = 9 }: SortCh
   };
 
   if (variant === "alpha") {
-    // Staggered horizontal lines — short/medium/long for asc (A→Z),
-    // reversed for desc (Z→A). Visually distinct from numeric arrows.
-    if (direction === "asc") {
-      return (
-        <svg {...shared} strokeWidth="1.5" strokeLinecap="round">
-          <line x1="0.75" y1="1.5" x2="2.5" y2="1.5" />
-          <line x1="0.75" y1="4.5" x2="4" y2="4.5" />
-          <line x1="0.75" y1="7.5" x2="5.25" y2="7.5" />
-        </svg>
-      );
-    }
+    // Stacked "A" over "Z" for asc (A→Z), "Z" over "A" for desc (Z→A).
+    const top = direction === "desc" ? "Z" : "A";
+    const bottom = direction === "desc" ? "A" : "Z";
     return (
-      <svg {...shared} strokeWidth="1.5" strokeLinecap="round">
-        <line x1="0.75" y1="1.5" x2="5.25" y2="1.5" />
-        <line x1="0.75" y1="4.5" x2="4" y2="4.5" />
-        <line x1="0.75" y1="7.5" x2="2.5" y2="7.5" />
+      <svg width={w} height={h} viewBox="0 0 6 9" display="block" fill="currentColor" stroke="none">
+        <text x="3" y="3.8" fontSize="4" fontWeight="700" fontFamily="Space Grotesk, sans-serif" textAnchor="middle">{top}</text>
+        <text x="3" y="8.2" fontSize="4" fontWeight="700" fontFamily="Space Grotesk, sans-serif" textAnchor="middle">{bottom}</text>
       </svg>
     );
   }
