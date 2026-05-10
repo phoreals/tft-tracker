@@ -49,7 +49,7 @@ export function SortChevron({ direction, size = 9 }: SortChevronProps) {
 
   // "none" — two half-arrows meeting at the vertical centre (↕).
   return (
-    <svg {...shared} strokeWidth="1.1">
+    <svg {...shared} strokeWidth="1.2">
       <path d="M0.75,3.75 L3,1.25 L5.25,3.75 M3,1.25 L3,4.5" />
       <path d="M0.75,5.25 L3,7.75 L5.25,5.25 M3,7.75 L3,4.5" />
     </svg>
