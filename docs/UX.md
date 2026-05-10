@@ -111,7 +111,7 @@ A `GlassCard` with a **duration pill** (period tag) after the title text and a *
 
 **View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 
-**Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use custom SVG arrows sized to the x-height of the header text. **Default sort on load: Rank descending (highest rank first).** Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
+**Column sorting** (table view only): All column headers are clickable. Clicking a header sorts by that column (descending first). Clicking again toggles asc/desc. The active sort column is highlighted in gold. Sort indicators use custom SVG arrows (9px tall, strokeWidth 1.2, uniform across all directions) sized to the x-height of the header text. **Default sort on load: Rank descending (highest rank first).** Sortable columns: Summoner (alphabetical), Rank (numeric via `rankToLP`), Games (count), Top 4% (rate), 1st% (rate), Time Played (duration). Sorting state carries across view switches.
 
 **Sort icon placement**: the chevron appears to the right of the label for left-aligned columns (Summoner, Rank). For right-aligned columns (Games, Top 4%, Win%, Playtime), the chevron appears to the left of the label so the label text stays flush against the right cell edge. Header labels use `white-space: nowrap` to prevent wrapping at any viewport width.
 
