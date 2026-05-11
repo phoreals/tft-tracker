@@ -24,7 +24,7 @@ A scrollable tab bar sits between the page header and the summary cards. It cont
 - Tab labels are the period name only ("Set 17", "Week 1", etc.) — no date ranges in the tab buttons or select options.
 - The bar overflows horizontally; `mask-image` gradients fade the left and/or right edges (48px) to signal scrollability. Gradients are conditional on scroll position. Driven by a `useScrollFade` hook.
 - Horizontal scrollbar thumb is invisible by default and appears on hover.
-- On load and on tab change, the active tab scrolls into view via `data-active="true"` + `scrollIntoView`.
+- On load and on tab change, the active tab scrolls into view via `data-active="true"` + direct `scrollLeft` manipulation (not `scrollIntoView`, which can cause vertical page scroll).
 - **Sticky**: the tab wrap sticks to `top: 0`. An `IntersectionObserver` on a zero-height sentinel element before the tab wrap drives a `$isSticky` prop — `backdrop-filter: blur(16px)` and a subtle gold glow activate only when stuck. On wide viewports (>1440px), `--bleed-extra` is computed via `ResizeObserver` so the sticky strip always bleeds edge-to-edge.
 - A mobile dropdown (`CustomSelect`) mirrors the same tab options; the desktop tab bar is hidden on small screens. The period name (e.g. "Set 17", "Week 1") is bold and gold-colored, followed by a muted date range in `· date – date` format matching the page subheader.
 - **The same tab system and sticky behavior applies to the Superlative Drilldown and Player Drilldown pages.**
