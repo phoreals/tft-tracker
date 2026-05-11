@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { getSetWeeks } from "@/lib/utils";
 
@@ -20,8 +20,9 @@ function parseTab(tabParam: string | null): "set" | number {
 }
 
 /**
- * URL-aware tab state. Reads and writes `?tab=` in the query string so tab
- * selection survives client-side navigation between pages.
+ * URL-aware tab state. Local React state is the immediate source of truth
+ * for instant UI updates; the URL is synced as a side effect for persistence
+ * across navigation. URL changes (browser back/forward) sync back into state.
  */
 export function useSelectedTab(): [
   "set" | number,
@@ -31,9 +32,17 @@ export function useSelectedTab(): [
   const router = useRouter();
   const pathname = usePathname();
 
-  const selectedTab = parseTab(searchParams.get("tab"));
+  const [selectedTab, setSelectedTabState] = useState<"set" | number>(
+    () => parseTab(searchParams.get("tab")),
+  );
+
+  // Sync from URL when it changes externally (browser back/forward, link navigation).
+  useEffect(() => {
+    setSelectedTabState(parseTab(searchParams.get("tab")));
+  }, [searchParams]);
 
   const setSelectedTab = useCallback((tab: "set" | number) => {
+    setSelectedTabState(tab); // immediate UI update
     const params = new URLSearchParams(searchParams.toString());
     params.set("tab", String(tab));
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
