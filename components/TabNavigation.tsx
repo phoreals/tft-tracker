@@ -151,11 +151,12 @@ export function TabNavigation({
 
   useEffect(() => {
     const bar = tabBarRef.current;
-    if (!bar) return;
-    const active = bar.querySelector(
-      "[data-active='true']",
-    ) as HTMLElement | null;
-    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    const active = bar?.querySelector<HTMLElement>("[data-active='true']");
+    if (!bar || !active) return;
+    const left = active.offsetLeft;
+    const right = left + active.offsetWidth;
+    if (left < bar.scrollLeft) bar.scrollLeft = left - 8;
+    else if (right > bar.scrollLeft + bar.offsetWidth) bar.scrollLeft = right - bar.offsetWidth + 8;
   }, [selectedTab]);
 
   return (

@@ -957,8 +957,13 @@ export default function StatsDrilldownPage() {
   const { fadeLeft: tableFadeLeft, fadeRight: tableFadeRight } = useScrollFade(tableWrapRef);
 
   useEffect(() => {
-    const active = catNavRef.current?.querySelector("[data-active='true']");
-    active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    const nav = catNavRef.current;
+    const active = nav?.querySelector<HTMLElement>("[data-active='true']");
+    if (!nav || !active) return;
+    const left = active.offsetLeft;
+    const right = left + active.offsetWidth;
+    if (left < nav.scrollLeft) nav.scrollLeft = left - 8;
+    else if (right > nav.scrollLeft + nav.offsetWidth) nav.scrollLeft = right - nav.offsetWidth + 8;
   }, [slug]);
 
   useEffect(() => {

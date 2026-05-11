@@ -132,8 +132,13 @@ export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTa
   useEffect(() => { setSelectedDay(null); }, [selectedTab]);
 
   useEffect(() => {
-    const active = stripRef.current?.querySelector("[data-active='true']");
-    active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    const strip = stripRef.current;
+    const active = strip?.querySelector<HTMLElement>("[data-active='true']");
+    if (!strip || !active) return;
+    const left = active.offsetLeft;
+    const right = left + active.offsetWidth;
+    if (left < strip.scrollLeft) strip.scrollLeft = left - 8;
+    else if (right > strip.scrollLeft + strip.offsetWidth) strip.scrollLeft = right - strip.offsetWidth + 8;
   }, [selectedDay]);
 
   const { sortedRows, sortKey, sortDir, toggleSort, isSet: hookIsSet } = usePlayerRows(
