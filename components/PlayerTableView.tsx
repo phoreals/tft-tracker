@@ -16,10 +16,10 @@ import type { PlayerRowData, SortKey } from "@/hooks/usePlayerRows";
 
 const TableWrap = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   overflow-x: auto;
-  margin-left: calc(-${({ theme }) => theme.primitive.spacing.md} - ${({ theme }) => theme.primitive.spacing.xs});
-  margin-right: calc(-${({ theme }) => theme.primitive.spacing.md} - ${({ theme }) => theme.primitive.spacing.xs});
-  padding-left: ${({ theme }) => theme.primitive.spacing.md};
-  padding-right: ${({ theme }) => theme.primitive.spacing.md};
+  margin-left: calc(-${({ theme }) => theme.primitive.spacing.sm} - ${({ theme }) => theme.primitive.spacing.xs});
+  margin-right: calc(-${({ theme }) => theme.primitive.spacing.sm} - ${({ theme }) => theme.primitive.spacing.xs});
+  padding-left: ${({ theme }) => theme.primitive.spacing.sm};
+  padding-right: ${({ theme }) => theme.primitive.spacing.sm};
 
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     margin-left: calc(-${({ theme }) => theme.primitive.spacing.lg} - ${({ theme }) => theme.primitive.spacing.xs});

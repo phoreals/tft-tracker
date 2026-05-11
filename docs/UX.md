@@ -75,7 +75,7 @@ Accessed by clicking a summary stat card or a superlative card on the home page.
 - Same sticky tab bar (Set 17 / Week 1–N)
 
 ### Category Navigation
-A horizontal pill bar above the content shows all 6 categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally.
+A horizontal pill bar above the content shows all 6 categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally. The active pill scrolls into view automatically when the category changes.
 
 ### Content
 Single-column stacked layout. Chart section (when present) sits above the sortable ranked table.
@@ -109,7 +109,7 @@ Two categories render a separate `GlassCard` below the main card:
 
 A `GlassCard` with a **duration pill** (period tag) after the title text, a **day stepper**, and a **view toggle** in the header action area. Data and sort state live in `usePlayerRows`; the active view is managed by `PlayerTable`.
 
-**Day stepper**: left/right chevron buttons with a date label between them (e.g. "5/7"), styled as a pill row matching the ViewToggle container. Steps one day at a time through the selected period, showing cumulative stats "as of" that date. Left arrow disabled at the period start; right arrow disabled at the end (full period). When showing the full period the label reads "All". Resets to "All" on tab change. On mobile the stepper wraps to a second line below the card title; on desktop it sits inline. When stepping is active, `isSet` is forced to `false` so scoped stats are shown instead of set totals. Implemented via an optional `endOverride` timestamp passed to `usePlayerRows`.
+**Day pill strip**: a scrollable row of fully-rounded pills inside the card body, between the header and the table/cards. Only shown when the period has more than one day. Pills: `[ This Week ] [ 5/1 ] [ 5/2 ] … [ 5/7 ]` (or "This Set" on the set tab). Selecting a day shows stats for that single 24-hour window only (not cumulative). Active pill scrolls into view automatically. Mask-image fades on left/right edges signal overflow. Resets to full-period on tab change. Implemented via `startOverride` + `endOverride` timestamps in `usePlayerRows`.
 
 **View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 

@@ -1,80 +1,84 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import styled from "styled-components";
-import { LayoutList, LayoutGrid, ChevronLeft, ChevronRight } from "lucide-react";
+import { LayoutList, LayoutGrid } from "lucide-react";
 import { GlassCard } from "./GlassCard";
 import { ViewToggle } from "./ViewToggle";
 import { PlayerTableView } from "./PlayerTableView";
 import { PlayerCardView } from "./PlayerCardView";
 import { usePlayerRows } from "@/hooks/usePlayerRows";
+import { useScrollFade } from "@/hooks/useTabNavigation";
 import { SET_START, SET_END } from "@/lib/utils";
 import type { PlayerRowInput } from "@/hooks/usePlayerRows";
 
 // ── Styled ──────────────────────────────────────────────────────
 
-const HeaderActions = styled.div`
+const DayStrip = styled.div<{ $fadeLeft: boolean; $fadeRight: boolean }>`
   display: flex;
-  flex-wrap: wrap-reverse;
-  align-items: center;
   gap: ${({ theme }) => theme.primitive.spacing.xs};
-  justify-content: flex-end;
-  flex-basis: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
 
-  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
-    flex-basis: auto;
-  }
+  mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 32px, black calc(100% - 32px), transparent)";
+    if ($fadeLeft)  return "linear-gradient(to right, transparent, black 32px)";
+    if ($fadeRight) return "linear-gradient(to right, black calc(100% - 32px), transparent)";
+    return "none";
+  }};
+  -webkit-mask-image: ${({ $fadeLeft, $fadeRight }) => {
+    if ($fadeLeft && $fadeRight)
+      return "linear-gradient(to right, transparent, black 32px, black calc(100% - 32px), transparent)";
+    if ($fadeLeft)  return "linear-gradient(to right, transparent, black 32px)";
+    if ($fadeRight) return "linear-gradient(to right, black calc(100% - 32px), transparent)";
+    return "none";
+  }};
 `;
 
-const DayStepper = styled.div`
-  display: flex;
+const DayPill = styled.button<{ $active: boolean }>`
+  display: inline-flex;
   align-items: center;
-  gap: 2px;
-  background: ${({ theme }) => theme.semantic.color.borderDim};
-  border-radius: ${({ theme }) => theme.semantic.radius.element};
-  padding: 2px;
-`;
-
-const StepBtn = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: calc(${({ theme }) => theme.semantic.radius.element} - 2px);
-  border: none;
-  background: transparent;
-  color: ${({ theme }) => theme.semantic.color.textMuted};
+  padding: ${({ theme }) => theme.primitive.spacing["2xs"]} ${({ theme }) => theme.primitive.spacing.sm};
+  border-radius: ${({ theme }) => theme.semantic.radius.pill};
+  border: 1px solid ${({ $active, theme }) =>
+    $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+  background: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accentBgHover : "transparent"};
+  color: ${({ $active, theme }) =>
+    $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+  font-family: ${({ theme }) => theme.semantic.font.display};
+  font-size: ${({ theme }) => theme.primitive.fontSize.sm};
+  font-weight: ${({ theme }) => theme.primitive.fontWeight.bold};
+  white-space: nowrap;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
 
-  &:hover:not(:disabled) {
-    color: ${({ theme }) => theme.semantic.color.textPrimary};
+  &:hover {
+    border-color: ${({ theme }) => theme.semantic.color.borderHover};
+    color: ${({ $active, theme }) =>
+      $active ? theme.semantic.color.accent : theme.semantic.color.textPrimary};
   }
 
-  &:active:not(:disabled) {
-    background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
+  @media (hover: none) {
+    &:hover {
+      border-color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.borderHover : theme.semantic.color.borderDefault};
+      color: ${({ $active, theme }) =>
+        $active ? theme.semantic.color.accent : theme.semantic.color.textMuted};
+    }
   }
 
-  &:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
+  &:active {
+    background: ${({ theme }) => theme.semantic.color.accentBgActive};
   }
 
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
   }
-`;
-
-const StepLabel = styled.span`
-  font-family: ${({ theme }) => theme.semantic.font.display};
-  font-size: ${({ theme }) => theme.primitive.fontSize.xs};
-  color: ${({ theme }) => theme.semantic.color.textMuted};
-  min-width: 52px;
-  text-align: center;
-  white-space: nowrap;
-  user-select: none;
 `;
 
 // ── Types ────────────────────────────────────────────────────────
@@ -104,7 +108,9 @@ interface PlayerTableProps {
 
 export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTableProps) {
   const [view, setView] = useState<ViewMode>("table");
-  const [dayOffset, setDayOffset] = useState<number | null>(null);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const stripRef = useRef<HTMLDivElement>(null);
+  const { fadeLeft, fadeRight } = useScrollFade(stripRef);
 
   const isSet = selectedTab === "set";
   const win = useMemo(() =>
@@ -115,59 +121,67 @@ export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTa
   );
 
   const periodDays = Math.ceil((Math.min(win.end, Date.now()) - win.start) / DAY_MS);
-  const endOverride = dayOffset !== null
-    ? Math.min(win.start + (dayOffset + 1) * DAY_MS, win.end)
+
+  const startOverride = selectedDay !== null
+    ? win.start + selectedDay * DAY_MS
+    : undefined;
+  const endOverride = selectedDay !== null
+    ? Math.min(win.start + (selectedDay + 1) * DAY_MS, win.end)
     : undefined;
 
-  useEffect(() => { setDayOffset(null); }, [selectedTab]);
+  useEffect(() => { setSelectedDay(null); }, [selectedTab]);
+
+  useEffect(() => {
+    const active = stripRef.current?.querySelector("[data-active='true']");
+    active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+  }, [selectedDay]);
 
   const { sortedRows, sortKey, sortDir, toggleSort, isSet: hookIsSet } = usePlayerRows(
     players,
     selectedTab,
     weeks,
+    startOverride,
     endOverride,
   );
 
-  const effectiveIsSet = dayOffset !== null ? false : hookIsSet;
+  const effectiveIsSet = selectedDay !== null ? false : hookIsSet;
 
-  const stepLeft = () =>
-    setDayOffset((d) => Math.max((d ?? periodDays - 1) - 1, 0));
-
-  const stepRight = () =>
-    setDayOffset((d) => {
-      if (d === null) return null;
-      return d >= periodDays - 1 ? null : d + 1;
-    });
-
-  const headerAction = (
-    <HeaderActions>
-      <DayStepper>
-        <StepBtn
-          disabled={dayOffset === 0}
-          onClick={stepLeft}
-          aria-label="Previous day"
-        >
-          <ChevronLeft size={14} />
-        </StepBtn>
-        <StepLabel>
-          {dayOffset !== null
-            ? fmtDate(win.start + dayOffset * DAY_MS)
-            : "All"}
-        </StepLabel>
-        <StepBtn
-          disabled={dayOffset === null}
-          onClick={stepRight}
-          aria-label="Next day"
-        >
-          <ChevronRight size={14} />
-        </StepBtn>
-      </DayStepper>
-      <ViewToggle views={VIEW_OPTIONS} value={view} onChange={setView} />
-    </HeaderActions>
+  const days = useMemo(
+    () => Array.from({ length: periodDays }, (_, i) => i),
+    [periodDays],
   );
 
   return (
-    <GlassCard title="Player Performance" titleExtra={periodTag} headerAction={headerAction} prominent>
+    <GlassCard
+      title="Player Performance"
+      titleExtra={periodTag}
+      headerAction={<ViewToggle views={VIEW_OPTIONS} value={view} onChange={setView} />}
+      prominent
+    >
+      {days.length > 1 && (
+        <DayStrip ref={stripRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight} role="group" aria-label="Filter by day">
+          <DayPill
+            type="button"
+            $active={selectedDay === null}
+            data-active={selectedDay === null ? "true" : undefined}
+            onClick={() => setSelectedDay(null)}
+          >
+            {isSet ? "This Set" : "This Week"}
+          </DayPill>
+          {days.map((i) => (
+            <DayPill
+              key={i}
+              type="button"
+              $active={selectedDay === i}
+              data-active={selectedDay === i ? "true" : undefined}
+              onClick={() => setSelectedDay(i)}
+            >
+              {fmtDate(win.start + i * DAY_MS)}
+            </DayPill>
+          ))}
+        </DayStrip>
+      )}
+
       {view === "table" ? (
         <PlayerTableView
           rows={sortedRows}

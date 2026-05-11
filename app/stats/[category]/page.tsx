@@ -957,6 +957,11 @@ export default function StatsDrilldownPage() {
   const { fadeLeft: tableFadeLeft, fadeRight: tableFadeRight } = useScrollFade(tableWrapRef);
 
   useEffect(() => {
+    const active = catNavRef.current?.querySelector("[data-active='true']");
+    active?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+  }, [slug]);
+
+  useEffect(() => {
     fetch("/api/players", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => setPlayers(data))
@@ -1100,6 +1105,7 @@ export default function StatsDrilldownPage() {
             key={key}
             href={`/stats/${key}?tab=${selectedTab}`}
             $active={key === slug}
+            data-active={key === slug ? "true" : undefined}
           >
             {c.navLabel ?? c.title}
           </CategoryPill>
