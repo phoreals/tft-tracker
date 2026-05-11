@@ -158,7 +158,7 @@ export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTa
       headerAction={<ViewToggle views={VIEW_OPTIONS} value={view} onChange={setView} />}
       prominent
     >
-      {days.length > 1 && (
+      {!isSet && days.length > 1 && (
         <DayStrip ref={stripRef} $fadeLeft={fadeLeft} $fadeRight={fadeRight} role="group" aria-label="Filter by day">
           <DayPill
             type="button"

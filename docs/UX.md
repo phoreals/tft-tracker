@@ -109,7 +109,7 @@ Two categories render a separate `GlassCard` below the main card:
 
 A `GlassCard` with a **duration pill** (period tag) after the title text, a **day stepper**, and a **view toggle** in the header action area. Data and sort state live in `usePlayerRows`; the active view is managed by `PlayerTable`.
 
-**Day pill strip**: a scrollable row of fully-rounded pills inside the card body, between the header and the table/cards. Only shown when the period has more than one day. Pills: `[ This Week ] [ 5/1 ] [ 5/2 ] … [ 5/7 ]` (or "This Set" on the set tab). Selecting a day shows stats for that single 24-hour window only (not cumulative). Active pill scrolls into view automatically. Mask-image fades on left/right edges signal overflow. Resets to full-period on tab change. Implemented via `startOverride` + `endOverride` timestamps in `usePlayerRows`.
+**Day pill strip**: a scrollable row of fully-rounded pills inside the card body, between the header and the table/cards. Only shown on week tabs (not the Set tab, which would produce too many pills) when the period has more than one day. Pills: `[ This Week ] [ 5/1 ] [ 5/2 ] … [ 5/7 ]` (or "This Set" on the set tab). Selecting a day shows stats for that single 24-hour window only (not cumulative). Active pill scrolls into view automatically. Mask-image fades on left/right edges signal overflow. Resets to full-period on tab change. Implemented via `startOverride` + `endOverride` timestamps in `usePlayerRows`.
 
 **View toggle**: two icon buttons (`LayoutList` / `LayoutGrid`) in the card header. Selecting a view persists for the session but is not stored in the URL. Default: table view.
 
