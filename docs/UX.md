@@ -145,6 +145,7 @@ A Recharts `LineChart` inside a `GlassCard` with a **duration pill** (period tag
 - Hovering a line dims all others; tooltip follows cursor and portals to `document.body` for correct blur
 - Line colors avoid rank-tier hues; 10-color palette (pink, blue, orange, lime, teal, sky, amber, mint, rose, indigo)
 - **Draw-in animation**: lines draw themselves via `stroke-dashoffset` over 2 seconds with ease-in-out when the chart scrolls into view. Dots fade in at each data point as the line reaches them. Plays once per page load.
+- **Active tab/pill scroll**: all scrollable pill containers (tab bar, day strip, category nav) automatically scroll the active element into view using direct `scrollLeft` manipulation — not `scrollIntoView`, which can cause vertical page scroll and sticky tab bar misclicks.
 
 Empty state: "No rank history yet. Sync to start tracking."
 
