@@ -8,7 +8,8 @@ import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
-import { getSetWeeks, SET_START, SET_END, SET_LABEL, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
+import { getSetWeeks, getBrowsableSets, getActiveSet, buildHref, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
+import { useSelectedSet } from "@/hooks/useSelectedSet";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { SyncOverlay } from "@/components/SyncOverlay";
@@ -342,12 +343,16 @@ export default function WeeklyStatsPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<{ tone: "muted" | "warn" | "error"; message: string } | null>(null);
 
-  const weeks = useMemo(() => getSetWeeks(), []);
-  const [selectedTab, setSelectedTab] = useSelectedTab();
+  const activeSet = useMemo(() => getActiveSet(), []);
+  const sets = useMemo(() => getBrowsableSets(), []);
+  const [selectedSet, setSelectedSet] = useSelectedSet();
+  const isArchived = selectedSet.number !== activeSet.number;
+  const weeks = useMemo(() => getSetWeeks(selectedSet), [selectedSet]);
+  const [selectedTab, setSelectedTab] = useSelectedTab(selectedSet);
 
   const fetchPlayers = useCallback(async () => {
     try {
-      const res = await fetch("/api/players", { cache: "no-store" });
+      const res = await fetch(`/api/players?set=${selectedSet.number}`, { cache: "no-store" });
       const data = await res.json();
       setPlayers(data);
     } catch (err) {
@@ -355,9 +360,10 @@ export default function WeeklyStatsPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedSet.number]);
 
   useEffect(() => {
+    setLoading(true);
     fetchPlayers();
   }, [fetchPlayers]);
 
@@ -438,7 +444,7 @@ export default function WeeklyStatsPage() {
 
   const summaryStats = useMemo(() => {
     const win = selectedTab === "set"
-      ? { start: SET_START, end: SET_END }
+      ? { start: selectedSet.start, end: selectedSet.end }
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
     const all = players.flatMap((p) => p.matches).filter((m) => m.timestamp >= win.start && m.timestamp < win.end);
     return {
@@ -448,17 +454,17 @@ export default function WeeklyStatsPage() {
       firsts: all.filter((m) => m.placement === 1).length,
       total: all.length,
     };
-  }, [players, selectedTab, weeks]);
+  }, [players, selectedTab, weeks, selectedSet]);
 
   const isSetMode = selectedTab === "set";
   const weekNumber = weeks[selectedTab as number]?.weekNumber;
-  const period = isSetMode ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
+  const period = isSetMode ? selectedSet.label : weekNumber ? `Week ${weekNumber}` : "This Week";
 
   const superlatives = useMemo(() => {
     if (players.length === 0) return [];
 
     const win = selectedTab === "set"
-      ? { start: SET_START, end: SET_END }
+      ? { start: selectedSet.start, end: selectedSet.end }
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
     const stats = computePlayerStats(players, win);
 
@@ -473,7 +479,7 @@ export default function WeeklyStatsPage() {
         player: leader?.player ?? null,
       };
     });
-  }, [players, selectedTab, weeks]);
+  }, [players, selectedTab, weeks, selectedSet, period]);
 
   const isSet = selectedTab === "set";
 
@@ -484,36 +490,46 @@ export default function WeeklyStatsPage() {
           <PageTitle>The Asylum TFT Tracker</PageTitle>
           <PageSubtitle>
             {isSet ? (
-              <><strong>{SET_LABEL}</strong>{"\u2002·\u2002"}{formatShortDate(SET_START)}{"\u2009\u2013\u2009"}{formatShortDate(SET_END)}</>
+              <><strong>{selectedSet.label}</strong>{"\u2002·\u2002"}{formatShortDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatShortDate(selectedSet.end)}</>
             ) : (() => {
               const w = weeks[selectedTab as number];
               return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
             })()}
+            {isArchived && <>{" · "}<DurationPill>Archived</DurationPill></>}
           </PageSubtitle>
         </div>
-        <SyncWrap>
-          <SyncButton onClick={handleSync} disabled={syncing}>
-            <SpinningIcon size={ICON_SIZE.md} $spinning={syncing} />
-            <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
-          </SyncButton>
-
-        </SyncWrap>
+        {!isArchived && (
+          <SyncWrap>
+            <SyncButton onClick={handleSync} disabled={syncing}>
+              <SpinningIcon size={ICON_SIZE.md} $spinning={syncing} />
+              <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
+            </SyncButton>
+          </SyncWrap>
+        )}
       </PageHeader>
 
       <SyncOverlay status={syncStatus} syncing={syncing} onDismiss={() => setSyncStatus(null)} />
 
-      <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
+      <TabNavigation
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        weeks={weeks}
+        selectedSet={selectedSet}
+        sets={sets}
+        activeSetNumber={activeSet.number}
+        onSetChange={setSelectedSet}
+      />
 
       <SuperlativesGrid>
         {(loading || superlatives.length === 0
           ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.title, period: "···", value: "...", player: null }))
           : superlatives
         ).map((s) => (
-          <SuperlativeCardLink key={s.slug} href={`/stats/${s.slug}?tab=${selectedTab}`}>
+          <SuperlativeCardLink key={s.slug} href={buildHref(`/stats/${s.slug}`, { set: selectedSet.number, tab: selectedTab })}>
             <GlassCard spaceBetween title={s.label} titleExtra={<DurationPill>{s.period}</DurationPill>}>
               <StatValue>{renderStatValue(s.value)}</StatValue>
               {s.player ? (
-                <PlayerChip href={`/player/${s.player.puuid}`} title={`${s.player.gameName}#${s.player.tagLine}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                <PlayerChip href={buildHref(`/player/${s.player.puuid}`, { set: selectedSet.number, tab: selectedTab })} title={`${s.player.gameName}#${s.player.tagLine}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                   <ChipIcon>
                     {s.player.profileIconId ? (
                       <img
@@ -548,6 +564,7 @@ export default function WeeklyStatsPage() {
         }))}
         selectedTab={selectedTab}
         weeks={weeks}
+        selectedSet={selectedSet}
         periodTag={<DurationPill>{loading ? "···" : period}</DurationPill>}
       />
 
@@ -563,19 +580,19 @@ export default function WeeklyStatsPage() {
       />
 
       <StatsGrid>
-        <SuperlativeCardLink href={`/stats/games?tab=${selectedTab}`}>
+        <SuperlativeCardLink href={buildHref(`/stats/games`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Squad Games" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>{loading ? "..." : summaryStats.games}</StatValue>
           </GlassCard>
         </SuperlativeCardLink>
 
-        <SuperlativeCardLink href={`/stats/playtime?tab=${selectedTab}`}>
+        <SuperlativeCardLink href={buildHref(`/stats/playtime`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Squad Playtime" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>{loading ? "..." : <PlaytimeDisplay seconds={summaryStats.playtime} variant="full" />}</StatValue>
           </GlassCard>
         </SuperlativeCardLink>
 
-        <SuperlativeCardLink href={`/stats/top4-rate?tab=${selectedTab}`}>
+        <SuperlativeCardLink href={buildHref(`/stats/top4-rate`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Squad Top 4 Rate" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>
               {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.top4 / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}
@@ -583,7 +600,7 @@ export default function WeeklyStatsPage() {
           </GlassCard>
         </SuperlativeCardLink>
 
-        <SuperlativeCardLink href={`/stats/win-rate?tab=${selectedTab}`}>
+        <SuperlativeCardLink href={buildHref(`/stats/win-rate`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Squad Win Rate" titleExtra={<DurationPill>{loading ? "···" : period}</DurationPill>}>
             <StatValue>
               {loading ? "..." : renderStatValue(`${summaryStats.total > 0 ? ((summaryStats.firsts / summaryStats.total) * 100).toFixed(1) : "0.0"}%`)}

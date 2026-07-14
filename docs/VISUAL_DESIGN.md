@@ -96,6 +96,18 @@ The sticky tab bar uses a lighter variant — no background color, `backdrop-fil
 
 All blur values come from the semantic blur token scale: `subtle` (12px), `standard` (16px), `card` (24px), `heavy` (48px). Both `-webkit-backdrop-filter` and `backdrop-filter` are always set for Safari compatibility.
 
+## Set Switcher
+
+The set switcher reuses the `CustomSelect` primitive (no new tokens): accent-colored
+bold label + muted `sublabel`, glassmorphic portal list, gold checkmark on the
+selected option. It lives inside the sticky tab strip — desktop as a compact 180px
+select to the left of the week tab bar, mobile stacked above the week select. Set
+options carry a "Current" / "Archived" sublabel to distinguish the live set from
+frozen ones. When a set is archived, the page subtitle appends an **"Archived"**
+`DurationPill` (same gold-bordered accent pill used for period tags), and live
+affordances (Sync button) are removed rather than disabled. The switcher only
+appears once more than one set is browsable.
+
 ## Color Usage Rules
 
 | Context | Color | Token |

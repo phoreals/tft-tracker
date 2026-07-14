@@ -14,6 +14,7 @@ import { TabNavigation } from "@/components/TabNavigation";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { SyncOverlay } from "@/components/SyncOverlay";
 import { DurationPill } from "@/components/DurationPill";
+import { useSelectedSet } from "@/hooks/useSelectedSet";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import {
   formatRank,
@@ -21,9 +22,9 @@ import {
   getRankColor,
   rankToLP,
   getSetWeeks,
-  SET_START,
-  SET_END,
-  SET_LABEL,
+  getBrowsableSets,
+  getActiveSet,
+  buildHref,
   computePlayerStats,
   SUPERLATIVE_CATEGORIES,
   findLeader,
@@ -758,17 +759,22 @@ export default function PlayerDrilldownPage() {
   const [placementView, setPlacementView] = useState<"bar" | "donut">("bar");
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | undefined>(undefined);
 
-  const weeks = useMemo(() => getSetWeeks(), []);
-  const [selectedTab, setSelectedTab] = useSelectedTab();
+  const activeSet = useMemo(() => getActiveSet(), []);
+  const sets = useMemo(() => getBrowsableSets(), []);
+  const [selectedSet, setSelectedSet] = useSelectedSet();
+  const isArchived = selectedSet.number !== activeSet.number;
+  const weeks = useMemo(() => getSetWeeks(selectedSet), [selectedSet]);
+  const [selectedTab, setSelectedTab] = useSelectedTab(selectedSet);
 
   const fetchPlayer = useCallback(async () => {
-    const data: PlayerData[] = await fetch("/api/players", { cache: "no-store" }).then((r) => r.json());
+    const data: PlayerData[] = await fetch(`/api/players?set=${selectedSet.number}`, { cache: "no-store" }).then((r) => r.json());
     setAllPlayers(data);
     const found = data.find((p) => p.puuid === puuid);
     if (found) setPlayer(found);
-  }, [puuid]);
+  }, [puuid, selectedSet.number]);
 
   useEffect(() => {
+    setLoading(true);
     fetchPlayer().finally(() => setLoading(false));
   }, [fetchPlayer]);
 
@@ -831,10 +837,10 @@ export default function PlayerDrilldownPage() {
   // Active time window
   const isSet = selectedTab === "set";
   const activeWindow = isSet
-    ? { start: SET_START, end: SET_END }
+    ? { start: selectedSet.start, end: selectedSet.end }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
   const weekNumber = (weeks[selectedTab as number] ?? weeks[weeks.length - 1])?.weekNumber;
-  const period = isSet ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
+  const period = isSet ? selectedSet.label : weekNumber ? `Week ${weekNumber}` : "This Week";
 
   // Matches filtered to the active window
   const scopedMatches = useMemo(() => {
@@ -873,7 +879,7 @@ export default function PlayerDrilldownPage() {
     if (!player || allPlayers.length === 0) return { playerSuperlatives: [], lpDiff: null as number | null, lpPerGame: null as number | null };
 
     const win = isSet
-      ? { start: SET_START, end: SET_END }
+      ? { start: selectedSet.start, end: selectedSet.end }
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
     const stats = computePlayerStats(allPlayers, win);
     const me = stats.find((s) => s.player.puuid === player.puuid);
@@ -886,7 +892,7 @@ export default function PlayerDrilldownPage() {
       return {
         slug: cat.slug,
         title: cat.title,
-        label: cat.label(isSet, weeks[selectedTab as number]?.weekNumber),
+        label: cat.label(isSet, weeks[selectedTab as number]?.weekNumber, selectedSet.label),
         value: val !== null ? cat.format(val as number) : "—",
       };
     });
@@ -896,14 +902,14 @@ export default function PlayerDrilldownPage() {
       lpDiff: me?.lpDiff ?? null,
       lpPerGame: me?.lpPerGame ?? null,
     };
-  }, [player, allPlayers, selectedTab, weeks, isSet]);
+  }, [player, allPlayers, selectedTab, weeks, isSet, selectedSet]);
 
   if (loading) return <LoadingText>Loading...</LoadingText>;
   if (!player) return <LoadingText>Player not found.</LoadingText>;
 
   return (
     <Page>
-      <BackLink href="/">
+      <BackLink href={buildHref(`/`, { set: selectedSet.number, tab: selectedTab })}>
         <ArrowLeft size={ICON_SIZE.sm} />
         BACK TO HOME
       </BackLink>
@@ -941,59 +947,70 @@ export default function PlayerDrilldownPage() {
             )}
           </PlayerInfo>
         </PlayerIdentity>
-        <SyncWrap>
-          <SyncButton onClick={handleSync} disabled={syncing}>
-            <SpinningRefresh size={ICON_SIZE.md} $spinning={syncing} />
-            <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
-          </SyncButton>
-        </SyncWrap>
+        {!isArchived && (
+          <SyncWrap>
+            <SyncButton onClick={handleSync} disabled={syncing}>
+              <SpinningRefresh size={ICON_SIZE.md} $spinning={syncing} />
+              <span>{syncing ? "SYNCING..." : "SYNC NOW"}</span>
+            </SyncButton>
+          </SyncWrap>
+        )}
       </PlayerHeader>
 
       <SyncOverlay status={syncStatus} syncing={syncing} onDismiss={() => setSyncStatus(null)} />
 
       <PageSubtitle>
         {isSet ? (
-          <><strong>{SET_LABEL}</strong>{"\u2002·\u2002"}{formatDisplayDate(SET_START)}{"\u2009\u2013\u2009"}{formatDisplayDate(SET_END)}</>
+          <><strong>{selectedSet.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(selectedSet.end)}</>
         ) : (() => {
           const w = weeks[selectedTab as number];
           return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(w.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(w.end)}</> : null;
         })()}
+        {isArchived && <>{" · "}<DurationPill>Archived</DurationPill></>}
       </PageSubtitle>
 
-      <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
+      <TabNavigation
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        weeks={weeks}
+        selectedSet={selectedSet}
+        sets={sets}
+        activeSetNumber={activeSet.number}
+        onSetChange={setSelectedSet}
+      />
 
       <StatsGrid>
-        <StatCardLink href={`/stats/games?tab=${selectedTab}`}>
+        <StatCardLink href={buildHref(`/stats/games`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Games" titleExtra={<DurationPill>{period}</DurationPill>}>
             <StatValue>{totalGames}</StatValue>
           </GlassCard>
         </StatCardLink>
 
-        <StatCardLink href={`/stats/top4-rate?tab=${selectedTab}`}>
+        <StatCardLink href={buildHref(`/stats/top4-rate`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Top 4 Rate" titleExtra={<DurationPill>{period}</DurationPill>}>
             <StatValue>{percentOf(top4, totalGames)}%<StatCount>({top4})</StatCount></StatValue>
           </GlassCard>
         </StatCardLink>
 
-        <StatCardLink href={`/stats/win-rate?tab=${selectedTab}`}>
+        <StatCardLink href={buildHref(`/stats/win-rate`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Win Rate" titleExtra={<DurationPill>{period}</DurationPill>}>
             <StatValue>{percentOf(firsts, totalGames)}%<StatCount>({firsts})</StatCount></StatValue>
           </GlassCard>
         </StatCardLink>
 
-        <StatCardLink href={`/stats/playtime?tab=${selectedTab}`}>
+        <StatCardLink href={buildHref(`/stats/playtime`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Time Played" titleExtra={<DurationPill>{period}</DurationPill>}>
             <StatValue><PlaytimeDisplay seconds={totalDuration} variant="full" /></StatValue>
           </GlassCard>
         </StatCardLink>
 
-        <StatCardLink href={`/stats/highest-lp?tab=${selectedTab}`}>
+        <StatCardLink href={buildHref(`/stats/highest-lp`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="LP Gain" titleExtra={<DurationPill>{period}</DurationPill>}>
             <StatValue>{lpDiff !== null ? `${lpDiff >= 0 ? "+" : ""}${lpDiff} LP` : "—"}</StatValue>
           </GlassCard>
         </StatCardLink>
 
-        <StatCardLink href={`/stats/best-lp-per-game?tab=${selectedTab}`}>
+        <StatCardLink href={buildHref(`/stats/best-lp-per-game`, { set: selectedSet.number, tab: selectedTab })}>
           <GlassCard title="Avg LP Per Game" titleExtra={<DurationPill>{period}</DurationPill>}>
             <StatValue>{lpPerGame !== null ? `${lpPerGame >= 0 ? "+" : ""}${lpPerGame.toFixed(1)} LP/g` : "—"}</StatValue>
           </GlassCard>
@@ -1003,7 +1020,7 @@ export default function PlayerDrilldownPage() {
       {playerSuperlatives.length > 0 && (
         <BadgeRow>
           {playerSuperlatives.map((s) => (
-            <BadgeLink key={s.slug} href={`/stats/${s.slug}`}>
+            <BadgeLink key={s.slug} href={buildHref(`/stats/${s.slug}`, { set: selectedSet.number, tab: selectedTab })}>
               <BadgeLabel>{s.label}</BadgeLabel>
               <BadgeValue>{s.value}</BadgeValue>
             </BadgeLink>
@@ -1304,7 +1321,7 @@ export default function PlayerDrilldownPage() {
                     )}
                     <MatchMeta>{formatMatchDuration(m.duration)}</MatchMeta>
                     <PortalTooltip text={formatDateTime(m.timestamp)}>
-                      <MatchMeta>{formatRelativeTime(m.timestamp)}</MatchMeta>
+                      <MatchMeta>{isArchived ? formatDisplayDate(m.timestamp) : formatRelativeTime(m.timestamp)}</MatchMeta>
                     </PortalTooltip>
                     <MatchDateTouch>{formatShortDate(m.timestamp)}</MatchDateTouch>
                   </MatchRow>

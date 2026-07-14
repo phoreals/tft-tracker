@@ -394,11 +394,27 @@ export const MOCK_PLAYERS = [
   },
 ];
 
+// The set the mock data represents. Requests for any other set return the same
+// roster with empty matches/history so the archived/empty states are exercisable
+// in dev.
+export const MOCK_SET_NUMBER = 17;
+
+// Roster with per-set data: full data for MOCK_SET_NUMBER, empty otherwise
+// (roster is cross-set, but a different set has no games / no rank yet — the
+// authentic "new set, day one" state).
+export function getMockPlayersForSet(setNumber: number) {
+  if (setNumber === MOCK_SET_NUMBER) return MOCK_PLAYERS;
+  return MOCK_PLAYERS.map((p) => ({ ...p, current: null, matches: [], history: [] }));
+}
+
 // ⚠️  PRODUCTION GUARD — do not remove NODE_ENV check.
 export function isMockMode() {
   return !process.env.KV_REST_API_URL && process.env.NODE_ENV !== "production";
 }
 
-export function getMockPlayer(puuid: string) {
-  return MOCK_PLAYERS.find((p) => p.puuid === puuid) ?? null;
+export function getMockPlayer(puuid: string, setNumber: number = MOCK_SET_NUMBER) {
+  const player = MOCK_PLAYERS.find((p) => p.puuid === puuid);
+  if (!player) return null;
+  if (setNumber === MOCK_SET_NUMBER) return player;
+  return { ...player, current: null, matches: [], history: [] };
 }

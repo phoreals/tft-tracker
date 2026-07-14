@@ -1,40 +1,126 @@
 // ── Set Schedule ─────────────────────────────────────────────────
 
-export const SET_START = new Date("2026-04-15T00:00:00").getTime();
-export const SET_END = new Date("2026-07-29T23:59:59").getTime();
-export const SET_NUMBER = 17;
-export const SET_LABEL = `Set ${SET_NUMBER}`;
+export interface TftSet {
+  number: number;
+  label: string;
+  start: number;
+  end: number;
+}
+
+// Registry of all tracked TFT sets, oldest first. The active set is derived from
+// today's date (getActiveSet), so adding a future set here makes it activate
+// automatically at its start date — no code change needed at rollover. Once the
+// active set moves on, the previous set is never written to again and freezes
+// into a browsable archive (see lib/kv.ts key namespacing).
+//
+// Set 18's end is provisional — update it when Riot announces the Set 19 launch.
+export const SETS: TftSet[] = [
+  { number: 17, label: "Set 17", start: new Date("2026-04-15T00:00:00").getTime(), end: new Date("2026-07-29T23:59:59").getTime() },
+  { number: 18, label: "Set 18", start: new Date("2026-07-30T00:00:00").getTime(), end: new Date("2026-11-11T23:59:59").getTime() },
+];
+
+// Dev-only "now" override for previewing set rollover locally. Set
+// NEXT_PUBLIC_PREVIEW_DATE (e.g. "2026-08-01") to make the app behave as if it
+// were that date — e.g. to see the set switcher and archived views before Set 18
+// actually starts. Ignored entirely in production; falls back to the real clock.
+function nowMs(): number {
+  if (process.env.NODE_ENV !== "production") {
+    const preview = process.env.NEXT_PUBLIC_PREVIEW_DATE;
+    if (preview) {
+      const t = new Date(preview).getTime();
+      if (!isNaN(t)) return t;
+    }
+  }
+  return Date.now();
+}
+
+// The set currently being played — the latest set whose start date has passed.
+// Server routes MUST call this per-request; do not rely on the SET_* aliases
+// below, which are frozen at module-load time.
+export function getActiveSet(now: number = nowMs()): TftSet {
+  let active = SETS[0];
+  for (const s of SETS) {
+    if (s.start <= now && s.start >= active.start) active = s;
+  }
+  return active;
+}
+
+export function getSetByNumber(n: number): TftSet | undefined {
+  return SETS.find((s) => s.number === n);
+}
+
+// Resolve a `?set=` URL param to a set, falling back to the active set for
+// missing / unknown / not-yet-started values.
+export function resolveSet(param?: string | null, now: number = nowMs()): TftSet {
+  const n = param != null ? parseInt(param, 10) : NaN;
+  if (!isNaN(n)) {
+    const s = getSetByNumber(n);
+    if (s && s.start <= now) return s;
+  }
+  return getActiveSet(now);
+}
+
+// Sets available to browse right now (started on or before `now`), newest first.
+// A not-yet-started set is hidden until its start date.
+export function getBrowsableSets(now: number = nowMs()): TftSet[] {
+  return SETS.filter((s) => s.start <= now).sort((a, b) => b.start - a.start);
+}
+
+// Back-compat aliases: the active set at module-load time. Client bundles
+// re-evaluate on load, so these are safe defaults for UI. Server routes must call
+// getActiveSet() per-request (a warm serverless instance could otherwise hold a
+// stale active set across the set boundary).
+export const SET_START = getActiveSet().start;
+export const SET_END = getActiveSet().end;
+export const SET_NUMBER = getActiveSet().number;
+export const SET_LABEL = getActiveSet().label;
+
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function getCurrentSetWeek(): { label: string; start: number; end: number; weekNumber: number } {
-  const now = Date.now();
-  let start = SET_START;
+export function getCurrentSetWeek(set: TftSet = getActiveSet()): { label: string; start: number; end: number; weekNumber: number } {
+  const now = nowMs();
+  let start = set.start;
   let i = 1;
-  while (start + WEEK_MS <= now && start + WEEK_MS < SET_END) {
+  while (start + WEEK_MS <= now && start + WEEK_MS < set.end) {
     start += WEEK_MS;
     i++;
   }
   return {
     label: `Week ${i}`,
     start,
-    end: Math.min(start + WEEK_MS, SET_END),
+    end: Math.min(start + WEEK_MS, set.end),
     weekNumber: i,
   };
 }
 
-// Returns all past/current set-weeks (no future weeks).
-export function getSetWeeks(): { label: string; start: number; end: number; weekNumber: number }[] {
+// Returns all past/current set-weeks for the given set. For the active set this
+// stops at the current week; for a finished (archived) set `now` is past its end,
+// so every week through set.end is returned.
+export function getSetWeeks(set: TftSet = getActiveSet()): { label: string; start: number; end: number; weekNumber: number }[] {
   const weeks: { label: string; start: number; end: number; weekNumber: number }[] = [];
-  let start = SET_START;
+  let start = set.start;
   let i = 1;
-  const now = Date.now();
-  while (start < SET_END && start <= now) {
-    const end = Math.min(start + WEEK_MS, SET_END);
+  const now = nowMs();
+  while (start < set.end && start <= now) {
+    const end = Math.min(start + WEEK_MS, set.end);
     weeks.push({ label: `Week ${i}`, start, end, weekNumber: i });
     start += WEEK_MS;
     i++;
   }
   return weeks;
+}
+
+// Build an internal href carrying the tracker's URL params (set + tab) so the
+// selected set and week persist across navigation. Null/empty params are omitted.
+export function buildHref(
+  pathname: string,
+  params: { set?: number | string | null; tab?: string | number | null },
+): string {
+  const sp = new URLSearchParams();
+  if (params.set != null && params.set !== "") sp.set("set", String(params.set));
+  if (params.tab != null && params.tab !== "") sp.set("tab", String(params.tab));
+  const qs = sp.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
 }
 
 // ── Rank Utilities ───────────────────────────────────────────────
@@ -233,19 +319,19 @@ export function computePlayerStats(
 export type SuperlativeCategory = {
   slug: string;
   title: string;
-  label: (isSet: boolean, weekNumber?: number) => string;
+  label: (isSet: boolean, weekNumber?: number, setLabel?: string) => string;
   key: keyof Pick<PlayerStat, "games" | "firsts" | "winRate" | "top4Rate" | "time" | "lpDiff" | "lpPerGame">;
   format: (v: number) => string;
   filter: (s: PlayerStat) => boolean;
 };
 
 export const SUPERLATIVE_CATEGORIES: SuperlativeCategory[] = [
-  { slug: "games",            title: "Most Games Played",      label: (s, w) => s ? `Most Games Played ${SET_LABEL}` : `Most Games Played ${w ? `Week ${w}` : "This Week"}`,           key: "games",     format: (v) => String(v),                                      filter: (s) => s.games > 0 },
-  { slug: "top4-rate",        title: "Best Top 4 Rate", label: (s, w) => s ? `Best Top 4 Rate ${SET_LABEL}` : `Best Top 4 Rate ${w ? `Week ${w}` : "This Week"}`,     key: "top4Rate",  format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
-  { slug: "win-rate",         title: "Best Win Rate",   label: (s, w) => s ? `Best Win Rate ${SET_LABEL}` : `Best Win Rate ${w ? `Week ${w}` : "This Week"}`,         key: "winRate",   format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
-  { slug: "playtime",         title: "Most Playtime",   label: (s, w) => s ? `Most Playtime ${SET_LABEL}` : `Most Playtime ${w ? `Week ${w}` : "This Week"}`,         key: "time",      format: (v) => formatPlaytime(v),                              filter: (s) => s.time > 0 },
-  { slug: "highest-lp",       title: "Most LP Gained",  label: (s, w) => s ? `Most LP Gained ${SET_LABEL}` : `Most LP Gained ${w ? `Week ${w}` : "This Week"}`,       key: "lpDiff",    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,                  filter: (s) => s.lpDiff !== null },
-  { slug: "best-lp-per-game", title: "Avg LP Per Game",  label: (s, w) => s ? `Avg LP Per Game ${SET_LABEL}` : `Avg LP Per Game ${w ? `Week ${w}` : "This Week"}`,       key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },
+  { slug: "games",            title: "Most Games Played",      label: (s, w, setLabel = SET_LABEL) => s ? `Most Games Played ${setLabel}` : `Most Games Played ${w ? `Week ${w}` : "This Week"}`,           key: "games",     format: (v) => String(v),                                      filter: (s) => s.games > 0 },
+  { slug: "top4-rate",        title: "Best Top 4 Rate", label: (s, w, setLabel = SET_LABEL) => s ? `Best Top 4 Rate ${setLabel}` : `Best Top 4 Rate ${w ? `Week ${w}` : "This Week"}`,     key: "top4Rate",  format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
+  { slug: "win-rate",         title: "Best Win Rate",   label: (s, w, setLabel = SET_LABEL) => s ? `Best Win Rate ${setLabel}` : `Best Win Rate ${w ? `Week ${w}` : "This Week"}`,         key: "winRate",   format: (v) => `${v.toFixed(1)}%`,                             filter: (s) => s.games > 0 },
+  { slug: "playtime",         title: "Most Playtime",   label: (s, w, setLabel = SET_LABEL) => s ? `Most Playtime ${setLabel}` : `Most Playtime ${w ? `Week ${w}` : "This Week"}`,         key: "time",      format: (v) => formatPlaytime(v),                              filter: (s) => s.time > 0 },
+  { slug: "highest-lp",       title: "Most LP Gained",  label: (s, w, setLabel = SET_LABEL) => s ? `Most LP Gained ${setLabel}` : `Most LP Gained ${w ? `Week ${w}` : "This Week"}`,       key: "lpDiff",    format: (v) => `${v >= 0 ? "+" : ""}${v} LP`,                  filter: (s) => s.lpDiff !== null },
+  { slug: "best-lp-per-game", title: "Avg LP Per Game",  label: (s, w, setLabel = SET_LABEL) => s ? `Avg LP Per Game ${setLabel}` : `Avg LP Per Game ${w ? `Week ${w}` : "This Week"}`,       key: "lpPerGame", format: (v) => `${v >= 0 ? "+" : ""}${v.toFixed(1)} LP/game`,  filter: (s) => s.lpPerGame !== null },
 ];
 
 export function findLeader(stats: PlayerStat[], cat: SuperlativeCategory): PlayerStat | null {

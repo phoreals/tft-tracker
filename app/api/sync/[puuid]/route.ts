@@ -19,7 +19,7 @@ import {
   delay,
   RateLimitError,
 } from "@/lib/riot";
-import { SET_START } from "@/lib/utils";
+import { getActiveSet } from "@/lib/utils";
 
 const BATCH_SIZE = 30;
 const TOTAL_TIMEOUT_MS = 50_000;
@@ -29,6 +29,8 @@ export async function POST(
   { params }: { params: Promise<{ puuid: string }> }
 ) {
   const { puuid } = await params;
+  // Resolve the active set per-request (see note in ../route.ts).
+  const activeSet = getActiveSet();
   const players = await getTrackedPlayers();
   const player = players.find((p) => p.puuid === puuid);
 
@@ -61,10 +63,10 @@ export async function POST(
         losses: tftEntry.losses,
         lastUpdated: new Date().toISOString(),
       };
-      await setPlayerCurrent(player.puuid, current);
+      await setPlayerCurrent(player.puuid, activeSet.number, current);
 
       const today = new Date().toISOString().split("T")[0];
-      await appendPlayerHistory(player.puuid, {
+      await appendPlayerHistory(player.puuid, activeSet.number, {
         date: today,
         tier: tftEntry.tier,
         rank: tftEntry.rank,
@@ -76,9 +78,9 @@ export async function POST(
     }
 
     await delay(100);
-    const setStartSec = Math.floor(SET_START / 1000);
+    const setStartSec = Math.floor(activeSet.start / 1000);
     const matchIds = await getAllMatchIds(player.puuid, setStartSec, deadline);
-    const existing = await getPlayerMatches(player.puuid);
+    const existing = await getPlayerMatches(player.puuid, activeSet.number);
     const existingIds = new Set(existing.map((m) => m.matchId));
     const allNewMatchIds = matchIds.filter((id) => !existingIds.has(id));
 
@@ -98,6 +100,12 @@ export async function POST(
         await delay(100);
         try {
           const match = await getMatch(matchId, deadline);
+          // Defensive guard: never store a match from another set into this
+          // set's archive (start_time scoping should already prevent it).
+          if (match.info.tft_set_number !== activeSet.number) {
+            console.warn(`[sync:player] ${playerLabel}: skipping match ${matchId} from set ${match.info.tft_set_number} (active is ${activeSet.number})`);
+            continue;
+          }
           const participant = match.info.participants.find((p) => p.puuid === player.puuid);
           if (participant) {
             allNewRecords.push({
@@ -108,6 +116,7 @@ export async function POST(
               ranked: match.info.queue_id === 1100,
               lastRound: participant.last_round,
               gameType: match.info.tft_game_type,
+              setNumber: match.info.tft_set_number,
             });
           }
         } catch (err) {
@@ -123,7 +132,7 @@ export async function POST(
 
     if (allNewRecords.length > 0) {
       const allMatches = [...existing, ...allNewRecords].sort((a, b) => a.timestamp - b.timestamp);
-      await setPlayerMatches(player.puuid, allMatches);
+      await setPlayerMatches(player.puuid, activeSet.number, allMatches);
     }
 
     console.log(`[sync:player] ${playerLabel}: done — ${allNewRecords.length} added, ${matchesRemaining} remaining`);

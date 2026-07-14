@@ -9,6 +9,7 @@ import {
   delay,
 } from "@/lib/riot";
 import type { MatchRecord } from "@/lib/kv";
+import { getActiveSet } from "@/lib/utils";
 
 export const maxDuration = 60;
 
@@ -64,6 +65,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid index" }, { status: 400 });
   }
 
+  const activeSet = getActiveSet();
+
   const results: { name: string; success: boolean; error?: string; skipped?: boolean; matchCount?: number }[] = [];
 
   for (const { gameName, tagLine } of toSeed) {
@@ -93,7 +96,7 @@ export async function POST(req: NextRequest) {
       const entries = await getLeagueEntries(account.puuid);
       const tftEntry = entries.find((e) => e.queueType === "RANKED_TFT");
       if (tftEntry) {
-        await setPlayerCurrent(account.puuid, {
+        await setPlayerCurrent(account.puuid, activeSet.number, {
           tier: tftEntry.tier,
           rank: tftEntry.rank,
           lp: tftEntry.leaguePoints,
@@ -104,13 +107,14 @@ export async function POST(req: NextRequest) {
       }
       await delay(100);
 
-      // Fetch all match history (paginated)
-      const matchIds = await getAllMatchIds(account.puuid);
+      // Fetch active-set match history (paginated, scoped to the set window)
+      const matchIds = await getAllMatchIds(account.puuid, Math.floor(activeSet.start / 1000));
       const matchRecords: MatchRecord[] = [];
       for (const matchId of matchIds) {
         await delay(100);
         try {
           const match = await getMatch(matchId);
+          if (match.info.tft_set_number !== activeSet.number) continue;
           const participant = match.info.participants.find(
             (p) => p.puuid === account.puuid
           );
@@ -120,6 +124,10 @@ export async function POST(req: NextRequest) {
               placement: participant.placement,
               duration: Math.round(match.info.game_length),
               timestamp: match.info.game_datetime,
+              ranked: match.info.queue_id === 1100,
+              lastRound: participant.last_round,
+              gameType: match.info.tft_game_type,
+              setNumber: match.info.tft_set_number,
             });
           }
         } catch {
@@ -127,7 +135,7 @@ export async function POST(req: NextRequest) {
         }
       }
       if (matchRecords.length > 0) {
-        await setPlayerMatches(account.puuid, matchRecords);
+        await setPlayerMatches(account.puuid, activeSet.number, matchRecords);
       }
 
       results.push({

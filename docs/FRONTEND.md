@@ -39,13 +39,15 @@ components/
 ├── PlayerTableView.tsx     Table view for player stats — <table> with sortable headers.
 ├── PlayerCardView.tsx      Card view for player stats — CSS Grid, auto-fill columns, each player a card.
 ├── PlaytimeDisplay.tsx     Reusable playtime formatter with portal tooltip. Three variants: full, hours, short.
-├── TabNavigation.tsx       Shared sticky tab bar + mobile dropdown. Props: selectedTab, onTabChange, weeks.
+├── TabNavigation.tsx       Shared sticky set switcher + week tab bar + mobile dropdowns. Props: selectedTab, onTabChange, weeks, selectedSet, sets, activeSetNumber, onSetChange.
+├── CustomSelect.tsx        Accessible portal-rendered dropdown (SelectOption {value,label,sublabel}). Used for the set switcher and mobile week select.
 ├── SyncOverlay.tsx         Fixed-position toast for sync results. Portal to body. Auto-dismiss success, persist errors with copy button.
 └── RankChart.tsx           Recharts LineChart. Y-axis tick tooltips via portal. Props: hideLegend, lineColors, periodTag.
 
 hooks/
-├── usePlayerRows.ts        Data + sort logic for player stats. Returns sortedRows, sortKey, sortDir, toggleSort.
-├── useSelectedTab.ts       URL-aware tab state. Local React state is the immediate source of truth (instant UI); URL (?tab=) is synced as a side effect via router.replace for persistence. searchParams changes (browser back/forward) sync back into state via useEffect.
+├── usePlayerRows.ts        Data + sort logic for player stats. Takes a setWindow {start,end} for whole-set totals. Returns sortedRows, sortKey, sortDir, toggleSort.
+├── useSelectedSet.ts       URL-aware selected-set state (?set=, via resolveSet). Same immediate-state + URL-sync pattern as useSelectedTab. Switching set also resets ?tab= to "set". Returns [TftSet, (setNumber)=>void].
+├── useSelectedTab.ts       URL-aware tab state, scoped to a viewed set: useSelectedTab(viewedSet). Uses getSetWeeks(viewedSet) for defaults and clamps out-of-range week indices to "set". Local state is immediate; URL (?tab=) synced via router.replace; searchParams/viewedSet changes sync back via useEffect.
 └── useTabNavigation.ts     useFullBleedSticky + useScrollFade hooks for the sticky tab bar.
 
 styles/
@@ -55,7 +57,7 @@ styles/
 └── StyledComponentsRegistry.tsx  SSR-compatible styled-components setup for App Router.
 
 lib/
-├── utils.ts               Formatters: formatPlaytime/Hours/Short/Full, formatRank, getSetWeeks, percentOf.
+├── utils.ts               Formatters + set registry. SETS array, TftSet type, getActiveSet/getSetByNumber/resolveSet/getBrowsableSets, per-set getSetWeeks(set)/getCurrentSetWeek(set), buildHref(pathname,{set,tab}), computePlayerStats, SUPERLATIVE_CATEGORIES. SET_* aliases = active set at module load (UI defaults only; routes call getActiveSet() per request).
 ├── mock.ts                Mock data for local dev (activated when KV_REST_API_URL is absent).
 ├── riot.ts                (see BACKEND.md)
 └── kv.ts                  (see BACKEND.md)
@@ -89,8 +91,8 @@ Card padding is 16px on mobile, switching to the `glassCard.padding` token (24px
 Wraps content in a `motion.div` with fade-in + slide-up (16px) animation on mount.
 
 ### PlayerTable (shell)
-Receives `{ players, selectedTab, weeks, periodTag? }` — fully controlled by page.tsx. Internally:
-1. Calls `usePlayerRows(players, selectedTab, weeks)` to get sorted rows and sort state
+Receives `{ players, selectedTab, weeks, selectedSet, periodTag? }` — fully controlled by page.tsx. Internally:
+1. Calls `usePlayerRows(players, selectedTab, weeks, { start: selectedSet.start, end: selectedSet.end })` to get sorted rows and sort state
 2. Manages `view: "table" | "card"` state
 3. Passes `periodTag` as `GlassCard`'s `titleExtra` and `ViewToggle` as `headerAction`
 4. Delegates rendering to `PlayerTableView` (table) or `PlayerCardView` (card)
@@ -144,11 +146,13 @@ No global state library. Each page manages its own state:
 
 ### Weekly Stats
 ```
-players: PlayerData[]          — fetched from /api/players on mount
+players: PlayerData[]          — fetched from /api/players?set=N on mount, refetched when selectedSet changes
 loading: boolean               — true until first fetch completes
 syncing: boolean               — true while /api/sync is in flight
+selectedSet: TftSet            — viewed set (?set=, useSelectedSet); drives the fetch and all windows
 selectedTab: "set" | number    — controls summary cards, PlayerTable, and RankChart simultaneously
-weeks: SetWeek[]               — computed once from getSetWeeks(), passed to both child components
+weeks: SetWeek[]               — getSetWeeks(selectedSet), recomputed when the set changes
+sets: TftSet[]                 — getBrowsableSets() for the switcher; activeSet for Current/Archived + hiding Sync
 ```
 
 ### Manage Players
@@ -179,7 +183,7 @@ error: string             — validation/API error message
 
 ## Local Development / Mock Data
 
-When `KV_REST_API_URL` is not set, `lib/mock.ts` provides fake data so the app is fully interactive without a Redis connection. `isMockMode()` returns `true` in this case. API routes that read player data call `isMockMode()` and return `MOCK_PLAYERS` or `getMockPlayer(puuid)` instead of hitting Redis.
+When `KV_REST_API_URL` is not set, `lib/mock.ts` provides fake data so the app is fully interactive without a Redis connection. `isMockMode()` returns `true` in this case. API routes that read player data call `isMockMode()` and return set-aware mock data — `getMockPlayersForSet(setNumber)` / `getMockPlayer(puuid, setNumber)` — instead of hitting Redis. Mock data represents `MOCK_SET_NUMBER` (17); requests for any other set return the same roster with empty matches/history, so the archived/empty states are exercisable in dev. (Before the Set 18 start date, `resolveSet` still maps `?set=18` back to the active Set 17.)
 
 Mock data covers all 10 rank tiers (one player per tier). Mock puuids follow the pattern `mock-puuid-{name}`: `mock-puuid-richardpression` (Challenger), `mock-puuid-firelordappa` (Grandmaster), `mock-puuid-caramelpapi` (Master), `mock-puuid-banh` (Diamond), `mock-puuid-vtaehyung` (Emerald), `mock-puuid-demure` (Platinum), `mock-puuid-lionnel` (Gold), `mock-puuid-nisca` (Silver), `mock-puuid-goldeen` (Bronze), `mock-puuid-mrbonchen` (Iron).
 

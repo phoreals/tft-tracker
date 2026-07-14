@@ -22,6 +22,7 @@ The app has basic accessibility but is not fully audited. This document tracks w
 - **Disabled states**: buttons show `opacity: 0.5` and `cursor: not-allowed` when disabled.
 - **Reduced motion**: `globals.css` includes a `prefers-reduced-motion: reduce` block.
 - **Player chip tooltips**: homepage superlative player chips have `title` attributes showing the full `gameName#tagLine` when text is truncated.
+- **Set switcher**: the set switcher reuses `CustomSelect`, so it inherits that component's accessibility — `aria-haspopup="listbox"`, `aria-expanded`, `role="listbox"`/`role="option"` with `aria-selected`, full keyboard support (Arrow/Enter/Space/Escape/Tab), roving `tabIndex`, portal rendering, and 44px option rows. The current-vs-archived distinction is conveyed textually via each option's "Current"/"Archived" sublabel (not by color alone), and the archived state is also surfaced as a visible "Archived" pill in the page subtitle.
 
 ## Touch / Mobile
 
