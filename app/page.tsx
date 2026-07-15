@@ -178,7 +178,7 @@ const PlayerChip = styled(Link)`
   text-decoration: none;
   color: inherit;
   position: relative;
-  z-index: 1;
+  z-index: 2; /* above the card's stretched-link overlay (z-index 1) */
   transition: background 0.2s;
   max-width: calc(100% + ${({ theme }) => theme.primitive.spacing.xs});
 
@@ -263,6 +263,48 @@ const SuperlativeCardLink = styled(Link)`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
     outline-offset: 2px;
+  }
+`;
+
+// Superlative cards contain a nested player link, so they use the "stretched link"
+// pattern instead of wrapping the whole card in an <a> (which would nest <a> in <a>
+// and cause a hydration error). SuperlativeCard is a plain wrapper; the card's link
+// is an absolutely-positioned overlay (CardStretchedLink) rendered inside GlassCard,
+// and PlayerChip sits above it (z-index 2) as a separate, real link.
+const SuperlativeCard = styled.div`
+  display: flex;
+  min-width: 0;
+  border-radius: ${({ theme }) => theme.component.glassCard.radius};
+  transition: transform 0.15s;
+
+  & > * {
+    flex: 1;
+  }
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:hover ${ChipName} {
+    color: ${({ theme }) => theme.semantic.color.accent};
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+// Overlay link that covers the whole card. Sits inside GlassCard (position: relative,
+// overflow: hidden), so it sizes to the card and shares the chip's stacking context.
+// The focus ring uses a negative offset so it isn't clipped by the card's overflow.
+const CardStretchedLink = styled(Link)`
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.semantic.color.accent};
+    outline-offset: -2px;
   }
 `;
 
@@ -526,11 +568,12 @@ export default function WeeklyStatsPage() {
           ? SUPERLATIVE_CATEGORIES.map((cat) => ({ slug: cat.slug, label: cat.title, period: "···", value: "...", player: null }))
           : superlatives
         ).map((s) => (
-          <SuperlativeCardLink key={s.slug} href={buildHref(`/stats/${s.slug}`, { set: selectedSet.number, tab: selectedTab })}>
+          <SuperlativeCard key={s.slug}>
             <GlassCard spaceBetween title={s.label} titleExtra={<DurationPill>{s.period}</DurationPill>}>
+              <CardStretchedLink href={buildHref(`/stats/${s.slug}`, { set: selectedSet.number, tab: selectedTab })} aria-label={s.label} />
               <StatValue>{renderStatValue(s.value)}</StatValue>
               {s.player ? (
-                <PlayerChip href={buildHref(`/player/${s.player.puuid}`, { set: selectedSet.number, tab: selectedTab })} title={`${s.player.gameName}#${s.player.tagLine}`} onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                <PlayerChip href={buildHref(`/player/${s.player.puuid}`, { set: selectedSet.number, tab: selectedTab })} title={`${s.player.gameName}#${s.player.tagLine}`}>
                   <ChipIcon>
                     {s.player.profileIconId ? (
                       <img
@@ -550,7 +593,7 @@ export default function WeeklyStatsPage() {
                 <NoDataLabel>Awaiting data</NoDataLabel>
               )}
             </GlassCard>
-          </SuperlativeCardLink>
+          </SuperlativeCard>
         ))}
       </SuperlativesGrid>
 
