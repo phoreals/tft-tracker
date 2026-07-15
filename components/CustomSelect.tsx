@@ -52,10 +52,10 @@ const Trigger = styled.button<{ $open: boolean; $variant: "default" | "tag"; $to
     $variant === "tag" &&
     `
     width: auto;
-    min-height: 0;
+    min-height: 44px;
     justify-content: center;
     gap: ${theme.primitive.spacing["2xs"]};
-    padding: ${theme.primitive.spacing["2xs"]};
+    padding: ${theme.primitive.spacing["2xs"]} ${theme.primitive.spacing.sm};
     border-radius: ${theme.semantic.radius.control};
     ${theme.semantic.typography.label};
     font-size: ${theme.primitive.fontSize.xs};
@@ -68,6 +68,7 @@ const Trigger = styled.button<{ $open: boolean; $variant: "default" | "tag"; $to
       border-color: ${theme.semantic.color.borderDefault};
       background: ${$open ? theme.semantic.color.bgHover : "transparent"};
       & strong { color: ${theme.semantic.color.textMuted}; font-weight: ${theme.primitive.fontWeight.regular}; }
+      & svg { color: ${theme.semantic.color.textMuted}; }
       &:hover { background: ${theme.semantic.color.bgHover}; }
     `
         : `
@@ -334,11 +335,9 @@ export function CustomSelect({ options, value, onChange, className, variant = "d
         onKeyDown={handleTriggerKeyDown}
       >
         <span><BoldLabel>{selectedLabel}</BoldLabel>{triggerSub && <Sublabel>{"\u2002·\u2002"}{triggerSub}</Sublabel>}</span>
-        {variant !== "tag" && (
-          <ChevronIcon $open={open}>
-            <ChevronDown size={14} />
-          </ChevronIcon>
-        )}
+        <ChevronIcon $open={open}>
+          <ChevronDown size={14} />
+        </ChevronIcon>
       </Trigger>
 
       {typeof document !== "undefined" && createPortal(list, document.body)}

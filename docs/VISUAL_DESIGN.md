@@ -100,10 +100,10 @@ All blur values come from the semantic blur token scale: `subtle` (12px), `stand
 
 The set switcher is intentionally low-emphasis — switching sets is rare — so it
 renders inline in the page subtitle as a **tag**, not a form control. It reuses the
-`CustomSelect` primitive via a new `variant="tag"`: the trigger drops the chevron
-and adopts `DurationPill` styling (`radius.control` pill, `spacing.2xs` padding,
-`label` typography, `xs` font) with a transparent background that tints on
-hover/open. It has two tones (`tone` prop):
+`CustomSelect` primitive via a new `variant="tag"`: a `DurationPill`-styled pill
+(`radius.control`, `label` typography, `xs` font) with a transparent background that
+tints on hover/open, a small dropdown chevron, and `min-height: 44px` to meet the
+tap-target guideline. It has two tones (`tone` prop):
 
 - **accent** (active set): gold text + `borderHover`, showing just the set label.
 - **muted** (archived set): `textMuted` text (regular weight) + `borderDefault`,

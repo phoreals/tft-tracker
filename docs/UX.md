@@ -17,11 +17,12 @@ Navigation is always visible. The active page is highlighted with a gold accent 
 
 Choosing which TFT set to view is a **rare** action, so the switcher is
 deliberately low-emphasis: it lives inline at the **start of the page subtitle**,
-styled as a tag (matching `DurationPill`) rather than a form control — **no
-dropdown chevron**. It's the `SetTag` component, backed by the `?set=` URL param
-(`useSelectedSet`) and shared across all pages (Home, Stat Drilldown, Player
+styled as a tag (matching `DurationPill`) with a small **dropdown chevron** to
+signal it's interactive. It's the `SetTag` component, backed by the `?set=` URL
+param (`useSelectedSet`) and shared across all pages (Home, Stat Drilldown, Player
 Drilldown). Clicking it opens a `CustomSelect` dropdown (`variant="tag"`) listing
 the browsable sets newest-first, each with a **"Current"** / **"Archived"** sublabel.
+The trigger meets the 44px minimum tap target.
 
 - When **only one set is browsable** (before the first rollover) it renders as a
   static, non-interactive `DurationPill` — there is nothing to switch to.

@@ -41,7 +41,7 @@ components/
 ├── PlaytimeDisplay.tsx     Reusable playtime formatter with portal tooltip. Three variants: full, hours, short.
 ├── TabNavigation.tsx       Shared sticky week tab bar + mobile week dropdown. Props: selectedTab, onTabChange, weeks, selectedSet (for the "set" tab label).
 ├── SetTag.tsx              Low-emphasis set switcher rendered in the page subtitle: CustomSelect variant="tag" when >1 browsable set, static DurationPill otherwise. Props: selectedSet, sets, activeSetNumber, onSetChange.
-├── CustomSelect.tsx        Accessible portal-rendered dropdown (SelectOption {value,label,sublabel}). variant="default" (mobile week select) | "tag" (set switcher: pill-styled trigger, no chevron).
+├── CustomSelect.tsx        Accessible portal-rendered dropdown (SelectOption {value,label,sublabel}). variant="default" (mobile week select) | "tag" (set switcher: pill-styled trigger + chevron, 44px min tap target, tone accent/muted).
 ├── SyncOverlay.tsx         Fixed-position toast for sync results. Portal to body. Auto-dismiss success, persist errors with copy button.
 └── RankChart.tsx           Recharts LineChart. Y-axis tick tooltips via portal. Props: hideLegend, lineColors, periodTag.
 
