@@ -13,25 +13,31 @@ Navigation is always visible. The active page is highlighted with a gold accent 
 
 ## Home (`/`)
 
-### Set Switcher
+### Set Switcher (`SetTag`)
 
-A `CustomSelect` dropdown for choosing which TFT set to view, part of the sticky
-tab strip. Backed by the `?set=` URL param (`useSelectedSet`) and shared across all
-pages (Home, Stat Drilldown, Player Drilldown). Options list the browsable sets
-newest-first, each with a sublabel: **"Current"** for the active set, **"Archived"**
-for finished sets.
+Choosing which TFT set to view is a **rare** action, so the switcher is
+deliberately low-emphasis: it lives inline at the **start of the page subtitle**,
+styled as a tag (matching `DurationPill`) rather than a form control — **no
+dropdown chevron**. It's the `SetTag` component, backed by the `?set=` URL param
+(`useSelectedSet`) and shared across all pages (Home, Stat Drilldown, Player
+Drilldown). Clicking it opens a `CustomSelect` dropdown (`variant="tag"`) listing
+the browsable sets newest-first, each with a **"Current"** / **"Archived"** sublabel.
 
-- **Only shown when more than one set is browsable** — i.e. once a new set has
-  started and the previous one is archived. Before the first rollover there is a
-  single set and no switcher.
-- Desktop: a compact 180px select sits to the **left** of the week tab bar (set is
-  the parent scope of week). Mobile: stacked **above** the week `CustomSelect`.
+- When **only one set is browsable** (before the first rollover) it renders as a
+  static, non-interactive `DurationPill` — there is nothing to switch to.
+- The subtitle reads `[Set N tag] · <period> · <dates>`, so the set context is
+  always visible regardless of the selected week tab. (The set switcher is *not* in
+  the tab bar — the tab bar's first "Set N" tab still selects the whole-set time
+  window.)
 - Switching set resets the week tab to the whole-set overview and refetches
   `GET /api/players?set=N`.
-- **Archived view**: when the viewed set is not the active set, the page subtitle
-  shows an "Archived" pill, the Sync button is hidden (syncing a finished set is
-  meaningless — Riot no longer reports it), and the player page shows absolute match
-  dates instead of live "x ago" relative times.
+- **Archived treatment**: when the viewed set is not the active set, the tag is
+  **de-emphasized** — muted grey text/border (regular weight) instead of the gold
+  accent — and reads **"Set N · Archived"** so it's clear you're looking at a past
+  set. (The active set's tag stays gold and shows just "Set N".) The Sync button is
+  hidden (syncing a finished set is meaningless — Riot no longer reports it), and the
+  player page shows absolute match dates instead of live "x ago" relative times.
+  There is no separate "Archived" pill — the tag carries that state itself.
 
 ### Page-Level Tab Navigation
 

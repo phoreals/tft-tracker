@@ -4,7 +4,7 @@
 
 ```
 /                          Weekly Stats (main view)
-  ├── Set switcher         (sticky, only shown when >1 set is browsable) Current / Archived
+  ├── Subtitle set tag     Low-emphasis tag in the subtitle; opens set dropdown (Current / Archived)
   ├── Tab bar (sticky)     "Set N" | Week 1 … Week N (controls all below)
   ├── Superlatives         6 cards: leader per stat category (tab-scoped)
   ├── Player table         Per-player stats (tab-scoped columns)
@@ -45,8 +45,10 @@ previous set becomes a frozen, browsable **archive**.
 - **Identity is cross-set**; the per-set facets (current / history / matches) are
   stored under set-namespaced Redis keys, so an archived set is never overwritten.
 - The **global set switcher** (`?set=` URL param, `useSelectedSet`) chooses which
-  set is viewed; it persists across all pages. It is only shown once more than one
-  set is browsable (`getBrowsableSets` — sets whose start has passed).
+  set is viewed; it persists across all pages. It is rendered as a low-emphasis
+  **tag in the page subtitle** (`SetTag`) — a rarely-used control — and becomes an
+  interactive dropdown only once more than one set is browsable (`getBrowsableSets`
+  — sets whose start has passed); otherwise it's a static pill.
 - Selecting an archived set hides live affordances (Sync) and marks the view
   "Archived".
 

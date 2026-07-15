@@ -10,6 +10,7 @@ import { PieChart, Pie, Cell, Sector, Tooltip as RechartsTooltip, ResponsiveCont
 import { SortChevron } from "@/components/SortChevron";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
+import { SetTag } from "@/components/SetTag";
 import { DurationPill } from "@/components/DurationPill";
 import { LINE_COLORS } from "@/components/RankChart";
 import {
@@ -953,7 +954,6 @@ export default function StatsDrilldownPage() {
   const activeSet = useMemo(() => getActiveSet(), []);
   const sets = useMemo(() => getBrowsableSets(), []);
   const [selectedSet, setSelectedSet] = useSelectedSet();
-  const isArchived = selectedSet.number !== activeSet.number;
   const weeks = useMemo(() => getSetWeeks(selectedSet), [selectedSet]);
   const [selectedTab, setSelectedTab] = useSelectedTab(selectedSet);
   const catNavRef = useRef<HTMLElement>(null);
@@ -1089,6 +1089,10 @@ export default function StatsDrilldownPage() {
   // Donut data: only rows with positive values
   const donutData = ranked.filter((r) => r.value > 0);
 
+  const setTag = (
+    <SetTag selectedSet={selectedSet} sets={sets} activeSetNumber={activeSet.number} onSetChange={setSelectedSet} />
+  );
+
   return (
     <Page>
       <BackLink href={buildHref(`/`, { set: selectedSet.number, tab: selectedTab })}>
@@ -1100,12 +1104,11 @@ export default function StatsDrilldownPage() {
         <PageTitle>{cat.title}</PageTitle>
         <PageSubtitle>
           {isSet ? (
-            <><strong>{selectedSet.label}</strong>{" · "}{formatShortDate(selectedSet.start)}{" – "}{formatShortDate(selectedSet.end)}</>
+            <>{setTag}{" · "}{formatShortDate(selectedSet.start)}{" – "}{formatShortDate(selectedSet.end)}</>
           ) : (() => {
             const w = weeks[selectedTab as number];
-            return w ? <><strong>{w.label}</strong>{" · "}{formatShortDate(w.start)}{" – "}{formatShortDate(w.end)}</> : null;
+            return w ? <>{setTag}{" "}<strong>{w.label}</strong>{" · "}{formatShortDate(w.start)}{" – "}{formatShortDate(w.end)}</> : null;
           })()}
-          {isArchived && <>{" · "}<DurationPill>Archived</DurationPill></>}
         </PageSubtitle>
       </div>
 
@@ -1114,9 +1117,6 @@ export default function StatsDrilldownPage() {
         onTabChange={setSelectedTab}
         weeks={weeks}
         selectedSet={selectedSet}
-        sets={sets}
-        activeSetNumber={activeSet.number}
-        onSetChange={setSelectedSet}
       />
 
       <CategoryNav ref={catNavRef} aria-label="Stat categories" $fadeLeft={catFadeLeft} $fadeRight={catFadeRight}>

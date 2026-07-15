@@ -19,10 +19,7 @@ interface TabNavigationProps {
   selectedTab: "set" | number;
   onTabChange: (tab: "set" | number) => void;
   weeks: SetWeek[];
-  selectedSet: TftSet;
-  sets: TftSet[];          // browsable sets, newest first
-  activeSetNumber: number; // the live set (others are archived)
-  onSetChange: (setNumber: number) => void;
+  selectedSet: TftSet; // used for the "set" tab label + mobile select option
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -135,30 +132,11 @@ const Tab = styled.button<{ $active: boolean }>`
 `;
 
 const MobileSelectWrap = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: ${({ theme }) => theme.primitive.spacing.xs};
+  display: block;
 
   @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
     display: none;
   }
-`;
-
-// Desktop row: set select (parent scope) sits left of the week tab bar.
-const DesktopRow = styled.div`
-  display: none;
-
-  @container content (min-width: ${({ theme }) => theme.primitive.container.md}) {
-    display: flex;
-    align-items: stretch;
-    gap: ${({ theme }) => theme.primitive.spacing.sm};
-    min-width: 0;
-  }
-`;
-
-const DesktopSetSelect = styled.div`
-  flex-shrink: 0;
-  width: 180px;
 `;
 
 // ── Component ───────────────────────────────────────────────────
@@ -168,9 +146,6 @@ export function TabNavigation({
   onTabChange,
   weeks,
   selectedSet,
-  sets,
-  activeSetNumber,
-  onSetChange,
 }: TabNavigationProps) {
   const tabBarRef = useRef<HTMLDivElement>(null);
   const { stickyRef, isSticky } = useFullBleedSticky();
@@ -186,25 +161,9 @@ export function TabNavigation({
     else if (right > bar.scrollLeft + bar.offsetWidth) bar.scrollLeft = right - bar.offsetWidth + 8;
   }, [selectedTab]);
 
-  // Only show a set switcher when more than one set is browsable (i.e. once a new
-  // set has started and the previous one is archived).
-  const showSetSwitcher = sets.length > 1;
-  const setOptions = sets.map((s) => ({
-    value: String(s.number),
-    label: s.label,
-    sublabel: s.number === activeSetNumber ? "Current" : "Archived",
-  }));
-
   return (
     <StickyTabWrap ref={stickyRef} $isSticky={isSticky}>
       <MobileSelectWrap>
-        {showSetSwitcher && (
-          <CustomSelect
-            value={String(selectedSet.number)}
-            onChange={(v) => onSetChange(parseInt(v, 10))}
-            options={setOptions}
-          />
-        )}
         <CustomSelect
           value={selectedTab === "set" ? "set" : String(selectedTab)}
           onChange={(v) =>
@@ -221,22 +180,12 @@ export function TabNavigation({
         />
       </MobileSelectWrap>
 
-      <DesktopRow>
-        {showSetSwitcher && (
-          <DesktopSetSelect>
-            <CustomSelect
-              value={String(selectedSet.number)}
-              onChange={(v) => onSetChange(parseInt(v, 10))}
-              options={setOptions}
-            />
-          </DesktopSetSelect>
-        )}
-        <TabBar
-          ref={tabBarRef}
-          role="tablist"
-          $fadeLeft={fadeLeft}
-          $fadeRight={fadeRight}
-        >
+      <TabBar
+        ref={tabBarRef}
+        role="tablist"
+        $fadeLeft={fadeLeft}
+        $fadeRight={fadeRight}
+      >
           <Tab
             type="button"
             role="tab"
@@ -261,7 +210,6 @@ export function TabNavigation({
             </Tab>
           ))}
         </TabBar>
-      </DesktopRow>
     </StickyTabWrap>
   );
 }

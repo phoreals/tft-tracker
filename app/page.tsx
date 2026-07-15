@@ -6,6 +6,7 @@ import styled from "styled-components";
 import { RefreshCw, User } from "lucide-react";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
+import { SetTag } from "@/components/SetTag";
 import { PlayerTable } from "@/components/PlayerTable";
 import { RankChart } from "@/components/RankChart";
 import { getSetWeeks, getBrowsableSets, getActiveSet, buildHref, computePlayerStats, SUPERLATIVE_CATEGORIES, findLeader } from "@/lib/utils";
@@ -483,6 +484,10 @@ export default function WeeklyStatsPage() {
 
   const isSet = selectedTab === "set";
 
+  const setTag = (
+    <SetTag selectedSet={selectedSet} sets={sets} activeSetNumber={activeSet.number} onSetChange={setSelectedSet} />
+  );
+
   return (
     <Page>
       <PageHeader>
@@ -490,12 +495,11 @@ export default function WeeklyStatsPage() {
           <PageTitle>The Asylum TFT Tracker</PageTitle>
           <PageSubtitle>
             {isSet ? (
-              <><strong>{selectedSet.label}</strong>{"\u2002·\u2002"}{formatShortDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatShortDate(selectedSet.end)}</>
+              <>{setTag}{"\u2002·\u2002"}{formatShortDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatShortDate(selectedSet.end)}</>
             ) : (() => {
               const w = weeks[selectedTab as number];
-              return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
+              return w ? <>{setTag}{" "}<strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
             })()}
-            {isArchived && <>{" · "}<DurationPill>Archived</DurationPill></>}
           </PageSubtitle>
         </div>
         {!isArchived && (
@@ -515,9 +519,6 @@ export default function WeeklyStatsPage() {
         onTabChange={setSelectedTab}
         weeks={weeks}
         selectedSet={selectedSet}
-        sets={sets}
-        activeSetNumber={activeSet.number}
-        onSetChange={setSelectedSet}
       />
 
       <SuperlativesGrid>

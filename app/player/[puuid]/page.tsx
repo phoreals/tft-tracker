@@ -11,6 +11,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { ViewToggle } from "@/components/ViewToggle";
 import { RankChart } from "@/components/RankChart";
 import { TabNavigation } from "@/components/TabNavigation";
+import { SetTag } from "@/components/SetTag";
 import { PlaytimeDisplay } from "@/components/PlaytimeDisplay";
 import { SyncOverlay } from "@/components/SyncOverlay";
 import { DurationPill } from "@/components/DurationPill";
@@ -907,6 +908,10 @@ export default function PlayerDrilldownPage() {
   if (loading) return <LoadingText>Loading...</LoadingText>;
   if (!player) return <LoadingText>Player not found.</LoadingText>;
 
+  const setTag = (
+    <SetTag selectedSet={selectedSet} sets={sets} activeSetNumber={activeSet.number} onSetChange={setSelectedSet} />
+  );
+
   return (
     <Page>
       <BackLink href={buildHref(`/`, { set: selectedSet.number, tab: selectedTab })}>
@@ -961,12 +966,11 @@ export default function PlayerDrilldownPage() {
 
       <PageSubtitle>
         {isSet ? (
-          <><strong>{selectedSet.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(selectedSet.end)}</>
+          <>{setTag}{"\u2002·\u2002"}{formatDisplayDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(selectedSet.end)}</>
         ) : (() => {
           const w = weeks[selectedTab as number];
-          return w ? <><strong>{w.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(w.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(w.end)}</> : null;
+          return w ? <>{setTag}{" "}<strong>{w.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(w.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(w.end)}</> : null;
         })()}
-        {isArchived && <>{" · "}<DurationPill>Archived</DurationPill></>}
       </PageSubtitle>
 
       <TabNavigation
@@ -974,9 +978,6 @@ export default function PlayerDrilldownPage() {
         onTabChange={setSelectedTab}
         weeks={weeks}
         selectedSet={selectedSet}
-        sets={sets}
-        activeSetNumber={activeSet.number}
-        onSetChange={setSelectedSet}
       />
 
       <StatsGrid>

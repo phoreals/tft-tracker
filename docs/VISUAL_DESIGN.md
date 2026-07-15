@@ -96,17 +96,27 @@ The sticky tab bar uses a lighter variant — no background color, `backdrop-fil
 
 All blur values come from the semantic blur token scale: `subtle` (12px), `standard` (16px), `card` (24px), `heavy` (48px). Both `-webkit-backdrop-filter` and `backdrop-filter` are always set for Safari compatibility.
 
-## Set Switcher
+## Set Switcher (SetTag)
 
-The set switcher reuses the `CustomSelect` primitive (no new tokens): accent-colored
-bold label + muted `sublabel`, glassmorphic portal list, gold checkmark on the
-selected option. It lives inside the sticky tab strip — desktop as a compact 180px
-select to the left of the week tab bar, mobile stacked above the week select. Set
-options carry a "Current" / "Archived" sublabel to distinguish the live set from
-frozen ones. When a set is archived, the page subtitle appends an **"Archived"**
-`DurationPill` (same gold-bordered accent pill used for period tags), and live
-affordances (Sync button) are removed rather than disabled. The switcher only
-appears once more than one set is browsable.
+The set switcher is intentionally low-emphasis — switching sets is rare — so it
+renders inline in the page subtitle as a **tag**, not a form control. It reuses the
+`CustomSelect` primitive via a new `variant="tag"`: the trigger drops the chevron
+and adopts `DurationPill` styling (`radius.control` pill, `spacing.2xs` padding,
+`label` typography, `xs` font) with a transparent background that tints on
+hover/open. It has two tones (`tone` prop):
+
+- **accent** (active set): gold text + `borderHover`, showing just the set label.
+- **muted** (archived set): `textMuted` text (regular weight) + `borderDefault`,
+  with a `triggerSublabel="Archived"` suffix — so an archived set is visibly
+  de-emphasized *and* self-labeled as past. `& strong` is overridden to `textMuted`
+  so the label itself dims, not just the suffix.
+
+The dropdown list is unchanged (glassmorphic portal, accent label + muted sublabel,
+gold checkmark) and gets a `min-width: 180px` so the "Current"/"Archived" sublabels
+aren't clipped by the narrow tag. When only one set is browsable, `SetTag` renders a
+plain static `DurationPill`. The archived state lives entirely in the tag — there is
+no separate "Archived" pill — and live affordances (Sync) are removed rather than
+disabled.
 
 ## Color Usage Rules
 
