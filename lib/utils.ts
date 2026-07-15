@@ -34,6 +34,12 @@ function nowMs(): number {
   return Date.now();
 }
 
+// Preview-aware current time. Exposed so dev mock data can honor
+// NEXT_PUBLIC_PREVIEW_DATE too. In production this is just Date.now().
+export function getNow(): number {
+  return nowMs();
+}
+
 // The set currently being played — the latest set whose start date has passed.
 // Server routes MUST call this per-request; do not rely on the SET_* aliases
 // below, which are frozen at module-load time.
