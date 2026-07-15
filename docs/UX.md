@@ -22,8 +22,8 @@ signal it's interactive. It's the `SetTag` component, backed by the `?set=` URL
 param (`useSelectedSet`) and shared across all pages (Home, Stat Drilldown, Player
 Drilldown). Clicking it opens a `CustomSelect` dropdown (`variant="tag"`) listing
 the browsable sets newest-first, each with a **"Current"** / **"Archived"** sublabel.
-The visible chip matches the subtitle text height (100% of a `1em`-tall wrapper) but
-still meets the 44×44 minimum tap target via an invisible centered overlay.
+The compact 22px chip sits inline with the subtitle text but still meets the 44×44
+minimum tap target via an invisible centered overlay.
 
 - When **only one set is browsable** (before the first rollover) it renders as a
   static, non-interactive `DurationPill` — there is nothing to switch to.
@@ -34,12 +34,14 @@ still meets the 44×44 minimum tap target via an invisible centered overlay.
 - Switching set resets the week tab to the whole-set overview and refetches
   `GET /api/players?set=N`.
 - **Archived treatment**: when the viewed set is not the active set, the tag is
-  **de-emphasized** — muted grey text/border (regular weight) instead of the gold
-  accent — and reads **"Set N · Archived"** so it's clear you're looking at a past
-  set. (The active set's tag stays gold and shows just "Set N".) The Sync button is
-  hidden (syncing a finished set is meaningless — Riot no longer reports it), and the
-  player page shows absolute match dates instead of live "x ago" relative times.
-  There is no separate "Archived" pill — the tag carries that state itself.
+  **de-emphasized** — muted grey text/border/chevron (regular weight) instead of the
+  gold accent — so it's visually clear you're looking at a past set. (The active
+  set's tag stays gold.) The tag shows only the set label; the archived state is
+  conveyed to screen readers via its `aria-label` (e.g. "Select set — currently
+  Set 17 (archived)") and stays visible in the dropdown's "Archived" sublabel. The
+  Sync button is hidden (syncing a finished set is meaningless — Riot no longer
+  reports it), and the player page shows absolute match dates instead of live "x ago"
+  relative times. There is no separate "Archived" pill.
 
 ### Page-Level Tab Navigation
 

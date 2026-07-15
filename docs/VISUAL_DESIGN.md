@@ -102,26 +102,25 @@ The set switcher is intentionally low-emphasis — switching sets is rare — so
 renders inline in the page subtitle as a **tag**, not a form control. It reuses the
 `CustomSelect` primitive via a new `variant="tag"`: a `DurationPill`-styled pill
 (`radius.control`, `label` typography, `xs` font) with a transparent background that
-tints on hover/open and a small (12px) dropdown chevron. The **visible chip matches
-the text height**: the `Wrapper` gets `height: 1em` (resolved against the inherited
-18px subtitle font, since only the trigger is font-shrunk to `xs`) and the trigger
-fills it with `height: 100%`, so the chip sits inline with the subtitle rather than
-towering as a chunky control. The **44×44 minimum tap target** is restored by an
-absolutely-positioned `&::before` overlay (`height: 44px; min-width: 44px`, centered)
-that sits outside the flex flow, so it never inflates the chip's visible size. It has
-two tones (`tone` prop):
+tints on hover/open and a small (12px) dropdown chevron. The chip is a compact
+**22px** high so it sits inline with the subtitle rather than towering as a chunky
+control. The **44×44 minimum tap target** is restored by an absolutely-positioned
+`&::before` overlay (`height: 44px; min-width: 44px`, centered) that sits outside the
+flex flow, so it never inflates the chip's visible size. It has two tones (`tone`
+prop):
 
-- **accent** (active set): gold text + `borderHover`, showing just the set label.
-- **muted** (archived set): `textMuted` text (regular weight) + `borderDefault`,
-  with a `triggerSublabel="Archived"` suffix — so an archived set is visibly
-  de-emphasized *and* self-labeled as past. `& strong` is overridden to `textMuted`
-  so the label itself dims, not just the suffix.
+- **accent** (active set): gold text + `borderHover`.
+- **muted** (archived set): `textMuted` text (regular weight) + `borderDefault`, so
+  an archived set is visibly de-emphasized. `& strong` and `& svg` are overridden to
+  `textMuted` so the label and chevron dim too. The trigger shows only the set label
+  (no "Archived" text); the archived state is conveyed to assistive tech via the
+  `SetTag` `aria-label` and remains visible in the dropdown's "Archived" sublabel.
 
 The dropdown list is unchanged (glassmorphic portal, accent label + muted sublabel,
 gold checkmark) and gets a `min-width: 180px` so the "Current"/"Archived" sublabels
 aren't clipped by the narrow tag. When only one set is browsable, `SetTag` renders a
-plain static `DurationPill`. The archived state lives entirely in the tag — there is
-no separate "Archived" pill — and live affordances (Sync) are removed rather than
+plain static `DurationPill`. There is no separate "Archived" pill in the subtitle —
+and live affordances (Sync) are removed rather than
 disabled.
 
 ## Color Usage Rules

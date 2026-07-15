@@ -14,10 +14,6 @@ const Wrapper = styled.div<{ $variant: "default" | "tag" }>`
   ${({ $variant }) =>
     $variant === "tag" &&
     `
-    /* 1em resolves against the inherited subtitle font-size (the Wrapper is NOT
-       font-shrunk, only the Trigger is), so the tag matches the text height and
-       gives the Trigger's height:100% a definite box to fill. */
-    height: 1em;
     align-items: center;
     vertical-align: middle;
   `}
@@ -63,10 +59,10 @@ const Trigger = styled.button<{ $open: boolean; $variant: "default" | "tag"; $to
     position: relative;
     box-sizing: border-box;
     width: auto;
-    /* The visible chip fills the text height (100% of the 1em-tall Wrapper) so it
-       sits inline with the subtitle; the full 44x44 minimum tap target is
-       restored by the ::before overlay below without inflating the chip. */
-    height: 100%;
+    /* Compact 22px chip so it sits inline with the subtitle text; the full 44x44
+       minimum tap target is restored by the ::before overlay below without
+       inflating the visible chip. */
+    height: 22px;
     min-height: 0;
     line-height: 1;
     justify-content: center;
@@ -203,11 +199,10 @@ interface CustomSelectProps {
   className?: string;
   variant?: "default" | "tag";
   tone?: "accent" | "muted";        // tag variant only: muted = de-emphasized (archived)
-  triggerSublabel?: string;         // tag variant only: suffix shown in the trigger (e.g. "Archived")
   "aria-label"?: string;
 }
 
-export function CustomSelect({ options, value, onChange, className, variant = "default", tone = "accent", triggerSublabel, "aria-label": ariaLabel }: CustomSelectProps) {
+export function CustomSelect({ options, value, onChange, className, variant = "default", tone = "accent", "aria-label": ariaLabel }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [listRect, setListRect] = useState({ top: 0, left: 0, width: 0 });
@@ -220,9 +215,6 @@ export function CustomSelect({ options, value, onChange, className, variant = "d
   const selectedOption = options[selectedIndex];
   const selectedLabel = selectedOption?.label ?? value;
   const selectedSublabel = selectedOption?.sublabel;
-  // The tag variant uses an explicit trigger suffix (e.g. "Archived") rather than
-  // echoing the selected option's sublabel.
-  const triggerSub = variant === "tag" ? triggerSublabel : selectedSublabel;
 
   // Measure trigger position for the fixed-position portal
   const measureTrigger = () => {
@@ -361,7 +353,7 @@ export function CustomSelect({ options, value, onChange, className, variant = "d
         onClick={handleOpen}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span><BoldLabel>{selectedLabel}</BoldLabel>{triggerSub && <Sublabel>{"\u2002·\u2002"}{triggerSub}</Sublabel>}</span>
+        <span><BoldLabel>{selectedLabel}</BoldLabel>{variant !== "tag" && selectedSublabel && <Sublabel>{"\u2002·\u2002"}{selectedSublabel}</Sublabel>}</span>
         <ChevronIcon $open={open}>
           <ChevronDown size={variant === "tag" ? 12 : 14} />
         </ChevronIcon>
