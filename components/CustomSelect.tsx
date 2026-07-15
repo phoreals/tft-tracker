@@ -51,14 +51,30 @@ const Trigger = styled.button<{ $open: boolean; $variant: "default" | "tag"; $to
   ${({ $variant, $open, $tone, theme }) =>
     $variant === "tag" &&
     `
+    position: relative;
+    box-sizing: border-box;
     width: auto;
-    min-height: 44px;
+    /* The visible chip hugs the adjacent subtitle text (~x-height): no vertical
+       padding, tight line-height. The full 44px tap target is restored by the
+       ::before overlay below, so the small chip stays accessible. */
+    min-height: 0;
+    line-height: 1;
     justify-content: center;
     gap: ${theme.primitive.spacing["2xs"]};
-    padding: ${theme.primitive.spacing["2xs"]} ${theme.primitive.spacing.sm};
+    padding: 0 ${theme.primitive.spacing["2xs"]};
     border-radius: ${theme.semantic.radius.control};
     ${theme.semantic.typography.label};
     font-size: ${theme.primitive.fontSize.xs};
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 44px;
+    }
 
     ${
       $tone === "muted"
@@ -336,7 +352,7 @@ export function CustomSelect({ options, value, onChange, className, variant = "d
       >
         <span><BoldLabel>{selectedLabel}</BoldLabel>{triggerSub && <Sublabel>{"\u2002·\u2002"}{triggerSub}</Sublabel>}</span>
         <ChevronIcon $open={open}>
-          <ChevronDown size={14} />
+          <ChevronDown size={variant === "tag" ? 12 : 14} />
         </ChevronIcon>
       </Trigger>
 

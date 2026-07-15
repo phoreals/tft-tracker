@@ -102,8 +102,13 @@ The set switcher is intentionally low-emphasis — switching sets is rare — so
 renders inline in the page subtitle as a **tag**, not a form control. It reuses the
 `CustomSelect` primitive via a new `variant="tag"`: a `DurationPill`-styled pill
 (`radius.control`, `label` typography, `xs` font) with a transparent background that
-tints on hover/open, a small dropdown chevron, and `min-height: 44px` to meet the
-tap-target guideline. It has two tones (`tone` prop):
+tints on hover/open and a small (12px) dropdown chevron. The **visible chip is
+deliberately short** — no vertical padding, `line-height: 1`, reduced horizontal
+padding — so it hugs the adjacent subtitle text (roughly its x-height) and reads as
+inline rather than a chunky control. The 44px tap target is restored by an
+absolutely-positioned `&::before` overlay (`height: 44px`, vertically centered),
+which sits outside the flex flow so it doesn't affect the chip's visible size. It has
+two tones (`tone` prop):
 
 - **accent** (active set): gold text + `borderHover`, showing just the set label.
 - **muted** (archived set): `textMuted` text (regular weight) + `borderDefault`,
