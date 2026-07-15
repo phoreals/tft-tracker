@@ -11,7 +11,16 @@ const Wrapper = styled.div<{ $variant: "default" | "tag" }>`
   position: relative;
   width: ${({ $variant }) => ($variant === "tag" ? "auto" : "100%")};
   display: ${({ $variant }) => ($variant === "tag" ? "inline-flex" : "block")};
-  vertical-align: baseline;
+  ${({ $variant }) =>
+    $variant === "tag" &&
+    `
+    /* 1em resolves against the inherited subtitle font-size (the Wrapper is NOT
+       font-shrunk, only the Trigger is), so the tag matches the text height and
+       gives the Trigger's height:100% a definite box to fill. */
+    height: 1em;
+    align-items: center;
+    vertical-align: middle;
+  `}
 `;
 
 // Trigger: transparent enough to show the StickyTabWrap's blur through it.
@@ -54,9 +63,10 @@ const Trigger = styled.button<{ $open: boolean; $variant: "default" | "tag"; $to
     position: relative;
     box-sizing: border-box;
     width: auto;
-    /* The visible chip hugs the adjacent subtitle text (~x-height): no vertical
-       padding, tight line-height. The full 44px tap target is restored by the
-       ::before overlay below, so the small chip stays accessible. */
+    /* The visible chip fills the text height (100% of the 1em-tall Wrapper) so it
+       sits inline with the subtitle; the full 44x44 minimum tap target is
+       restored by the ::before overlay below without inflating the chip. */
+    height: 100%;
     min-height: 0;
     line-height: 1;
     justify-content: center;
@@ -69,11 +79,12 @@ const Trigger = styled.button<{ $open: boolean; $variant: "default" | "tag"; $to
     &::before {
       content: "";
       position: absolute;
-      left: 0;
-      right: 0;
+      left: 50%;
       top: 50%;
-      transform: translateY(-50%);
+      transform: translate(-50%, -50%);
+      width: 100%;
       height: 44px;
+      min-width: 44px;
     }
 
     ${

@@ -22,8 +22,8 @@ signal it's interactive. It's the `SetTag` component, backed by the `?set=` URL
 param (`useSelectedSet`) and shared across all pages (Home, Stat Drilldown, Player
 Drilldown). Clicking it opens a `CustomSelect` dropdown (`variant="tag"`) listing
 the browsable sets newest-first, each with a **"Current"** / **"Archived"** sublabel.
-The visible chip is small (sized to the subtitle text's x-height) but still meets the
-44px minimum tap target via an invisible overlay.
+The visible chip matches the subtitle text height (100% of a `1em`-tall wrapper) but
+still meets the 44×44 minimum tap target via an invisible centered overlay.
 
 - When **only one set is browsable** (before the first rollover) it renders as a
   static, non-interactive `DurationPill` — there is nothing to switch to.
