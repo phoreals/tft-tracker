@@ -12,6 +12,8 @@
 // buildHistoryFromLP takes a 15-element array where index 0 = daysAgo 14
 // (April 16) and index 14 = daysAgo 0 (today, April 30). One entry per day.
 
+import { getActiveSet, getNow } from "@/lib/utils";
+
 const now = Date.now();
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;
@@ -394,11 +396,48 @@ export const MOCK_PLAYERS = [
   },
 ];
 
+// The set the mock data is natively authored for (dates land inside Set 17).
+export const MOCK_SET_NUMBER = 17;
+
+type MockPlayer = (typeof MOCK_PLAYERS)[number];
+
+// Shift a player's history dates and match timestamps so the most recent snapshot
+// lands at `endTs`. Used to project the squad's dummy data onto whichever set is
+// active, so the rank-over-time graph (and matches) are populated in the default
+// view instead of only on Set 17.
+function redatePlayer(p: MockPlayer, endTs: number): MockPlayer {
+  const offset = endTs - now; // `now` (module load) = the latest mock snapshot
+  const fmt = (ts: number) => {
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  return {
+    ...p,
+    current: p.current
+      ? { ...p.current, lastUpdated: new Date(endTs).toISOString() }
+      : p.current,
+    matches: p.matches.map((m) => ({ ...m, timestamp: m.timestamp + offset })),
+    history: p.history.map((h) => ({ ...h, date: fmt(new Date(h.date).getTime() + offset) })),
+  };
+}
+
+// Roster with per-set data:
+// - the active set gets the squad's dummy data re-dated to end "now" (preview-aware),
+//   so its rank-over-time graph and stats are populated;
+// - Set 17 (when it's an archive, not active) keeps its natively-authored data;
+// - any other set returns an empty "new set" roster.
+export function getMockPlayersForSet(setNumber: number) {
+  const activeSetNumber = getActiveSet().number;
+  if (setNumber === activeSetNumber) return MOCK_PLAYERS.map((p) => redatePlayer(p, getNow()));
+  if (setNumber === MOCK_SET_NUMBER) return MOCK_PLAYERS;
+  return MOCK_PLAYERS.map((p) => ({ ...p, current: null, matches: [], history: [] }));
+}
+
 // ⚠️  PRODUCTION GUARD — do not remove NODE_ENV check.
 export function isMockMode() {
   return !process.env.KV_REST_API_URL && process.env.NODE_ENV !== "production";
 }
 
-export function getMockPlayer(puuid: string) {
-  return MOCK_PLAYERS.find((p) => p.puuid === puuid) ?? null;
+export function getMockPlayer(puuid: string, setNumber: number = MOCK_SET_NUMBER) {
+  return getMockPlayersForSet(setNumber).find((p) => p.puuid === puuid) ?? null;
 }

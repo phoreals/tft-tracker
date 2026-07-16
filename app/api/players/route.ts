@@ -18,12 +18,17 @@ import {
   getMatch,
   delay,
 } from "@/lib/riot";
-import { SET_START } from "@/lib/utils";
-import { isMockMode, MOCK_PLAYERS } from "@/lib/mock";
+import { getActiveSet, resolveSet } from "@/lib/utils";
+import { isMockMode, getMockPlayersForSet } from "@/lib/mock";
 
-export async function GET() {
+// The set to serve is chosen by the `?set=` param (the global switcher), falling
+// back to the active set. Data is read from that set's namespace, so an archived
+// set returns its frozen snapshot.
+export async function GET(req: NextRequest) {
+  const setNumber = resolveSet(req.nextUrl.searchParams.get("set")).number;
+
   if (isMockMode()) {
-    return NextResponse.json(MOCK_PLAYERS);
+    return NextResponse.json(getMockPlayersForSet(setNumber));
   }
 
   const players = await getTrackedPlayers();
@@ -31,9 +36,9 @@ export async function GET() {
   const enriched = await Promise.all(
     players.map(async (p) => {
       const [current, matches, history] = await Promise.all([
-        getPlayerCurrent(p.puuid),
-        getPlayerMatches(p.puuid),
-        getPlayerHistory(p.puuid),
+        getPlayerCurrent(p.puuid, setNumber),
+        getPlayerMatches(p.puuid, setNumber),
+        getPlayerHistory(p.puuid, setNumber),
       ]);
       return { ...p, current, matches, history };
     })
@@ -60,6 +65,9 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+
+  // New players are always added to the active set's namespace.
+  const activeSet = getActiveSet();
 
   try {
     // Validate with Riot API
@@ -94,12 +102,12 @@ export async function POST(req: NextRequest) {
         lastUpdated: new Date().toISOString(),
       };
       const { setPlayerCurrent } = await import("@/lib/kv");
-      await setPlayerCurrent(account.puuid, current);
+      await setPlayerCurrent(account.puuid, activeSet.number, current);
     }
 
-    // Fetch Set 17 match history (paginated). Caps at 30 on initial add;
+    // Fetch active-set match history (paginated). Caps at 30 on initial add;
     // subsequent Sync Now calls backfill the rest 30 at a time.
-    const setStartSec = Math.floor(SET_START / 1000);
+    const setStartSec = Math.floor(activeSet.start / 1000);
     const allMatchIds = await getAllMatchIds(account.puuid, setStartSec);
     const matchIds = allMatchIds.slice(0, 30);
     const matchRecords: MatchRecord[] = [];
@@ -108,6 +116,7 @@ export async function POST(req: NextRequest) {
       await delay(100);
       try {
         const match = await getMatch(matchId);
+        if (match.info.tft_set_number !== activeSet.number) continue;
         const participant = match.info.participants.find(
           (p) => p.puuid === account.puuid
         );
@@ -117,6 +126,10 @@ export async function POST(req: NextRequest) {
             placement: participant.placement,
             duration: Math.round(match.info.game_length),
             timestamp: match.info.game_datetime,
+            ranked: match.info.queue_id === 1100,
+            lastRound: participant.last_round,
+            gameType: match.info.tft_game_type,
+            setNumber: match.info.tft_set_number,
           });
         }
       } catch {
@@ -126,7 +139,7 @@ export async function POST(req: NextRequest) {
 
     if (matchRecords.length > 0) {
       const { setPlayerMatches } = await import("@/lib/kv");
-      await setPlayerMatches(account.puuid, matchRecords);
+      await setPlayerMatches(account.puuid, activeSet.number, matchRecords);
     }
 
     return NextResponse.json({ ...player, current, matches: matchRecords });

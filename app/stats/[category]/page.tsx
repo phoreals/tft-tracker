@@ -10,20 +10,22 @@ import { PieChart, Pie, Cell, Sector, Tooltip as RechartsTooltip, ResponsiveCont
 import { SortChevron } from "@/components/SortChevron";
 import { GlassCard } from "@/components/GlassCard";
 import { TabNavigation } from "@/components/TabNavigation";
+import { SetTag } from "@/components/SetTag";
 import { DurationPill } from "@/components/DurationPill";
 import { LINE_COLORS } from "@/components/RankChart";
 import {
   formatPlaytime,
   formatPlaytimeHours,
   getSetWeeks,
+  getBrowsableSets,
+  getActiveSet,
+  buildHref,
   getLeaderboardColor,
   computePlayerStats,
-  SET_START,
-  SET_END,
-  SET_LABEL,
   type PlayerStatInput,
   type PlayerStat,
 } from "@/lib/utils";
+import { useSelectedSet } from "@/hooks/useSelectedSet";
 import { useSelectedTab } from "@/hooks/useSelectedTab";
 import { useScrollFade } from "@/hooks/useTabNavigation";
 import { theme, ICON_SIZE } from "@/styles/theme";
@@ -949,8 +951,12 @@ export default function StatsDrilldownPage() {
   const [refLineTip, setRefLineTip] = useState<{ x: number; y: number } | null>(null);
 
   const cat = UNIFIED_CATEGORIES[slug];
-  const weeks = useMemo(() => getSetWeeks(), []);
-  const [selectedTab, setSelectedTab] = useSelectedTab();
+  const activeSet = useMemo(() => getActiveSet(), []);
+  const sets = useMemo(() => getBrowsableSets(), []);
+  const [selectedSet, setSelectedSet] = useSelectedSet();
+  const isArchived = selectedSet.number !== activeSet.number;
+  const weeks = useMemo(() => getSetWeeks(selectedSet), [selectedSet]);
+  const [selectedTab, setSelectedTab] = useSelectedTab(selectedSet);
   const catNavRef = useRef<HTMLElement>(null);
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const { fadeLeft: catFadeLeft, fadeRight: catFadeRight } = useScrollFade(catNavRef as React.RefObject<HTMLDivElement>);
@@ -967,18 +973,19 @@ export default function StatsDrilldownPage() {
   }, [slug]);
 
   useEffect(() => {
-    fetch("/api/players", { cache: "no-store" })
+    setLoading(true);
+    fetch(`/api/players?set=${selectedSet.number}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => setPlayers(data))
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedSet.number]);
 
   const isSet = selectedTab === "set";
   const win = isSet
-    ? { start: SET_START, end: SET_END }
+    ? { start: selectedSet.start, end: selectedSet.end }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
   const weekNumber = (weeks[selectedTab as number] ?? weeks[weeks.length - 1])?.weekNumber;
-  const period = isSet ? SET_LABEL : weekNumber ? `Week ${weekNumber}` : "This Week";
+  const period = isSet ? selectedSet.label : weekNumber ? `Week ${weekNumber}` : "This Week";
 
   const periodSec = win ? (Math.min(win.end, Date.now()) - win.start) / 1000 : 0;
   const periodLabel = isSet ? "the set" : "the week";
@@ -1083,9 +1090,13 @@ export default function StatsDrilldownPage() {
   // Donut data: only rows with positive values
   const donutData = ranked.filter((r) => r.value > 0);
 
+  const setTag = (
+    <SetTag selectedSet={selectedSet} sets={sets} activeSetNumber={activeSet.number} onSetChange={setSelectedSet} />
+  );
+
   return (
-    <Page>
-      <BackLink href={`/?tab=${selectedTab}`}>
+    <Page data-archived={isArchived ? "true" : undefined}>
+      <BackLink href={buildHref(`/`, { set: selectedSet.number, tab: selectedTab })}>
         <ArrowLeft size={ICON_SIZE.sm} />
         BACK TO HOME
       </BackLink>
@@ -1094,21 +1105,26 @@ export default function StatsDrilldownPage() {
         <PageTitle>{cat.title}</PageTitle>
         <PageSubtitle>
           {isSet ? (
-            <><strong>{SET_LABEL}</strong>{" · "}{formatShortDate(SET_START)}{" – "}{formatShortDate(SET_END)}</>
+            <>{setTag}{" · "}{formatShortDate(selectedSet.start)}{" – "}{formatShortDate(selectedSet.end)}</>
           ) : (() => {
             const w = weeks[selectedTab as number];
-            return w ? <><strong>{w.label}</strong>{" · "}{formatShortDate(w.start)}{" – "}{formatShortDate(w.end)}</> : null;
+            return w ? <>{setTag}{" · "}<strong>{w.label}</strong>{" · "}{formatShortDate(w.start)}{" – "}{formatShortDate(w.end)}</> : null;
           })()}
         </PageSubtitle>
       </div>
 
-      <TabNavigation selectedTab={selectedTab} onTabChange={setSelectedTab} weeks={weeks} />
+      <TabNavigation
+        selectedTab={selectedTab}
+        onTabChange={setSelectedTab}
+        weeks={weeks}
+        selectedSet={selectedSet}
+      />
 
       <CategoryNav ref={catNavRef} aria-label="Stat categories" $fadeLeft={catFadeLeft} $fadeRight={catFadeRight}>
         {Object.entries(UNIFIED_CATEGORIES).map(([key, c]) => (
           <CategoryPill
             key={key}
-            href={`/stats/${key}?tab=${selectedTab}`}
+            href={buildHref(`/stats/${key}`, { set: selectedSet.number, tab: selectedTab })}
             $active={key === slug}
             data-active={key === slug ? "true" : undefined}
           >

@@ -7,14 +7,23 @@ import { Check, ChevronDown } from "lucide-react";
 
 // ── Styled ───────────────────────────────────────────────────────
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{ $variant: "default" | "tag" }>`
   position: relative;
-  width: 100%;
+  width: ${({ $variant }) => ($variant === "tag" ? "auto" : "100%")};
+  display: ${({ $variant }) => ($variant === "tag" ? "inline-flex" : "block")};
+  ${({ $variant }) =>
+    $variant === "tag" &&
+    `
+    align-items: center;
+    vertical-align: middle;
+  `}
 `;
 
 // Trigger: transparent enough to show the StickyTabWrap's blur through it.
 // backdrop-filter intentionally omitted — the parent StickyTabWrap handles it.
-const Trigger = styled.button<{ $open: boolean }>`
+// The "tag" variant renders as a compact, low-emphasis pill (matching
+// DurationPill) with no chevron — for rarely-used inline selectors.
+const Trigger = styled.button<{ $open: boolean; $variant: "default" | "tag"; $tone: "accent" | "muted" }>`
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -43,6 +52,61 @@ const Trigger = styled.button<{ $open: boolean }>`
   &:active {
     background: ${({ theme }) => theme.semantic.color.accentBgSubtle};
   }
+
+  ${({ $variant, $open, $tone, theme }) =>
+    $variant === "tag" &&
+    `
+    position: relative;
+    box-sizing: border-box;
+    width: auto;
+    /* Compact 22px chip so it sits inline with the subtitle text; the full 44x44
+       minimum tap target is restored by the ::before overlay below without
+       inflating the visible chip. */
+    height: 22px;
+    min-height: 0;
+    line-height: 1;
+    justify-content: center;
+    gap: ${theme.primitive.spacing["2xs"]};
+    padding: 0 ${theme.primitive.spacing["2xs"]};
+    border-radius: ${theme.semantic.radius.control};
+    ${theme.semantic.typography.label};
+    font-size: ${theme.primitive.fontSize.xs};
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 44px;
+      min-width: 44px;
+    }
+
+    ${
+      $tone === "muted"
+        ? `
+      /* De-emphasized: an archived / past set reads as clearly secondary. */
+      color: ${theme.semantic.color.textMuted};
+      border-color: ${theme.semantic.color.borderDefault};
+      background: ${$open ? theme.semantic.color.bgHover : "transparent"};
+      & strong { color: ${theme.semantic.color.textMuted}; font-weight: ${theme.primitive.fontWeight.regular}; }
+      & svg { color: ${theme.semantic.color.textMuted}; }
+      &:hover { background: ${theme.semantic.color.bgHover}; }
+    `
+        : `
+      color: ${theme.semantic.color.accent};
+      border-color: ${theme.semantic.color.borderHover};
+      background: ${$open ? theme.semantic.color.accentBgHover : "transparent"};
+      &:hover { background: ${theme.semantic.color.accentBgHover}; }
+    `
+    }
+
+    &:focus-visible {
+      outline: 2px solid ${theme.semantic.color.accent};
+      outline-offset: 2px;
+    }
+  `}
 `;
 
 const ChevronIcon = styled.span<{ $open: boolean }>`
@@ -55,11 +119,12 @@ const ChevronIcon = styled.span<{ $open: boolean }>`
 
 // OptionList renders via portal to document.body so it escapes any parent
 // stacking context (sticky + backdrop-filter), allowing its own blur to work.
-const OptionList = styled.ul<{ $top: number; $left: number; $width: number }>`
+const OptionList = styled.ul<{ $top: number; $left: number; $width: number; $variant: "default" | "tag" }>`
   position: fixed;
   top: ${({ $top }) => $top}px;
   left: ${({ $left }) => $left}px;
   width: ${({ $width }) => $width}px;
+  min-width: ${({ $variant }) => ($variant === "tag" ? "180px" : "0")};
   z-index: 9999;
   margin: 0;
   padding: ${({ theme }) => theme.primitive.spacing["2xs"]} 0;
@@ -132,9 +197,12 @@ interface CustomSelectProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  variant?: "default" | "tag";
+  tone?: "accent" | "muted";        // tag variant only: muted = de-emphasized (archived)
+  "aria-label"?: string;
 }
 
-export function CustomSelect({ options, value, onChange, className }: CustomSelectProps) {
+export function CustomSelect({ options, value, onChange, className, variant = "default", tone = "accent", "aria-label": ariaLabel }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [listRect, setListRect] = useState({ top: 0, left: 0, width: 0 });
@@ -234,10 +302,11 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
     <OptionList
       ref={listRef}
       role="listbox"
-      aria-label="Select option"
+      aria-label={ariaLabel ?? "Select option"}
       $top={listRect.top}
       $left={listRect.left}
       $width={listRect.width}
+      $variant={variant}
       onKeyDown={handleListKeyDown}
     >
       {options.map((opt, i) => {
@@ -271,19 +340,22 @@ export function CustomSelect({ options, value, onChange, className }: CustomSele
   ) : null;
 
   return (
-    <Wrapper ref={wrapperRef} className={className}>
+    <Wrapper ref={wrapperRef} className={className} $variant={variant} as={variant === "tag" ? "span" : undefined}>
       <Trigger
         ref={triggerRef}
         type="button"
         $open={open}
+        $variant={variant}
+        $tone={tone}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={ariaLabel}
         onClick={handleOpen}
         onKeyDown={handleTriggerKeyDown}
       >
-        <span><BoldLabel>{selectedLabel}</BoldLabel>{selectedSublabel && <Sublabel>{"\u2002·\u2002"}{selectedSublabel}</Sublabel>}</span>
+        <span><BoldLabel>{selectedLabel}</BoldLabel>{variant !== "tag" && selectedSublabel && <Sublabel>{"\u2002·\u2002"}{selectedSublabel}</Sublabel>}</span>
         <ChevronIcon $open={open}>
-          <ChevronDown size={14} />
+          <ChevronDown size={variant === "tag" ? 12 : 14} />
         </ChevronIcon>
       </Trigger>
 

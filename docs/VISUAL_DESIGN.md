@@ -96,6 +96,41 @@ The sticky tab bar uses a lighter variant — no background color, `backdrop-fil
 
 All blur values come from the semantic blur token scale: `subtle` (12px), `standard` (16px), `card` (24px), `heavy` (48px). Both `-webkit-backdrop-filter` and `backdrop-filter` are always set for Safari compatibility.
 
+## Set Switcher (SetTag)
+
+The set switcher is intentionally low-emphasis — switching sets is rare — so it
+renders inline in the page subtitle as a **tag**, not a form control. It reuses the
+`CustomSelect` primitive via a new `variant="tag"`: a `DurationPill`-styled pill
+(`radius.control`, `label` typography, `xs` font) with a transparent background that
+tints on hover/open and a small (12px) dropdown chevron. The chip is a compact
+**22px** high so it sits inline with the subtitle rather than towering as a chunky
+control. The **44×44 minimum tap target** is restored by an absolutely-positioned
+`&::before` overlay (`height: 44px; min-width: 44px`, centered) that sits outside the
+flex flow, so it never inflates the chip's visible size. It has two tones (`tone`
+prop):
+
+- **accent** (active set): gold text + `borderHover`.
+- **muted** (archived set): `textMuted` text (regular weight) + `borderDefault`, so
+  an archived set is visibly de-emphasized. `& strong` and `& svg` are overridden to
+  `textMuted` so the label and chevron dim too. The trigger shows only the set label
+  (no "Archived" text); the archived state is conveyed to assistive tech via the
+  `SetTag` `aria-label` and remains visible in the dropdown's "Archived" sublabel.
+
+The dropdown list is unchanged (glassmorphic portal, accent label + muted sublabel,
+gold checkmark) and gets a `min-width: 180px` so the "Current"/"Archived" sublabels
+aren't clipped by the narrow tag. When only one set is browsable, `SetTag` renders a
+plain static `DurationPill`. There is no separate "Archived" pill in the subtitle —
+and live affordances (Sync) are removed rather than
+disabled.
+
+**Archived views de-emphasize all period pills too.** `DurationPill` (the "Set N" /
+"Week N" tag on card headers, tables, and charts) carries a
+`[data-archived="true"] &` rule that switches it from gold accent to `textMuted` text
++ `borderDefault`. Each page sets `data-archived="true"` on its root `<Page>` when the
+viewed set isn't the active set, so every period pill on the page dims together with
+the set tag — the whole archived view reads as secondary. Active-set views leave the
+attribute off, so pills stay gold. Colors use semantic tokens (no hardcoded values).
+
 ## Color Usage Rules
 
 | Context | Color | Token |

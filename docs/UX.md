@@ -13,11 +13,44 @@ Navigation is always visible. The active page is highlighted with a gold accent 
 
 ## Home (`/`)
 
+### Set Switcher (`SetTag`)
+
+Choosing which TFT set to view is a **rare** action, so the switcher is
+deliberately low-emphasis: it lives inline at the **start of the page subtitle**,
+styled as a tag (matching `DurationPill`) with a small **dropdown chevron** to
+signal it's interactive. It's the `SetTag` component, backed by the `?set=` URL
+param (`useSelectedSet`) and shared across all pages (Home, Stat Drilldown, Player
+Drilldown). Clicking it opens a `CustomSelect` dropdown (`variant="tag"`) listing
+the browsable sets newest-first, each with a **"Current"** / **"Archived"** sublabel.
+The compact 22px chip sits inline with the subtitle text but still meets the 44×44
+minimum tap target via an invisible centered overlay.
+
+- When **only one set is browsable** (before the first rollover) it renders as a
+  static, non-interactive `DurationPill` — there is nothing to switch to.
+- The subtitle reads `[Set N tag] · <period> · <dates>`, so the set context is
+  always visible regardless of the selected week tab. (The set switcher is *not* in
+  the tab bar — the tab bar's first "Set N" tab still selects the whole-set time
+  window.)
+- Switching set resets the week tab to the whole-set overview and refetches
+  `GET /api/players?set=N`.
+- **Archived treatment**: when the viewed set is not the active set, the tag is
+  **de-emphasized** — muted grey text/border/chevron (regular weight) instead of the
+  gold accent — so it's visually clear you're looking at a past set. (The active
+  set's tag stays gold.) The tag shows only the set label; the archived state is
+  conveyed to screen readers via its `aria-label` (e.g. "Select set — currently
+  Set 17 (archived)") and stays visible in the dropdown's "Archived" sublabel. The
+  Sync button is hidden (syncing a finished set is meaningless — Riot no longer
+  reports it), and the player page shows absolute match dates instead of live "x ago"
+  relative times. There is no separate "Archived" pill. Additionally, **every period
+  `DurationPill` on the page** (card headers, tables, charts) is muted to grey on an
+  archived set — driven by a `data-archived="true"` attribute on the page root — so
+  the whole view reads as past, not just the set tag.
+
 ### Page-Level Tab Navigation
 
 A scrollable tab bar sits between the page header and the summary cards. It controls the entire page — summary cards, player table, and placement chart all update together.
 
-**Tabs**: "Set 17" (first) | "Week 1" | "Week 2" | … | "Week N" (current week)
+**Tabs**: "Set N" (first, the viewed set's label) | "Week 1" | "Week 2" | … | "Week N"
 
 - Calculated from the TFT set start date in 7-day increments. Future weeks are hidden.
 - Default on load: the current week (not "Set 17").
@@ -42,9 +75,9 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 | **Most LP Gained** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
 | **Avg LP Per Game** | Highest LP gain per game played |
 
-Each card has a **duration pill** in the top-right of its header showing the active time window — "Set 17" (gold accent pill) or "Week N". The card label is the category name only (e.g. "Most Games"); the period is communicated by the pill alone.
+Each card has a **duration pill** in the top-right of its header showing the active time window — "Set 17" or "Week N" (gold accent pill; **muted grey when viewing an archived set**, matching the de-emphasized set tag — see Archived treatment). The card label is the category name only (e.g. "Most Games"); the period is communicated by the pill alone.
 
-`cat.label(isSet, weekNumber?)` on `SuperlativeCategory` is still used for column headers in the drilldown table — it returns e.g. "Most Games Week 2" or "Most Games Set 17" depending on context.
+`cat.label(isSet, weekNumber?, setLabel?)` on `SuperlativeCategory` is still used for the player-page superlative badges — it returns e.g. "Most Games Week 2" or "Most Games Set 17"; the viewed set's label is passed in so archived views read correctly.
 
 If no players qualify for a category (e.g. no games in a week), the card shows "—" as the stat value and "Awaiting data" in place of the player chip (muted text, same height as a chip to keep cards uniform). Ties go to the first alphabetically by gameName.
 
@@ -70,12 +103,12 @@ Four `GlassCard` components show aggregate metrics for the **currently selected 
 Accessed by clicking a summary stat card or a superlative card on the home page. Six categories: `games`, `playtime`, `top4-rate`, `win-rate`, `highest-lp`, `best-lp-per-game`. Categories may specify a `navLabel` for the pill bar when a shorter label is needed (e.g. "LP / Game" instead of "Avg LP Per Game").
 
 ### Layout
-- Back link to Home (preserves `?tab=` parameter)
+- Back link to Home (preserves `?set=` and `?tab=` parameters via `buildHref`)
 - Page title = category label
-- Same sticky tab bar (Set 17 / Week 1–N)
+- Same sticky set switcher + tab bar (Set N / Week 1–N)
 
 ### Category Navigation
-A horizontal pill bar above the content shows all 6 categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?tab=` parameter. On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally. The active pill scrolls into view automatically when the category changes.
+A horizontal pill bar above the content shows all 6 categories. The active category is highlighted (gold border + accent background). Clicking a pill navigates to that category's drilldown, preserving the current `?set=` and `?tab=` parameters (via `buildHref`). On mobile, pills scroll horizontally (no wrap) with a hidden scrollbar; on desktop they wrap normally. The active pill scrolls into view automatically when the category changes.
 
 ### Content
 Single-column stacked layout. Chart section (when present) sits above the sortable ranked table.
@@ -152,7 +185,7 @@ Empty state: "No rank history yet. Sync to start tracking."
 See `docs/DATA_VIZ.md` for full chart spec.
 
 ### Sync Button
-Top-right of the page header. Runs a multi-pass loop: calls `POST /api/sync` repeatedly until `matchesRemaining === 0` across all players. Shows a spinning icon while in flight. On completion, a `SyncOverlay` toast appears in the bottom-right (bottom-center on mobile) showing the result:
+Top-right of the page header (**hidden when viewing an archived set**). Runs a multi-pass loop: calls `POST /api/sync` repeatedly until `matchesRemaining === 0` across all players. Shows a spinning icon while in flight. On completion, a `SyncOverlay` toast appears in the bottom-right (bottom-center on mobile) showing the result:
 - **Success**: "Synced 11 players — 5 matches added (Banh +2, Demure +3)". Auto-dismisses after 5s.
 - **No changes**: "All 11 players up to date". Auto-dismisses after 5s.
 - **Error**: Red-bordered card with monospace error text. Persists until dismissed. Copy button copies the raw error for debugging.
@@ -248,12 +281,12 @@ Scrollable list of **all stored matches** (newest first, not week-scoped). Initi
 ## Player Drilldown (`/player/[puuid]`)
 
 ### Sync Button
-Below the player identity on mobile, right-aligned on desktop. Visually identical to the homepage sync button. Calls `POST /api/sync/[puuid]` — a targeted sync that dedicates the full 50s budget to a single player. Same multi-pass loop, rate-limit countdown, and `SyncOverlay` result toast as the homepage. Success message includes the player name: "Richardpression synced — 3 matches added".
+Below the player identity on mobile, right-aligned on desktop (**hidden when viewing an archived set**). Visually identical to the homepage sync button. Calls `POST /api/sync/[puuid]` — a targeted sync that dedicates the full 50s budget to a single player. Same multi-pass loop, rate-limit countdown, and `SyncOverlay` result toast as the homepage. Success message includes the player name: "Richardpression synced — 3 matches added".
 
 ## Data Refresh Flow
 
 1. **Automatic**: Vercel Cron hits `GET /api/cron` daily at midnight UTC
 2. **Manual (all players)**: User clicks "Sync Now" on the home page → multi-pass `POST /api/sync`
 3. **Manual (one player)**: User clicks "SYNC NOW" on the player drilldown page → multi-pass `POST /api/sync/[puuid]`
-4. **On add**: Adding a player fetches their rank + first 30 Set 17 matches. Subsequent syncs backfill any remaining history (30 per run).
-5. Page data is fetched via `GET /api/players` on mount (client-side `useEffect`)
+4. **On add**: Adding a player fetches their rank + first 30 matches of the active set. Subsequent syncs backfill any remaining history (30 per run).
+5. Page data is fetched via `GET /api/players?set=N` on mount (client-side `useEffect`), refetched when the selected set changes. All syncs write to the active set only — archived sets are frozen.

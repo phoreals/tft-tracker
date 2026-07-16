@@ -6,7 +6,7 @@
 |-------|-----------|-------|
 | Runtime | Next.js API Routes | Deployed as Vercel serverless functions |
 | Database | Upstash Redis | REST-based, free tier (256MB, 10K commands/day) |
-| External API | Riot Games TFT API | Personal key: 20 req/s, 100 req/2min |
+| External API | Riot Games TFT API | Development key (expires every 24h): 20 req/s, 100 req/2min |
 | Scheduling | Vercel Cron | Daily at midnight UTC |
 
 ## File Structure
@@ -14,25 +14,47 @@
 ```
 app/api/
 ├── players/
-│   ├── route.ts              GET (list all), POST (add player)
+│   ├── route.ts              GET (list all, ?set=), POST (add player)
 │   └── [puuid]/
-│       └── route.ts          DELETE (remove player)
+│       └── route.ts          GET (single, ?set=), DELETE (remove player)
 ├── sync/
-│   └── route.ts              POST (sync all players with Riot API)
+│   ├── route.ts              POST (sync all players with Riot API)
+│   └── [puuid]/route.ts      POST (sync one player)
 ├── seed/
-│   └── route.ts              POST (add 7 original players)
+│   └── route.ts              POST (add original players)
+├── migrate/
+│   └── route.ts              POST (one-time: legacy keys → Set 17 namespace)
 └── cron/
     └── route.ts              GET (Vercel Cron trigger, auth required)
 
 lib/
 ├── riot.ts                   Riot API client
-└── kv.ts                     Upstash Redis data access layer
+└── kv.ts                     Upstash Redis data access layer (per-set namespaced)
 ```
+
+## Sets & Per-Set Namespacing
+
+The app tracks multiple TFT sets (see `SETS` in `lib/utils.ts`). Set identity is
+derived from today's date: `getActiveSet()` returns the latest set whose start has
+passed. Per-set player data (current/history/matches) is stored under
+**set-namespaced Redis keys** (`player:{puuid}:s{n}:{facet}`). Consequences:
+
+- **Server routes resolve the set per-request** — sync/seed/POST write to
+  `getActiveSet().number`'s namespace; GET endpoints read the set from the `?set=`
+  param via `resolveSet(...)`. Never rely on the module-level `SET_*` aliases in a
+  route (they freeze at module load and can go stale on a warm instance).
+- **Archiving is automatic**: once the active set advances, the previous set's keys
+  are never written again → frozen archive. No manual step at rollover.
+- Match writes carry `setNumber` and are guarded (`match.info.tft_set_number ===
+  activeSet.number`) so a boundary match can't leak into the wrong archive.
 
 ## API Routes
 
-### `GET /api/players`
-Returns all tracked players with their current stats, match history, and rank history.
+### `GET /api/players?set=N`
+Returns all tracked players with their current stats, match history, and rank
+history **for set N**. `?set=` is resolved via `resolveSet` (unknown/not-yet-started
+values fall back to the active set); omitting it serves the active set. This is the
+endpoint the global set switcher calls.
 
 **Response**: `PlayerData[]` where each entry has:
 ```typescript
@@ -42,11 +64,15 @@ Returns all tracked players with their current stats, match history, and rank hi
   tagLine: string;
   summonerId: string;
   region: string;
-  current: PlayerCurrentStats | null;  // from player:{puuid}:current
-  matches: MatchRecord[];              // from player:{puuid}:matches
-  history: HistorySnapshot[];          // from player:{puuid}:history
+  current: PlayerCurrentStats | null;  // from player:{puuid}:s{N}:current
+  matches: MatchRecord[];              // from player:{puuid}:s{N}:matches
+  history: HistorySnapshot[];          // from player:{puuid}:s{N}:history
 }
 ```
+
+### `GET /api/players/[puuid]?set=N`
+Single-player variant of the above (parity; the player page fetches the list and
+filters client-side). Reads the requested set's namespace.
 
 ### `POST /api/players`
 Add a new player to tracking.
@@ -58,8 +84,8 @@ Add a new player to tracking.
 2. Call Riot API: account lookup → get puuid
 3. Call Riot API: summoner lookup → get summonerId
 4. Save player identity to Redis
-5. Fetch initial rank data → save to Redis
-6. Fetch all Set 17 match IDs (paginated) → fetch first 30 → save to Redis. Subsequent syncs backfill the rest.
+5. Fetch initial rank data → save to the active set's namespace
+6. Fetch all active-set match IDs (paginated, scoped by `activeSet.start`) → fetch first 30 (guarded by `tft_set_number`, full `MatchRecord` fields) → save. Subsequent syncs backfill the rest.
 7. Return player data
 
 **Error responses**: 400 if gameName/tagLine missing or Riot API rejects
@@ -70,13 +96,13 @@ Remove a player and all their data (current, history, matches) from Redis.
 ### `POST /api/sync`
 Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 
-**Flow per player**:
-1. Fetch league entries → update `player:{puuid}:current`
-2. Append daily snapshot to `player:{puuid}:history` (deduped by date)
-3. `getAllMatchIds(puuid, SET_START_SECONDS)` — paginate all Set 17 match IDs
+**Flow per player** (all writes target the active set's namespace, resolved once per request via `getActiveSet()`):
+1. Fetch league entries → update `player:{puuid}:s{active}:current`
+2. Append daily snapshot to `player:{puuid}:s{active}:history` (deduped by date)
+3. `getAllMatchIds(puuid, activeSet.start / 1000)` — paginate active-set match IDs
 4. Diff against stored matches → collect all new match IDs
-5. Process in batches of 30 until all new matches are fetched or 50s elapsed
-6. Update `player:{puuid}:matches` with merged + sorted list
+5. Process in batches of 30 until all new matches are fetched or 50s elapsed; each stored match is guarded by `tft_set_number === activeSet.number` and carries the full `MatchRecord` (`setNumber`, `ranked`, `lastRound`, `gameType`)
+6. Update `player:{puuid}:s{active}:matches` with merged + sorted list
 
 **Backfill behavior**: A single sync run will process as many batches of 30 as the time budget allows. Players are sorted by stored match count descending before the loop — those who are already caught up (cheap to process) go first, preserving the remaining time budget for players who are behind. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
 
@@ -117,6 +143,16 @@ Configured in `vercel.json`:
 { "crons": [{ "path": "/api/cron", "schedule": "0 0 * * *" }] }
 ```
 
+### `POST /api/migrate`
+One-time, **idempotent** migration that copies each tracked player's legacy
+un-namespaced facet keys (`player:{puuid}:{facet}`) into the Set 17 namespace
+(`player:{puuid}:s17:{facet}`). Safe to run repeatedly and while Set 17 is still
+active — it never overwrites an already-namespaced key. Getters also self-migrate
+lazily on read, so this route is a belt-and-suspenders way to eliminate any
+split-brain window before the Set 18 rollover. No-op (400) in mock mode.
+
+**Response**: `{ players: number, migrated: number, results: [{ puuid, name, copied }] }`
+
 ## Riot API Client (`lib/riot.ts`)
 
 All calls go through `riotFetch<T>(url)` which adds the `X-Riot-Token` header.
@@ -143,27 +179,34 @@ Uses `@upstash/redis` REST client. All data is JSON-serialized.
 
 ### Redis Key Schema
 
+Identity keys are cross-set; the three data facets are namespaced per set (`s{n}`).
+
 | Key | Type | Value |
 |-----|------|-------|
-| `players` | Set | Set of puuid strings |
-| `player:{puuid}` | String (JSON) | `TrackedPlayer` — identity fields |
-| `player:{puuid}:current` | String (JSON) | `PlayerCurrentStats` — latest rank |
-| `player:{puuid}:history` | String (JSON) | `HistorySnapshot[]` — daily rank snapshots (max 365) |
-| `player:{puuid}:matches` | String (JSON) | `MatchRecord[]` — match results (max 200) |
+| `players` | Set | Set of puuid strings (cross-set) |
+| `player:{puuid}` | String (JSON) | `TrackedPlayer` — identity fields (cross-set) |
+| `player:{puuid}:s{n}:current` | String (JSON) | `PlayerCurrentStats` — latest rank for set n |
+| `player:{puuid}:s{n}:history` | String (JSON) | `HistorySnapshot[]` — daily rank snapshots for set n (max 365) |
+| `player:{puuid}:s{n}:matches` | String (JSON) | `MatchRecord[]` — match results for set n |
+| `player:{puuid}:{facet}` | String (JSON) | **Legacy** un-namespaced keys (pre-namespacing). Read as a Set 17 fallback and self-migrated on read; also handled by `POST /api/migrate`. |
 
 ### Functions
+
+Per-set accessors take a `setNumber`. Getters read `player:{puuid}:s{n}:{facet}` and,
+for `setNumber === 17`, fall back to the legacy key and copy it up on first read.
 
 | Function | Operation |
 |----------|-----------|
 | `getTrackedPlayers()` | SMEMBERS `players` → GET each `player:{puuid}` |
 | `addPlayer(player)` | SADD `players` + SET `player:{puuid}` |
-| `removePlayer(puuid)` | SREM `players` + DEL all 4 keys |
-| `getPlayerCurrent(puuid)` | GET `player:{puuid}:current` |
-| `setPlayerCurrent(puuid, stats)` | SET `player:{puuid}:current` |
-| `getPlayerHistory(puuid)` | GET `player:{puuid}:history` |
-| `appendPlayerHistory(puuid, snap)` | Read-modify-write: dedup by date, trim to 365 |
-| `getPlayerMatches(puuid)` | GET `player:{puuid}:matches` |
-| `setPlayerMatches(puuid, matches)` | SET (no trim — stores full array) |
+| `removePlayer(puuid)` | SREM `players` + DEL identity, legacy keys, and every set's facet keys |
+| `getPlayerCurrent(puuid, setNumber)` | GET `player:{puuid}:s{n}:current` (legacy fallback for s17) |
+| `setPlayerCurrent(puuid, setNumber, stats)` | SET `player:{puuid}:s{n}:current` |
+| `getPlayerHistory(puuid, setNumber)` | GET `player:{puuid}:s{n}:history` (legacy fallback for s17) |
+| `appendPlayerHistory(puuid, setNumber, snap)` | Read-modify-write: dedup by date, trim to 365 |
+| `getPlayerMatches(puuid, setNumber)` | GET `player:{puuid}:s{n}:matches` (legacy fallback for s17) |
+| `setPlayerMatches(puuid, setNumber, matches)` | SET (no trim — stores full array) |
+| `migratePlayerToNamespacedKeys(puuid)` | Idempotently copy legacy facet keys → s17 namespace |
 
 ### Data Types
 
@@ -202,6 +245,7 @@ interface MatchRecord {
   ranked?: boolean;    // true = Ranked TFT (queue_id 1100); false = other queue; undefined = pre-migration
   lastRound?: number;  // round number when player was eliminated / game ended
   gameType?: string;   // "standard" | "turbo" (Hyper Roll) | "pairs" (Double Up) | "choncc"
+  setNumber?: number;  // TFT set the match belongs to (undefined = pre-migration)
 }
 ```
 
@@ -209,7 +253,7 @@ interface MatchRecord {
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `RIOT_API_KEY` | Yes | Personal API key from developer.riotgames.com |
+| `RIOT_API_KEY` | Yes | Development API key from developer.riotgames.com (regenerates every 24h) |
 | `KV_REST_API_URL` | Yes | Upstash Redis REST endpoint |
 | `KV_REST_API_TOKEN` | Yes | Upstash Redis auth token |
 | `CRON_SECRET` | Yes | Bearer token for cron endpoint auth |
@@ -236,3 +280,7 @@ Currently hardcoded to `na1` platform / `americas` regional routing. To support 
 2. Populate it in the sync logic (`api/sync/route.ts`)
 3. Store it in the appropriate Redis key
 4. Consume it in the frontend component
+
+### Adding a new TFT set
+1. Append a `{ number, label, start, end }` entry to the `SETS` registry in `lib/utils.ts` (update the previous set's `end` if it changed).
+2. That's it — at the new set's `start` date it becomes active automatically: sync writes to its namespace, the previous set freezes as an archive, and the global switcher begins showing both. Run `POST /api/migrate` once (optional; getters also self-migrate) if legacy un-namespaced keys still exist.

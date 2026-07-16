@@ -3,7 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import styled from "styled-components";
 import { CustomSelect } from "@/components/CustomSelect";
-import { SET_LABEL, SET_START, SET_END } from "@/lib/utils";
+import type { TftSet } from "@/lib/utils";
 import { useFullBleedSticky, useScrollFade } from "@/hooks/useTabNavigation";
 
 // ── Types ───────────────────────────────────────────────────────
@@ -19,6 +19,7 @@ interface TabNavigationProps {
   selectedTab: "set" | number;
   onTabChange: (tab: "set" | number) => void;
   weeks: SetWeek[];
+  selectedSet: TftSet; // used for the "set" tab label + mobile select option
 }
 
 // ── Helpers ─────────────────────────────────────────────────────
@@ -144,6 +145,7 @@ export function TabNavigation({
   selectedTab,
   onTabChange,
   weeks,
+  selectedSet,
 }: TabNavigationProps) {
   const tabBarRef = useRef<HTMLDivElement>(null);
   const { stickyRef, isSticky } = useFullBleedSticky();
@@ -168,7 +170,7 @@ export function TabNavigation({
             onTabChange(v === "set" ? "set" : parseInt(v, 10))
           }
           options={[
-            { value: "set", label: SET_LABEL, sublabel: `${formatShortDate(SET_START)}\u2009\u2013\u2009${formatShortDate(SET_END)}` },
+            { value: "set", label: selectedSet.label, sublabel: `${formatShortDate(selectedSet.start)}\u2009\u2013\u2009${formatShortDate(selectedSet.end)}` },
             ...weeks.map((w, i) => ({
               value: String(i),
               label: w.label,
@@ -184,30 +186,30 @@ export function TabNavigation({
         $fadeLeft={fadeLeft}
         $fadeRight={fadeRight}
       >
-        <Tab
-          type="button"
-          role="tab"
-          aria-selected={selectedTab === "set"}
-          $active={selectedTab === "set"}
-          data-active={selectedTab === "set" ? "true" : undefined}
-          onClick={() => onTabChange("set")}
-        >
-          {SET_LABEL}
-        </Tab>
-        {weeks.map((w, i) => (
           <Tab
-            key={i}
             type="button"
             role="tab"
-            aria-selected={selectedTab === i}
-            $active={selectedTab === i}
-            data-active={selectedTab === i ? "true" : undefined}
-            onClick={() => onTabChange(i)}
+            aria-selected={selectedTab === "set"}
+            $active={selectedTab === "set"}
+            data-active={selectedTab === "set" ? "true" : undefined}
+            onClick={() => onTabChange("set")}
           >
-            {w.label}
+            {selectedSet.label}
           </Tab>
-        ))}
-      </TabBar>
+          {weeks.map((w, i) => (
+            <Tab
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={selectedTab === i}
+              $active={selectedTab === i}
+              data-active={selectedTab === i ? "true" : undefined}
+              onClick={() => onTabChange(i)}
+            >
+              {w.label}
+            </Tab>
+          ))}
+        </TabBar>
     </StickyTabWrap>
   );
 }

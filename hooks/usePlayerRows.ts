@@ -4,8 +4,6 @@ import {
   formatRankAbbr,
   percentOf,
   rankToLP,
-  SET_START,
-  SET_END,
 } from "@/lib/utils";
 import type { PlayerCurrentStats, MatchRecord } from "@/lib/kv";
 
@@ -51,6 +49,7 @@ export function usePlayerRows(
   players: PlayerRowInput[],
   selectedTab: "set" | number,
   weeks: { label: string; start: number; end: number }[],
+  setWindow: { start: number; end: number },
   startOverride?: number,
   endOverride?: number,
 ) {
@@ -59,7 +58,7 @@ export function usePlayerRows(
 
   const isSet = selectedTab === "set";
   const win = isSet
-    ? { start: SET_START, end: SET_END }
+    ? { start: setWindow.start, end: setWindow.end }
     : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]);
   const effectiveStart = startOverride ?? win.start;
   const effectiveEnd = endOverride ?? win.end;
@@ -68,7 +67,7 @@ export function usePlayerRows(
     () =>
       players.map((p) => {
         const setMatches = p.matches.filter(
-          (m) => m.timestamp >= SET_START && m.timestamp < SET_END,
+          (m) => m.timestamp >= setWindow.start && m.timestamp < setWindow.end,
         );
         const totalGames = setMatches.length;
         const totalDuration = setMatches.reduce((s, m) => s + m.duration, 0);
@@ -108,7 +107,7 @@ export function usePlayerRows(
         };
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [players, selectedTab, weeks, startOverride, endOverride],
+    [players, selectedTab, weeks, setWindow.start, setWindow.end, startOverride, endOverride],
   );
 
   const toggleSort = (key: SortKey) => {

@@ -9,7 +9,7 @@ import { PlayerTableView } from "./PlayerTableView";
 import { PlayerCardView } from "./PlayerCardView";
 import { usePlayerRows } from "@/hooks/usePlayerRows";
 import { useScrollFade } from "@/hooks/useTabNavigation";
-import { SET_START, SET_END } from "@/lib/utils";
+import type { TftSet } from "@/lib/utils";
 import type { PlayerRowInput } from "@/hooks/usePlayerRows";
 
 // ── Styled ──────────────────────────────────────────────────────
@@ -101,12 +101,13 @@ interface PlayerTableProps {
   players: PlayerRowInput[];
   selectedTab: "set" | number;
   weeks: { label: string; start: number; end: number; weekNumber: number }[];
+  selectedSet: TftSet;
   periodTag?: React.ReactNode;
 }
 
 // ── Component ────────────────────────────────────────────────────
 
-export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTableProps) {
+export function PlayerTable({ players, selectedTab, weeks, selectedSet, periodTag }: PlayerTableProps) {
   const [view, setView] = useState<ViewMode>("table");
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
@@ -115,9 +116,9 @@ export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTa
   const isSet = selectedTab === "set";
   const win = useMemo(() =>
     isSet
-      ? { start: SET_START, end: SET_END }
+      ? { start: selectedSet.start, end: selectedSet.end }
       : (weeks[selectedTab as number] ?? weeks[weeks.length - 1]),
-    [isSet, selectedTab, weeks],
+    [isSet, selectedTab, weeks, selectedSet],
   );
 
   const periodDays = Math.ceil((Math.min(win.end, Date.now()) - win.start) / DAY_MS);
@@ -145,6 +146,7 @@ export function PlayerTable({ players, selectedTab, weeks, periodTag }: PlayerTa
     players,
     selectedTab,
     weeks,
+    { start: selectedSet.start, end: selectedSet.end },
     startOverride,
     endOverride,
   );

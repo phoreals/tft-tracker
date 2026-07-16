@@ -7,15 +7,17 @@ import {
 } from "@/lib/kv";
 import { Redis } from "@upstash/redis";
 import { isMockMode, getMockPlayer } from "@/lib/mock";
+import { resolveSet } from "@/lib/utils";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ puuid: string }> }
 ) {
   const { puuid } = await params;
+  const setNumber = resolveSet(req.nextUrl.searchParams.get("set")).number;
 
   if (isMockMode()) {
-    const mock = getMockPlayer(puuid);
+    const mock = getMockPlayer(puuid, setNumber);
     if (!mock) return NextResponse.json({ error: "Player not found" }, { status: 404 });
     return NextResponse.json(mock);
   }
@@ -39,9 +41,9 @@ export async function GET(
   }
 
   const [current, matches, history] = await Promise.all([
-    getPlayerCurrent(puuid),
-    getPlayerMatches(puuid),
-    getPlayerHistory(puuid),
+    getPlayerCurrent(puuid, setNumber),
+    getPlayerMatches(puuid, setNumber),
+    getPlayerHistory(puuid, setNumber),
   ]);
 
   return NextResponse.json({ ...player, current, matches, history });

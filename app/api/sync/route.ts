@@ -19,7 +19,7 @@ import {
   delay,
   RateLimitError,
 } from "@/lib/riot";
-import { SET_START } from "@/lib/utils";
+import { getActiveSet } from "@/lib/utils";
 
 const BATCH_SIZE = 30;
 const TOTAL_TIMEOUT_MS = 50_000; // leave 10s buffer before Vercel's 60s limit
@@ -27,8 +27,11 @@ const TOTAL_TIMEOUT_MS = 50_000; // leave 10s buffer before Vercel's 60s limit
 export async function POST() {
   const syncStart = Date.now();
   const deadline = syncStart + TOTAL_TIMEOUT_MS;
+  // Resolve the active set per-request — do not use module-level SET_* aliases,
+  // which freeze at module load and could go stale on a warm serverless instance.
+  const activeSet = getActiveSet();
   const rawPlayers = await getTrackedPlayers();
-  const matchCounts = await Promise.all(rawPlayers.map((p) => getPlayerMatches(p.puuid).then((m) => m.length)));
+  const matchCounts = await Promise.all(rawPlayers.map((p) => getPlayerMatches(p.puuid, activeSet.number).then((m) => m.length)));
   const players = rawPlayers
     .map((p, i) => ({ ...p, _storedCount: matchCounts[i] }))
     .sort((a, b) => b._storedCount - a._storedCount);
@@ -79,11 +82,11 @@ export async function POST() {
           losses: tftEntry.losses,
           lastUpdated: new Date().toISOString(),
         };
-        await setPlayerCurrent(player.puuid, current);
+        await setPlayerCurrent(player.puuid, activeSet.number, current);
 
         // Append to history (one entry per day)
         const today = new Date().toISOString().split("T")[0];
-        await appendPlayerHistory(player.puuid, {
+        await appendPlayerHistory(player.puuid, activeSet.number, {
           date: today,
           tier: tftEntry.tier,
           rank: tftEntry.rank,
@@ -99,9 +102,9 @@ export async function POST() {
       // Fetch all new match IDs upfront, then process in batches until
       // caught up or the function timeout approaches.
       await delay(100);
-      const setStartSec = Math.floor(SET_START / 1000);
+      const setStartSec = Math.floor(activeSet.start / 1000);
       const matchIds = await getAllMatchIds(player.puuid, setStartSec, deadline);
-      const existing = await getPlayerMatches(player.puuid);
+      const existing = await getPlayerMatches(player.puuid, activeSet.number);
       const existingIds = new Set(existing.map((m) => m.matchId));
       const allNewMatchIds = matchIds.filter((id) => !existingIds.has(id));
 
@@ -121,6 +124,12 @@ export async function POST() {
           await delay(100);
           try {
             const match = await getMatch(matchId, deadline);
+            // Defensive guard: never store a match from another set into this
+            // set's archive (start_time scoping should already prevent it).
+            if (match.info.tft_set_number !== activeSet.number) {
+              console.warn(`[sync] ${playerLabel}: skipping match ${matchId} from set ${match.info.tft_set_number} (active is ${activeSet.number})`);
+              continue;
+            }
             const participant = match.info.participants.find(
               (p) => p.puuid === player.puuid
             );
@@ -130,6 +139,10 @@ export async function POST() {
                 placement: participant.placement,
                 duration: Math.round(match.info.game_length),
                 timestamp: match.info.game_datetime,
+                ranked: match.info.queue_id === 1100,
+                lastRound: participant.last_round,
+                gameType: match.info.tft_game_type,
+                setNumber: match.info.tft_set_number,
               });
             } else {
               console.warn(`[sync] ${playerLabel}: participant not found in match ${matchId}`);
@@ -149,7 +162,7 @@ export async function POST() {
         const allMatches = [...existing, ...allNewRecords].sort(
           (a, b) => a.timestamp - b.timestamp
         );
-        await setPlayerMatches(player.puuid, allMatches);
+        await setPlayerMatches(player.puuid, activeSet.number, allMatches);
         console.log(`[sync] ${playerLabel}: saved ${allNewRecords.length} new matches (${remaining} still remaining)`);
       } else {
         console.log(`[sync] ${playerLabel}: no new matches to save`);

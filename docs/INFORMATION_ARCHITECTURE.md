@@ -4,7 +4,8 @@
 
 ```
 /                          Weekly Stats (main view)
-  ├── Tab bar (sticky)     "Set 17" | Week 1 … Week N (controls all below)
+  ├── Subtitle set tag     Low-emphasis tag in the subtitle; opens set dropdown (Current / Archived)
+  ├── Tab bar (sticky)     "Set N" | Week 1 … Week N (controls all below)
   ├── Superlatives         6 cards: leader per stat category (tab-scoped)
   ├── Player table         Per-player stats (tab-scoped columns)
   ├── Rank chart           Line chart (tab-driven mode)
@@ -33,17 +34,37 @@
   └── Match history        Scrollable list, newest first
 ```
 
+## Sets (Seasons)
+
+The app tracks multiple TFT sets. The `SETS` registry in `lib/utils.ts` lists each
+set as `{ number, label, start, end }`. The **active set** is derived from today's
+date (`getActiveSet`) — the latest set whose start has passed. When a new set's
+start date arrives, it becomes active automatically with no code change; the
+previous set becomes a frozen, browsable **archive**.
+
+- **Identity is cross-set**; the per-set facets (current / history / matches) are
+  stored under set-namespaced Redis keys, so an archived set is never overwritten.
+- The **global set switcher** (`?set=` URL param, `useSelectedSet`) chooses which
+  set is viewed; it persists across all pages. It is rendered as a low-emphasis
+  **tag in the page subtitle** (`SetTag`) — a rarely-used control — and becomes an
+  interactive dropdown only once more than one set is browsable (`getBrowsableSets`
+  — sets whose start has passed); otherwise it's a static pill.
+- Selecting an archived set hides live affordances (Sync) and de-emphasizes the
+  whole view: the set tag and every period pill (`DurationPill`) dim to muted grey
+  (via `data-archived` on the page root).
+
 ## Data Hierarchy
 
 ### Primary Entity: Player
-A player is identified by their Riot `puuid` and has three data facets:
+A player is identified by their Riot `puuid`. Identity is cross-set; the other
+three facets are stored and read per set:
 
 ```
 Player (TrackedPlayer)
-├── Identity:  gameName, tagLine, puuid, summonerId, region
-├── Current:   tier, rank, lp, wins, losses, lastUpdated
-├── History:   [{ date, tier, rank, lp, wins, losses }]  (daily snapshots)
-└── Matches:   [{ matchId, placement, duration, timestamp }]  (last 200, fetches 100 per sync)
+├── Identity:  gameName, tagLine, puuid, summonerId, region   (cross-set)
+├── Current:   tier, rank, lp, wins, losses, lastUpdated       (per set)
+├── History:   [{ date, tier, rank, lp, wins, losses }]        (per set, daily snapshots)
+└── Matches:   [{ matchId, placement, duration, timestamp, setNumber, ranked?, lastRound?, gameType? }]  (per set)
 ```
 
 ### Derived Metrics (computed client-side)
@@ -60,7 +81,7 @@ These are NOT stored — they're calculated from matches on render:
 | Rank numeric value | `RANK_VALUES[tier] + DIVISION_VALUES[rank] + lp` |
 
 ### Week Boundary
-Weeks are calculated from the TFT set start date (April 15, 2026) in 7-day increments through set end (July 29, 2026). Week 1 = Apr 15-21, Week 2 = Apr 22-28, etc. The current week is determined by `getCurrentSetWeek()` in `lib/utils.ts`. The `SET_START` and `SET_END` constants should be updated when a new TFT set launches.
+Weeks are calculated per viewed set from that set's start date in 7-day increments through its end. `getSetWeeks(set)` and `getCurrentSetWeek(set)` in `lib/utils.ts` take a `TftSet` (defaulting to the active set). For the active set the list stops at the current week; for a finished/archived set every week through set end is returned. To add a new set, append an entry to the `SETS` registry in `lib/utils.ts` — do not edit scalar constants.
 
 ## Content Priority
 
@@ -92,12 +113,14 @@ Active state indicated by:
 
 | URL | Page | Data Source |
 |-----|------|-------------|
-| `/` | Weekly Stats | `GET /api/players` (all player data) |
-| `/players` | Manage Players | `GET /api/players` (player list only) |
-| `/stats/[category]` | Stat Drilldown | `GET /api/players` (all players, ranked by stat) |
-| `/player/[puuid]` | Player Drilldown | `GET /api/players` (filtered client-side by puuid) |
+| `/?set=&tab=` | Weekly Stats | `GET /api/players?set=N` (all player data for set N) |
+| `/players` | Manage Players | `GET /api/players` (player list only; roster is cross-set) |
+| `/stats/[category]?set=&tab=` | Stat Drilldown | `GET /api/players?set=N` (all players, ranked by stat) |
+| `/player/[puuid]?set=&tab=` | Player Drilldown | `GET /api/players?set=N` (filtered client-side by puuid) |
 
-The Weekly Stats and Manage Players pages fetch the same endpoint. The Player Drilldown page also fetches all players and filters to the one matching the URL `puuid` parameter — there is no per-player endpoint.
+Two URL params carry view state and persist across navigation: `?set=` (which set, `useSelectedSet`) and `?tab=` (`"set"` = whole set, or a week index, `useSelectedTab`). Both are omitted/normalized when unset. Unknown or not-yet-started `?set=` values fall back to the active set; out-of-range `?tab=` values fall back to the whole-set overview. Switching sets resets `?tab=` to `"set"`.
+
+The Weekly Stats and Manage Players pages fetch the same endpoint. The Player Drilldown page also fetches all players and filters to the one matching the URL `puuid` parameter — there is no per-player list endpoint (though `GET /api/players/[puuid]?set=N` exists for parity). `GET /api/players` reads the requested set's namespace, so an archived set returns its frozen snapshot.
 
 ## Empty States
 
@@ -106,6 +129,7 @@ The Weekly Stats and Manage Players pages fetch the same endpoint. The Player Dr
 | No players in table | "No players tracked yet. Add players to get started." | Navigate to /players |
 | No players in list | "No players tracked yet. Add a summoner to get started." | Use add form or seed |
 | No chart history | "No history data yet. Sync to start tracking." | Click Sync Now |
+| Empty archive / new set day one | Standard empty states ("No data for this time period", etc.) | Sync (active set) or switch set |
 | Seed card | Shows original squad names | Click "Load Original Squad" |
 
 ## Data Freshness
@@ -118,4 +142,4 @@ The Weekly Stats and Manage Players pages fetch the same endpoint. The Player Dr
 | Redis → Client | On page load | `GET /api/players` in `useEffect` |
 | Redis → Client | After sync/add | Re-fetch via same endpoint |
 
-There is no real-time push or polling. Data is as fresh as the last sync.
+There is no real-time push or polling. Data is as fresh as the last sync. Sync always writes to the **active** set's namespace, so once a set ends its data is frozen — archived sets never change and their views omit freshness/relative-time affordances.
