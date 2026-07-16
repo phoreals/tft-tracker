@@ -13,7 +13,7 @@ A private TFT leaderboard for a friend group ("The Asylum"). Tracks ranked stats
 | Charts | Recharts |
 | Icons | lucide-react |
 | Database | Upstash Redis (REST via `@upstash/redis`) |
-| External API | Riot Games TFT API (personal key) |
+| External API | Riot Games TFT API (development key — expires every 24h) |
 | Hosting | Vercel hobby plan |
 
 ## Documentation

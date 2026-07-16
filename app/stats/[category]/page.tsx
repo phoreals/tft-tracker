@@ -954,6 +954,7 @@ export default function StatsDrilldownPage() {
   const activeSet = useMemo(() => getActiveSet(), []);
   const sets = useMemo(() => getBrowsableSets(), []);
   const [selectedSet, setSelectedSet] = useSelectedSet();
+  const isArchived = selectedSet.number !== activeSet.number;
   const weeks = useMemo(() => getSetWeeks(selectedSet), [selectedSet]);
   const [selectedTab, setSelectedTab] = useSelectedTab(selectedSet);
   const catNavRef = useRef<HTMLElement>(null);
@@ -1094,7 +1095,7 @@ export default function StatsDrilldownPage() {
   );
 
   return (
-    <Page>
+    <Page data-archived={isArchived ? "true" : undefined}>
       <BackLink href={buildHref(`/`, { set: selectedSet.number, tab: selectedTab })}>
         <ArrowLeft size={ICON_SIZE.sm} />
         BACK TO HOME
@@ -1107,7 +1108,7 @@ export default function StatsDrilldownPage() {
             <>{setTag}{" · "}{formatShortDate(selectedSet.start)}{" – "}{formatShortDate(selectedSet.end)}</>
           ) : (() => {
             const w = weeks[selectedTab as number];
-            return w ? <>{setTag}{" "}<strong>{w.label}</strong>{" · "}{formatShortDate(w.start)}{" – "}{formatShortDate(w.end)}</> : null;
+            return w ? <>{setTag}{" · "}<strong>{w.label}</strong>{" · "}{formatShortDate(w.start)}{" – "}{formatShortDate(w.end)}</> : null;
           })()}
         </PageSubtitle>
       </div>

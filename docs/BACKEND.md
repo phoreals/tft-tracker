@@ -6,7 +6,7 @@
 |-------|-----------|-------|
 | Runtime | Next.js API Routes | Deployed as Vercel serverless functions |
 | Database | Upstash Redis | REST-based, free tier (256MB, 10K commands/day) |
-| External API | Riot Games TFT API | Personal key: 20 req/s, 100 req/2min |
+| External API | Riot Games TFT API | Development key (expires every 24h): 20 req/s, 100 req/2min |
 | Scheduling | Vercel Cron | Daily at midnight UTC |
 
 ## File Structure
@@ -253,7 +253,7 @@ interface MatchRecord {
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `RIOT_API_KEY` | Yes | Personal API key from developer.riotgames.com |
+| `RIOT_API_KEY` | Yes | Development API key from developer.riotgames.com (regenerates every 24h) |
 | `KV_REST_API_URL` | Yes | Upstash Redis REST endpoint |
 | `KV_REST_API_TOKEN` | Yes | Upstash Redis auth token |
 | `CRON_SECRET` | Yes | Bearer token for cron endpoint auth |

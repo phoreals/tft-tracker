@@ -123,6 +123,14 @@ plain static `DurationPill`. There is no separate "Archived" pill in the subtitl
 and live affordances (Sync) are removed rather than
 disabled.
 
+**Archived views de-emphasize all period pills too.** `DurationPill` (the "Set N" /
+"Week N" tag on card headers, tables, and charts) carries a
+`[data-archived="true"] &` rule that switches it from gold accent to `textMuted` text
++ `borderDefault`. Each page sets `data-archived="true"` on its root `<Page>` when the
+viewed set isn't the active set, so every period pill on the page dims together with
+the set tag — the whole archived view reads as secondary. Active-set views leave the
+attribute off, so pills stay gold. Colors use semantic tokens (no hardcoded values).
+
 ## Color Usage Rules
 
 | Context | Color | Token |

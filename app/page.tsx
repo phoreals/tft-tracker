@@ -531,7 +531,7 @@ export default function WeeklyStatsPage() {
   );
 
   return (
-    <Page>
+    <Page data-archived={isArchived ? "true" : undefined}>
       <PageHeader>
         <div>
           <PageTitle>The Asylum TFT Tracker</PageTitle>
@@ -540,7 +540,7 @@ export default function WeeklyStatsPage() {
               <>{setTag}{"\u2002·\u2002"}{formatShortDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatShortDate(selectedSet.end)}</>
             ) : (() => {
               const w = weeks[selectedTab as number];
-              return w ? <>{setTag}{" "}<strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
+              return w ? <>{setTag}{" · "}<strong>{w.label}</strong>{"\u2002·\u2002"}{formatShortDate(w.start)}{"\u2009\u2013\u2009"}{formatShortDate(w.end)}</> : null;
             })()}
           </PageSubtitle>
         </div>

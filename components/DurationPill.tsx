@@ -13,4 +13,11 @@ export const DurationPill = styled.span`
   font-size: ${({ theme }) => theme.primitive.fontSize.xs};
   color: ${({ theme }) => theme.semantic.color.accent};
   flex-shrink: 0;
+
+  /* Inside an archived-set view, period tags are de-emphasized (muted) to match
+     the archived set tag. Driven by data-archived on the page root. */
+  [data-archived="true"] & {
+    color: ${({ theme }) => theme.semantic.color.textMuted};
+    border-color: ${({ theme }) => theme.semantic.color.borderDefault};
+  }
 `;

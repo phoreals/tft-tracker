@@ -49,8 +49,9 @@ previous set becomes a frozen, browsable **archive**.
   **tag in the page subtitle** (`SetTag`) — a rarely-used control — and becomes an
   interactive dropdown only once more than one set is browsable (`getBrowsableSets`
   — sets whose start has passed); otherwise it's a static pill.
-- Selecting an archived set hides live affordances (Sync) and marks the view
-  "Archived".
+- Selecting an archived set hides live affordances (Sync) and de-emphasizes the
+  whole view: the set tag and every period pill (`DurationPill`) dim to muted grey
+  (via `data-archived` on the page root).
 
 ## Data Hierarchy
 

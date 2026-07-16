@@ -17,7 +17,7 @@ Track your Teamfight Tactics squad's ranked performance, match history, and rank
 | Frontend | React 19, styled-components, Recharts, Motion |
 | Backend | Next.js API Routes (Vercel serverless functions) |
 | Database | Upstash Redis (free tier) |
-| External API | Riot Games TFT API (personal key) |
+| External API | Riot Games TFT API (development key — expires every 24h) |
 
 ## Quick Start
 

@@ -913,7 +913,7 @@ export default function PlayerDrilldownPage() {
   );
 
   return (
-    <Page>
+    <Page data-archived={isArchived ? "true" : undefined}>
       <BackLink href={buildHref(`/`, { set: selectedSet.number, tab: selectedTab })}>
         <ArrowLeft size={ICON_SIZE.sm} />
         BACK TO HOME
@@ -969,7 +969,7 @@ export default function PlayerDrilldownPage() {
           <>{setTag}{"\u2002·\u2002"}{formatDisplayDate(selectedSet.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(selectedSet.end)}</>
         ) : (() => {
           const w = weeks[selectedTab as number];
-          return w ? <>{setTag}{" "}<strong>{w.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(w.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(w.end)}</> : null;
+          return w ? <>{setTag}{" · "}<strong>{w.label}</strong>{"\u2002·\u2002"}{formatDisplayDate(w.start)}{"\u2009\u2013\u2009"}{formatDisplayDate(w.end)}</> : null;
         })()}
       </PageSubtitle>
 

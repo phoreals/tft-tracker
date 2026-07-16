@@ -41,7 +41,10 @@ minimum tap target via an invisible centered overlay.
   Set 17 (archived)") and stays visible in the dropdown's "Archived" sublabel. The
   Sync button is hidden (syncing a finished set is meaningless — Riot no longer
   reports it), and the player page shows absolute match dates instead of live "x ago"
-  relative times. There is no separate "Archived" pill.
+  relative times. There is no separate "Archived" pill. Additionally, **every period
+  `DurationPill` on the page** (card headers, tables, charts) is muted to grey on an
+  archived set — driven by a `data-archived="true"` attribute on the page root — so
+  the whole view reads as past, not just the set tag.
 
 ### Page-Level Tab Navigation
 
@@ -72,7 +75,7 @@ Six `GlassCard` components in a 3-column grid (2 columns on mobile) highlighting
 | **Most LP Gained** | LP delta: current rank minus earliest history snapshot in window (requires ≥ 1 snapshot) |
 | **Avg LP Per Game** | Highest LP gain per game played |
 
-Each card has a **duration pill** in the top-right of its header showing the active time window — "Set 17" (gold accent pill) or "Week N". The card label is the category name only (e.g. "Most Games"); the period is communicated by the pill alone.
+Each card has a **duration pill** in the top-right of its header showing the active time window — "Set 17" or "Week N" (gold accent pill; **muted grey when viewing an archived set**, matching the de-emphasized set tag — see Archived treatment). The card label is the category name only (e.g. "Most Games"); the period is communicated by the pill alone.
 
 `cat.label(isSet, weekNumber?, setLabel?)` on `SuperlativeCategory` is still used for the player-page superlative badges — it returns e.g. "Most Games Week 2" or "Most Games Set 17"; the viewed set's label is passed in so archived views read correctly.
 
