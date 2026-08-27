@@ -157,7 +157,7 @@ A `GlassCard` with a **duration pill** (period tag) after the title text, a **da
 | Column | Source | Notes |
 |--------|--------|-------|
 | Summoner | `gameName#tagLine` | Riot profile icon (Community Dragon CDN); falls back to `User` icon |
-| Rank | `tier rank LP` | Tier-colored rank emblem + abbreviated rank on mobile, full string on desktop |
+| Rank | `tier rank LP` | Tier-colored rank emblem + abbreviated rank on mobile, full string on desktop. Reads "Unranked" until the player finishes placements — expect the whole squad to show this for the first days of a new set, since Riot resets the ladder at rollover and reports no entry until placements are done |
 | Games | Set total or week count depending on tab | |
 | Top 4% | Scoped `(placements ≤ 4) / total * 100` | |
 | 1st% | Scoped `(placements == 1) / total * 100` | Cyan text |

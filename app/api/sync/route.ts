@@ -5,6 +5,7 @@ import {
   getTrackedPlayers,
   addPlayer,
   setPlayerCurrent,
+  clearPlayerCurrent,
   appendPlayerHistory,
   getPlayerMatches,
   setPlayerMatches,
@@ -96,7 +97,11 @@ export async function POST() {
         });
         console.log(`[sync] ${playerLabel}: rank updated (${tftEntry.tier} ${tftEntry.rank} ${tftEntry.leaguePoints} LP)`);
       } else {
-        console.warn(`[sync] ${playerLabel}: no RANKED_TFT entry found`);
+        // No entry = unranked in this set (hasn't placed yet). Clear rather than
+        // leave the previous value standing, or a rank captured before the set's
+        // ladder reset would never be overwritten.
+        await clearPlayerCurrent(player.puuid, activeSet.number);
+        console.warn(`[sync] ${playerLabel}: no RANKED_TFT entry — cleared rank for set ${activeSet.number}`);
       }
 
       // Fetch all new match IDs upfront, then process in batches until

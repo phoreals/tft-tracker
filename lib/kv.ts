@@ -131,6 +131,21 @@ export async function setPlayerCurrent(
   await redis.set(facetKey(puuid, setNumber, "current"), stats);
 }
 
+// Drop a set's rank so the player reads as Unranked again. Riot omits the
+// RANKED_TFT entry for anyone who hasn't finished placements, and at a set
+// rollover that's *everyone* — without this, a rank written before the ladder
+// reset would sit in the new set's namespace forever, because sync would never
+// have an entry to overwrite it with.
+//
+// Only ever called for the active set. Calling it for LEGACY_SET_NUMBER would
+// let readFacet resurrect the value from the old un-namespaced key on next read.
+export async function clearPlayerCurrent(
+  puuid: string,
+  setNumber: number
+): Promise<void> {
+  await redis.del(facetKey(puuid, setNumber, "current"));
+}
+
 // --- History ---
 
 export async function getPlayerHistory(
