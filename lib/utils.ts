@@ -13,10 +13,11 @@ export interface TftSet {
 // active set moves on, the previous set is never written to again and freezes
 // into a browsable archive (see lib/kv.ts key namespacing).
 //
-// Set 18's end is provisional — update it when Riot announces the Set 19 launch.
+// Set 18 launches 2026-08-26. Its end is provisional—a ~4-month set is the norm,
+// so it's penciled in at 2026-12-26. Update it when Riot announces the Set 19 launch.
 export const SETS: TftSet[] = [
-  { number: 17, label: "Set 17", start: new Date("2026-04-15T00:00:00").getTime(), end: new Date("2026-07-29T23:59:59").getTime() },
-  { number: 18, label: "Set 18", start: new Date("2026-07-30T00:00:00").getTime(), end: new Date("2026-11-11T23:59:59").getTime() },
+  { number: 17, label: "Set 17", start: new Date("2026-04-15T00:00:00").getTime(), end: new Date("2026-08-25T23:59:59").getTime() },
+  { number: 18, label: "Set 18", start: new Date("2026-08-26T00:00:00").getTime(), end: new Date("2026-12-26T23:59:59").getTime() },
 ];
 
 // Dev-only "now" override for previewing set rollover locally. Set
