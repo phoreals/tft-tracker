@@ -416,14 +416,24 @@ export default function WeeklyStatsPage() {
 
     let pass = 0;
     let totalAdded = 0;
-    // Skipped players trigger another pass, so this loop needs a ceiling — a
-    // permanently exhausted time budget would otherwise never stop passing.
-    const MAX_PASSES = 10;
+    // Three independent stops. Each pass can take the server's full 60s plus a
+    // rate-limit countdown, so an uncapped loop reads as a hung button: bound
+    // the passes, bound the wall clock, and bail the moment a pass stops
+    // accomplishing anything.
+    const MAX_PASSES = 4;
+    const OVERALL_DEADLINE = Date.now() + 180_000;
+    // Signature of the pending work, used to detect a pass that changed nothing.
+    let prevPending = "";
 
     try {
       while (true) {
         pass++;
-        setSyncStatus({ tone: "muted", message: pass === 1 ? "Syncing…" : `Pass ${pass} — ${totalAdded} matches added so far…` });
+        setSyncStatus({
+          tone: "muted",
+          message: pass === 1
+            ? "Syncing… (pass 1, up to 60s)"
+            : `Pass ${pass} of ${MAX_PASSES} — ${totalAdded} match${totalAdded === 1 ? "" : "es"} added so far…`,
+        });
 
         const res = await fetch("/api/sync", { method: "POST" });
         if (!res.ok) {
@@ -454,14 +464,28 @@ export default function WeeklyStatsPage() {
         if (withRemaining.length > 0 || skipped.length > 0 || maxRateLimitMs > 0) {
           await fetchPlayers();
 
-          if (pass >= MAX_PASSES) {
-            const pending = [...withRemaining, ...skipped]
-              .map((r: { name: string }) => r.name)
-              .filter((n, i, a) => a.indexOf(n) === i)
-              .join(", ");
+          const pendingNames = [...withRemaining, ...skipped]
+            .map((r: { name: string }) => r.name)
+            .filter((n, i, a) => a.indexOf(n) === i);
+          const pending = pendingNames.join(", ");
+          const signature = [...pendingNames].sort().join("|");
+
+          // A pass that added nothing, wasn't rate limited, and left exactly the
+          // same players pending will do the same on the next pass. Stop rather
+          // than spin — and say what's stuck, because that's the diagnosis.
+          const noProgress =
+            pass > 1 && (data.totalAdded ?? 0) === 0 && maxRateLimitMs === 0 && signature === prevPending;
+          prevPending = signature;
+
+          if (noProgress || pass >= MAX_PASSES || Date.now() >= OVERALL_DEADLINE) {
+            const why = noProgress
+              ? `no progress on pass ${pass}`
+              : pass >= MAX_PASSES
+                ? `${MAX_PASSES} passes`
+                : "3 minutes";
             setSyncStatus({
               tone: "warn",
-              message: `Stopped after ${MAX_PASSES} passes — ${totalAdded} match${totalAdded === 1 ? "" : "es"} added. Still pending: ${pending}. Run Sync Now again to continue.`,
+              message: `Stopped after ${why} — ${totalAdded} match${totalAdded === 1 ? "" : "es"} added. Still pending: ${pending}. Run Sync Now again to continue.`,
             });
             break;
           }

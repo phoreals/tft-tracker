@@ -191,11 +191,18 @@ Top-right of the page header (**hidden when viewing an archived set**). Runs a m
 - **Error**: Red-bordered card with monospace error text. Persists until dismissed. Copy button copies the raw error for debugging.
 - **Warn**: Gold-bordered card for match fetch errors. Auto-dismisses after 5s.
 
-If a pass returns `maxRateLimitMs > 0`, counts down the rate-limit wait second-by-second before the next pass (no overlay during sync — only the spinning button icon).
+If a pass returns `maxRateLimitMs > 0`, counts down the rate-limit wait second-by-second before the next pass, shown live in the overlay.
 
 **Players skipped for time** (`skipped: true`) drive another pass rather than an error toast — the server ran out of its 50s budget before reaching them and they lead the next pass. The interstitial reads "Pass 2 done — 3 players queued, continuing…". This is deliberately *not* the Error state: skipped players used to surface as a red error, which also aborted the retry loop and left them permanently unsynced.
 
-**Pass ceiling**: the loop stops after `MAX_PASSES` (10) and shows a Warn toast naming who is still pending — "Stopped after 10 passes — 4 matches added. Still pending: Lionnel, Demure. Run Sync Now again to continue." Without a ceiling, a permanently exhausted budget would pass forever.
+**Progress is visible during the run.** `SyncOverlay` renders while `syncing` is true, not only on completion — showing "Pass 2 of 4 — 3 matches added so far…" or the rate-limit countdown. In-flight the card is progress only: no dismiss button and no copy button, since neither would stop the run. It was previously suppressed during sync (`if (!status || syncing) return null`), which made a legitimately slow multi-pass run indistinguishable from a hung button.
+
+**Three independent stops**, because a pass can take the server's full 60s plus a rate-limit countdown:
+- `MAX_PASSES` = 4
+- An overall 3-minute wall-clock deadline
+- **No-progress detection** — a pass that added zero matches, wasn't rate limited, and left exactly the same players pending as the previous pass will do the same again, so the loop stops immediately
+
+All three end in the same Warn toast naming who is still pending and why it stopped: "Stopped after no progress on pass 2 — 0 matches added. Still pending: Lionnel, Demure. Run Sync Now again to continue." The reason is part of the message because it is the diagnosis — "no progress" and "3 minutes" point at different problems.
 
 ## Manage Players (`/players`)
 

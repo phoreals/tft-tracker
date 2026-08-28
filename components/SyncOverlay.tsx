@@ -165,11 +165,14 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
     });
   }, [status]);
 
-  // Only show overlay for final results, not while syncing
-  if (!status || syncing || typeof document === "undefined") return null;
+  // Shown during a sync as well as after it. A multi-pass sync can run for
+  // minutes across rate-limit waits; with progress hidden, the spinning button
+  // is indistinguishable from a hung one. In-flight, the card is progress only —
+  // no dismiss control, since dismissing wouldn't stop the run.
+  if (!status || typeof document === "undefined") return null;
 
-  const showCopy = status.tone === "error";
-  const isError = status.tone === "error";
+  const showCopy = !syncing && status.tone === "error";
+  const isError = !syncing && status.tone === "error";
 
   return createPortal(
     <Backdrop>
@@ -192,9 +195,11 @@ export function SyncOverlay({ status, syncing, onDismiss }: SyncOverlayProps) {
               {copied ? <Check size={14} /> : <Copy size={14} />}
             </IconButton>
           )}
-          <IconButton onClick={onDismiss} title="Dismiss" aria-label="Dismiss">
-            <X size={14} />
-          </IconButton>
+          {!syncing && (
+            <IconButton onClick={onDismiss} title="Dismiss" aria-label="Dismiss">
+              <X size={14} />
+            </IconButton>
+          )}
         </Actions>
       </Card>
     </Backdrop>,
