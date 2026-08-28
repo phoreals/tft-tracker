@@ -17,7 +17,9 @@ const redis = new Redis({
 // old data self-migrates. POST /api/migrate does the same eagerly.
 const LEGACY_SET_NUMBER = 17;
 
-type Facet = "current" | "history" | "matches";
+// "sync" is bookkeeping rather than player data — it has no legacy un-namespaced
+// equivalent, so readFacet's s17 fallback simply misses and returns null.
+type Facet = "current" | "history" | "matches" | "sync";
 
 function facetKey(puuid: string, setNumber: number, facet: Facet): string {
   return `player:${puuid}:s${setNumber}:${facet}`;
@@ -56,6 +58,18 @@ export interface HistorySnapshot {
   losses: number;
 }
 
+export interface PlayerSyncMeta {
+  // Epoch ms of the last sync pass that reached this player. Sync processes the
+  // stalest players first, so this is what stops a fixed order from cutting the
+  // same tail every run when the time budget expires.
+  syncedAt: number;
+  // Match IDs that fall inside this set's time window but belong to another set
+  // (games played after our set boundary but before Riot's actual set patch).
+  // They are rejected on fetch, so without remembering them they would never
+  // enter stored matches and would be re-fetched on every sync forever.
+  excludedMatchIds: string[];
+}
+
 export interface MatchRecord {
   matchId: string;
   placement: number;
@@ -87,7 +101,7 @@ export async function addPlayer(player: TrackedPlayer): Promise<void> {
 
 export async function removePlayer(puuid: string): Promise<void> {
   await redis.srem("players", puuid);
-  const facets: Facet[] = ["current", "history", "matches"];
+  const facets: Facet[] = ["current", "history", "matches", "sync"];
   const keys = [
     `player:${puuid}`,
     // Legacy un-namespaced facet keys
@@ -188,6 +202,54 @@ export async function setPlayerMatches(
   matches: MatchRecord[]
 ): Promise<void> {
   await redis.set(facetKey(puuid, setNumber, "matches"), matches);
+}
+
+// --- Sync Metadata ---
+
+const EXCLUDED_CAP = 500;
+
+const EMPTY_SYNC_META: PlayerSyncMeta = { syncedAt: 0, excludedMatchIds: [] };
+
+export async function getPlayerSyncMeta(
+  puuid: string,
+  setNumber: number
+): Promise<PlayerSyncMeta> {
+  const meta = await readFacet<PlayerSyncMeta>(puuid, setNumber, "sync");
+  if (!meta) return { ...EMPTY_SYNC_META };
+  // Tolerate partial records written by an older deploy.
+  return {
+    syncedAt: meta.syncedAt ?? 0,
+    excludedMatchIds: meta.excludedMatchIds ?? [],
+  };
+}
+
+// Stamp the player as synced for this set. Called on every terminal outcome —
+// success, rate limit, or error — so a player who keeps failing still yields
+// their place at the front of the queue instead of blocking everyone behind them.
+export async function touchPlayerSynced(
+  puuid: string,
+  setNumber: number,
+  at: number = Date.now()
+): Promise<void> {
+  const meta = await getPlayerSyncMeta(puuid, setNumber);
+  await redis.set(facetKey(puuid, setNumber, "sync"), { ...meta, syncedAt: at });
+}
+
+// Union new IDs into the exclusion list. The realistic source is the handful of
+// games played between our set boundary and Riot's set patch, so the list is
+// naturally small; EXCLUDED_CAP is only a runaway guard.
+export async function addExcludedMatchIds(
+  puuid: string,
+  setNumber: number,
+  ids: string[]
+): Promise<void> {
+  if (!ids.length) return;
+  const meta = await getPlayerSyncMeta(puuid, setNumber);
+  const merged = Array.from(new Set([...meta.excludedMatchIds, ...ids]));
+  await redis.set(facetKey(puuid, setNumber, "sync"), {
+    ...meta,
+    excludedMatchIds: merged.slice(-EXCLUDED_CAP),
+  });
 }
 
 // --- Migration ---

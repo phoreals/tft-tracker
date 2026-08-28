@@ -9,6 +9,9 @@ import {
   appendPlayerHistory,
   getPlayerMatches,
   setPlayerMatches,
+  getPlayerSyncMeta,
+  touchPlayerSynced,
+  addExcludedMatchIds,
   type PlayerCurrentStats,
   type MatchRecord,
 } from "@/lib/kv";
@@ -32,11 +35,14 @@ export async function POST() {
   // which freeze at module load and could go stale on a warm serverless instance.
   const activeSet = getActiveSet();
   const rawPlayers = await getTrackedPlayers();
-  const matchCounts = await Promise.all(rawPlayers.map((p) => getPlayerMatches(p.puuid, activeSet.number).then((m) => m.length)));
+  // Stalest-first. The time budget will always cut someone off; ordering by when
+  // each player was last reached is what guarantees it isn't the same someone
+  // every run. Never-synced players carry syncedAt 0 and therefore go first.
+  const syncMetas = await Promise.all(rawPlayers.map((p) => getPlayerSyncMeta(p.puuid, activeSet.number)));
   const players = rawPlayers
-    .map((p, i) => ({ ...p, _storedCount: matchCounts[i] }))
-    .sort((a, b) => b._storedCount - a._storedCount);
-  console.log(`[sync] Player order: ${players.map((p) => `${p.gameName ?? p.puuid}(${p._storedCount})`).join(", ")}`);
+    .map((p, i) => ({ ...p, _syncedAt: syncMetas[i].syncedAt, _excluded: syncMetas[i].excludedMatchIds }))
+    .sort((a, b) => a._syncedAt - b._syncedAt);
+  console.log(`[sync] Player order: ${players.map((p) => `${p.gameName ?? p.puuid}(${p._syncedAt === 0 ? "never" : new Date(p._syncedAt).toISOString()})`).join(", ")}`);
   const results: {
     puuid: string;
     name: string;
@@ -47,6 +53,7 @@ export async function POST() {
     matchErrors: number;
     error?: string;
     rateLimitMs?: number;
+    skipped?: boolean;
   }[] = [];
 
   console.log(`[sync] Starting sync for ${players.length} players`);
@@ -55,8 +62,11 @@ export async function POST() {
     const playerLabel = `${player.gameName ?? player.puuid}`;
 
     if (Date.now() >= deadline) {
-      console.warn(`[sync] ${playerLabel}: skipping — out of time budget`);
-      results.push({ puuid: player.puuid, name: playerLabel, success: false, matchesAdded: 0, matchesRemaining: -1, batches: 0, matchErrors: 0, error: "Skipped: out of time budget" });
+      // Resumable, not fatal: this player keeps their old (older) syncedAt, so
+      // the next pass puts them at the front. Reported as success so the client
+      // runs that next pass instead of aborting the whole multi-pass loop.
+      console.warn(`[sync] ${playerLabel}: skipping — out of time budget, will lead the next pass`);
+      results.push({ puuid: player.puuid, name: playerLabel, success: true, matchesAdded: 0, matchesRemaining: 0, batches: 0, matchErrors: 0, skipped: true });
       continue;
     }
 
@@ -111,11 +121,17 @@ export async function POST() {
       const matchIds = await getAllMatchIds(player.puuid, setStartSec, deadline);
       const existing = await getPlayerMatches(player.puuid, activeSet.number);
       const existingIds = new Set(existing.map((m) => m.matchId));
-      const allNewMatchIds = matchIds.filter((id) => !existingIds.has(id));
+      // Drop IDs already known to belong to another set — they are inside this
+      // set's time window but were rejected on a previous run, and re-fetching
+      // them every sync is what starved the players behind this one.
+      const excludedIds = new Set(player._excluded);
+      const allNewMatchIds = matchIds.filter((id) => !existingIds.has(id) && !excludedIds.has(id));
 
-      console.log(`[sync] ${playerLabel}: ${existing.length} stored, ${allNewMatchIds.length} new to fetch`);
+      const skippedByExclusion = matchIds.length - existingIds.size - allNewMatchIds.length;
+      console.log(`[sync] ${playerLabel}: ${existing.length} stored, ${allNewMatchIds.length} new to fetch${skippedByExclusion > 0 ? `, ${skippedByExclusion} known foreign-set skipped` : ""}`);
 
       const allNewRecords: MatchRecord[] = [];
+      const foreignMatchIds: string[] = [];
       let offset = 0;
       let batches = 0;
       let matchErrors = 0;
@@ -132,6 +148,8 @@ export async function POST() {
             // Defensive guard: never store a match from another set into this
             // set's archive (start_time scoping should already prevent it).
             if (match.info.tft_set_number !== activeSet.number) {
+              // Remember it, or the next sync fetches it again — and every sync after that.
+              foreignMatchIds.push(matchId);
               console.warn(`[sync] ${playerLabel}: skipping match ${matchId} from set ${match.info.tft_set_number} (active is ${activeSet.number})`);
               continue;
             }
@@ -171,6 +189,11 @@ export async function POST() {
         console.log(`[sync] ${playerLabel}: saved ${allNewRecords.length} new matches (${remaining} still remaining)`);
       } else {
         console.log(`[sync] ${playerLabel}: no new matches to save`);
+      }
+
+      if (foreignMatchIds.length > 0) {
+        await addExcludedMatchIds(player.puuid, activeSet.number, foreignMatchIds);
+        console.log(`[sync] ${playerLabel}: excluded ${foreignMatchIds.length} foreign-set match(es) from future syncs`);
       }
 
       if (remaining > 0) {
@@ -215,6 +238,12 @@ export async function POST() {
       }
     }
 
+    // Stamp every terminal outcome — success, rate limit, and error alike — so a
+    // player who reliably fails still surrenders their spot at the front of the
+    // queue. The out-of-budget path above `continue`s past this on purpose: it
+    // never got its turn, so it keeps its older timestamp and leads next pass.
+    await touchPlayerSynced(player.puuid, activeSet.number);
+
     // Delay between players to respect rate limits
     await delay(200);
   }
@@ -222,7 +251,8 @@ export async function POST() {
   const totalAdded = results.reduce((s, r) => s + r.matchesAdded, 0);
   const totalRemaining = results.reduce((s, r) => s + r.matchesRemaining, 0);
   const maxRateLimitMs = results.reduce((max, r) => Math.max(max, r.rateLimitMs ?? 0), 0);
-  console.log(`[sync] Done — ${totalAdded} matches added, ${totalRemaining} still remaining across all players${maxRateLimitMs > 0 ? `, rate limited (retry in ${maxRateLimitMs}ms)` : ""}`);
+  const totalSkipped = results.filter((r) => r.skipped).length;
+  console.log(`[sync] Done — ${totalAdded} matches added, ${totalRemaining} still remaining across all players${totalSkipped > 0 ? `, ${totalSkipped} player(s) skipped for time` : ""}${maxRateLimitMs > 0 ? `, rate limited (retry in ${maxRateLimitMs}ms)` : ""}`);
 
-  return NextResponse.json({ synced: results.length, totalAdded, totalRemaining, maxRateLimitMs, results });
+  return NextResponse.json({ synced: results.length, totalAdded, totalRemaining, totalSkipped, maxRateLimitMs, results });
 }

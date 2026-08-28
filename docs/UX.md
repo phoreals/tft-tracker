@@ -185,13 +185,17 @@ Empty state: "No rank history yet. Sync to start tracking."
 See `docs/DATA_VIZ.md` for full chart spec.
 
 ### Sync Button
-Top-right of the page header (**hidden when viewing an archived set**). Runs a multi-pass loop: calls `POST /api/sync` repeatedly until `matchesRemaining === 0` across all players. Shows a spinning icon while in flight. On completion, a `SyncOverlay` toast appears in the bottom-right (bottom-center on mobile) showing the result:
+Top-right of the page header (**hidden when viewing an archived set**). Runs a multi-pass loop: calls `POST /api/sync` repeatedly until no player reports `matchesRemaining > 0` or `skipped`. Shows a spinning icon while in flight. On completion, a `SyncOverlay` toast appears in the bottom-right (bottom-center on mobile) showing the result:
 - **Success**: "Synced 11 players — 5 matches added (Banh +2, Demure +3)". Auto-dismisses after 5s.
 - **No changes**: "All 11 players up to date". Auto-dismisses after 5s.
 - **Error**: Red-bordered card with monospace error text. Persists until dismissed. Copy button copies the raw error for debugging.
 - **Warn**: Gold-bordered card for match fetch errors. Auto-dismisses after 5s.
 
 If a pass returns `maxRateLimitMs > 0`, counts down the rate-limit wait second-by-second before the next pass (no overlay during sync — only the spinning button icon).
+
+**Players skipped for time** (`skipped: true`) drive another pass rather than an error toast — the server ran out of its 50s budget before reaching them and they lead the next pass. The interstitial reads "Pass 2 done — 3 players queued, continuing…". This is deliberately *not* the Error state: skipped players used to surface as a red error, which also aborted the retry loop and left them permanently unsynced.
+
+**Pass ceiling**: the loop stops after `MAX_PASSES` (10) and shows a Warn toast naming who is still pending — "Stopped after 10 passes — 4 matches added. Still pending: Lionnel, Demure. Run Sync Now again to continue." Without a ceiling, a permanently exhausted budget would pass forever.
 
 ## Manage Players (`/players`)
 

@@ -416,6 +416,9 @@ export default function WeeklyStatsPage() {
 
     let pass = 0;
     let totalAdded = 0;
+    // Skipped players trigger another pass, so this loop needs a ceiling — a
+    // permanently exhausted time budget would otherwise never stop passing.
+    const MAX_PASSES = 10;
 
     try {
       while (true) {
@@ -434,6 +437,9 @@ export default function WeeklyStatsPage() {
         const failed = (data.results ?? []).filter((r: { success: boolean }) => !r.success);
         const withErrors = (data.results ?? []).filter((r: { matchErrors: number }) => r.matchErrors > 0);
         const withRemaining = (data.results ?? []).filter((r: { matchesRemaining: number }) => r.matchesRemaining > 0);
+        // Players the server ran out of time for. They lead the next pass, so
+        // this is a "keep going" signal, not a failure.
+        const skipped = (data.results ?? []).filter((r: { skipped?: boolean }) => r.skipped);
         const matchErrCount = withErrors.reduce((s: number, r: { matchErrors: number }) => s + r.matchErrors, 0);
 
         if (failed.length > 0) {
@@ -445,8 +451,21 @@ export default function WeeklyStatsPage() {
           break;
         }
 
-        if (withRemaining.length > 0 || maxRateLimitMs > 0) {
+        if (withRemaining.length > 0 || skipped.length > 0 || maxRateLimitMs > 0) {
           await fetchPlayers();
+
+          if (pass >= MAX_PASSES) {
+            const pending = [...withRemaining, ...skipped]
+              .map((r: { name: string }) => r.name)
+              .filter((n, i, a) => a.indexOf(n) === i)
+              .join(", ");
+            setSyncStatus({
+              tone: "warn",
+              message: `Stopped after ${MAX_PASSES} passes — ${totalAdded} match${totalAdded === 1 ? "" : "es"} added. Still pending: ${pending}. Run Sync Now again to continue.`,
+            });
+            break;
+          }
+
           if (maxRateLimitMs > 0) {
             // Rate limited — count down before next pass
             let secsLeft = Math.ceil(maxRateLimitMs / 1000);
@@ -456,9 +475,12 @@ export default function WeeklyStatsPage() {
               secsLeft--;
             }
           } else {
-            // More matches to fetch — pause briefly then run another pass
+            // More work to do — pause briefly then run another pass
             const remaining = withRemaining.reduce((s: number, r: { matchesRemaining: number }) => s + r.matchesRemaining, 0);
-            setSyncStatus({ tone: "muted", message: `Pass ${pass} done — ${remaining} matches remaining, continuing…` });
+            const note = remaining > 0
+              ? `${remaining} matches remaining`
+              : `${skipped.length} player${skipped.length === 1 ? "" : "s"} queued`;
+            setSyncStatus({ tone: "muted", message: `Pass ${pass} done — ${note}, continuing…` });
             await new Promise((r) => setTimeout(r, 1500));
           }
           continue;

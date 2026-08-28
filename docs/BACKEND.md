@@ -97,6 +97,7 @@ Remove a player and all their data (current, history, matches) from Redis.
 Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 
 **Flow per player** (all writes target the active set's namespace, resolved once per request via `getActiveSet()`):
+0. Order players stalest-first by `player:{puuid}:s{active}:sync` → `syncedAt` (see **Player ordering** below)
 1. Fetch league entries → update `player:{puuid}:s{active}:current`. **If there is no `RANKED_TFT` entry the key is deleted, not left alone** — Riot omits the entry until a player finishes placements, which at a set rollover is everyone. Leaving the old value would strand the previous set's rank in the new set's namespace permanently, since sync would never get an entry to overwrite it with. Deleting makes the row read "Unranked" and lets it self-heal on the next sync.
 2. Append daily snapshot to `player:{puuid}:s{active}:history` (deduped by date). Skipped when unranked — no entry means no snapshot to record.
 3. `getAllMatchIds(puuid, activeSet.start / 1000)` — paginate active-set match IDs
@@ -104,7 +105,15 @@ Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 5. Process in batches of 30 until all new matches are fetched or 50s elapsed; each stored match is guarded by `tft_set_number === activeSet.number` and carries the full `MatchRecord` (`setNumber`, `ranked`, `lastRound`, `gameType`)
 6. Update `player:{puuid}:s{active}:matches` with merged + sorted list
 
-**Backfill behavior**: A single sync run will process as many batches of 30 as the time budget allows. Players are sorted by stored match count descending before the loop — those who are already caught up (cheap to process) go first, preserving the remaining time budget for players who are behind. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
+**Player ordering — stalest first**: Players are sorted ascending by `syncedAt` from their `:sync` facet, so whoever was reached longest ago goes first and never-synced players (`syncedAt: 0`) lead. `touchPlayerSynced` stamps every terminal outcome — success, rate limit, *and* error — so a player who reliably fails still surrenders their place at the front instead of blocking the queue behind them.
+
+This replaced a sort by stored match count descending. That order was fixed across runs, so whichever players fell past the deadline were cut on *every* run — at a set rollover the only player with stored matches always sorted first and was the only one who ever completed. Any deterministic order has this failure mode; ordering by staleness is what makes the cut rotate.
+
+**Backfill behavior**: A single sync run will process as many batches of 30 as the time budget allows. Players with very large gaps (100+ missing matches) may need a second sync run. `matchesRemaining > 0` in the response indicates another run is needed.
+
+**Out-of-budget skips are resumable, not failures**: When the 50s deadline passes mid-loop, remaining players are recorded as `success: true, skipped: true` and `continue` *past* the `touchPlayerSynced` stamp — keeping their older timestamp so they lead the next pass. They must not be reported as `success: false`: the frontend aborts its whole multi-pass loop on any failure, which previously killed the very retry that would have serviced them.
+
+**Foreign-set match exclusion**: A match inside this set's time window can still belong to the previous set — games played after our `SETS[].start` boundary but before Riot's actual set patch. The `tft_set_number` guard rejects them, but a rejected match is never stored, so it is never in `existingIds` and gets re-fetched on every subsequent sync forever, burning budget for the players behind. Rejected IDs are therefore persisted to `excludedMatchIds` on the `:sync` facet and filtered out of `allNewMatchIds` on later runs. Those games are counted in neither set.
 
 **Rate limiting**: 100ms delay between API calls, 200ms delay between players. If a 429 response is received and the `Retry-After` wait would fit within the remaining budget, `riotFetch` waits and retries automatically. If the wait would exceed the deadline, a `RateLimitError` is thrown (exported from `lib/riot.ts`).
 
@@ -112,7 +121,7 @@ Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 
 **Console logging**: Each sync emits `[sync] PlayerName:` prefixed logs covering rank updates, per-batch progress, per-match errors, and a final summary.
 
-**Response**: `{ synced: number, totalAdded: number, totalRemaining: number, maxRateLimitMs: number, results: [{ puuid, name, success, matchesAdded, matchesRemaining, batches, matchErrors, rateLimitMs?, error? }] }`
+**Response**: `{ synced: number, totalAdded: number, totalRemaining: number, totalSkipped: number, maxRateLimitMs: number, results: [{ puuid, name, success, matchesAdded, matchesRemaining, batches, matchErrors, rateLimitMs?, skipped?, error? }] }`
 
 ### `POST /api/sync/[puuid]`
 Sync a single player by PUUID. The entire 50s budget is dedicated to that one player — useful for targeted backfill when a player's match count looks wrong. `maxDuration = 60`.
@@ -188,6 +197,7 @@ Identity keys are cross-set; the three data facets are namespaced per set (`s{n}
 | `player:{puuid}:s{n}:current` | String (JSON) | `PlayerCurrentStats` — latest rank for set n |
 | `player:{puuid}:s{n}:history` | String (JSON) | `HistorySnapshot[]` — daily rank snapshots for set n (max 365) |
 | `player:{puuid}:s{n}:matches` | String (JSON) | `MatchRecord[]` — match results for set n |
+| `player:{puuid}:s{n}:sync` | String (JSON) | `PlayerSyncMeta` — `{ syncedAt, excludedMatchIds }`. Sync bookkeeping for set n: queue position and foreign-set match IDs. No legacy equivalent, so the s17 fallback simply misses. |
 | `player:{puuid}:{facet}` | String (JSON) | **Legacy** un-namespaced keys (pre-namespacing). Read as a Set 17 fallback and self-migrated on read; also handled by `POST /api/migrate`. |
 
 ### Functions
@@ -207,6 +217,9 @@ for `setNumber === 17`, fall back to the legacy key and copy it up on first read
 | `appendPlayerHistory(puuid, setNumber, snap)` | Read-modify-write: dedup by date, trim to 365 |
 | `getPlayerMatches(puuid, setNumber)` | GET `player:{puuid}:s{n}:matches` (legacy fallback for s17) |
 | `setPlayerMatches(puuid, setNumber, matches)` | SET (no trim — stores full array) |
+| `getPlayerSyncMeta(puuid, setNumber)` | GET `player:{puuid}:s{n}:sync` → defaults to `{ syncedAt: 0, excludedMatchIds: [] }` |
+| `touchPlayerSynced(puuid, setNumber, at?)` | Read-modify-write: stamp `syncedAt` |
+| `addExcludedMatchIds(puuid, setNumber, ids)` | Read-modify-write: union into `excludedMatchIds`, cap 500 |
 | `migratePlayerToNamespacedKeys(puuid)` | Idempotently copy legacy facet keys → s17 namespace |
 
 ### Data Types

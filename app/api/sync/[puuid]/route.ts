@@ -9,6 +9,9 @@ import {
   appendPlayerHistory,
   getPlayerMatches,
   setPlayerMatches,
+  getPlayerSyncMeta,
+  touchPlayerSynced,
+  addExcludedMatchIds,
   type PlayerCurrentStats,
   type MatchRecord,
 } from "@/lib/kv";
@@ -87,11 +90,15 @@ export async function POST(
     const matchIds = await getAllMatchIds(player.puuid, setStartSec, deadline);
     const existing = await getPlayerMatches(player.puuid, activeSet.number);
     const existingIds = new Set(existing.map((m) => m.matchId));
-    const allNewMatchIds = matchIds.filter((id) => !existingIds.has(id));
+    // Same exclusion filter as the bulk route — see the note in ../route.ts.
+    const excludedIds = new Set((await getPlayerSyncMeta(player.puuid, activeSet.number)).excludedMatchIds);
+    const allNewMatchIds = matchIds.filter((id) => !existingIds.has(id) && !excludedIds.has(id));
 
-    console.log(`[sync:player] ${playerLabel}: ${existing.length} stored, ${allNewMatchIds.length} new to fetch`);
+    const skippedByExclusion = matchIds.length - existingIds.size - allNewMatchIds.length;
+    console.log(`[sync:player] ${playerLabel}: ${existing.length} stored, ${allNewMatchIds.length} new to fetch${skippedByExclusion > 0 ? `, ${skippedByExclusion} known foreign-set skipped` : ""}`);
 
     const allNewRecords: MatchRecord[] = [];
+    const foreignMatchIds: string[] = [];
     let offset = 0;
     let batches = 0;
     let matchErrors = 0;
@@ -108,6 +115,7 @@ export async function POST(
           // Defensive guard: never store a match from another set into this
           // set's archive (start_time scoping should already prevent it).
           if (match.info.tft_set_number !== activeSet.number) {
+            foreignMatchIds.push(matchId);
             console.warn(`[sync:player] ${playerLabel}: skipping match ${matchId} from set ${match.info.tft_set_number} (active is ${activeSet.number})`);
             continue;
           }
@@ -139,6 +147,13 @@ export async function POST(
       const allMatches = [...existing, ...allNewRecords].sort((a, b) => a.timestamp - b.timestamp);
       await setPlayerMatches(player.puuid, activeSet.number, allMatches);
     }
+
+    if (foreignMatchIds.length > 0) {
+      await addExcludedMatchIds(player.puuid, activeSet.number, foreignMatchIds);
+      console.log(`[sync:player] ${playerLabel}: excluded ${foreignMatchIds.length} foreign-set match(es) from future syncs`);
+    }
+
+    await touchPlayerSynced(player.puuid, activeSet.number);
 
     console.log(`[sync:player] ${playerLabel}: done — ${allNewRecords.length} added, ${matchesRemaining} remaining`);
 
