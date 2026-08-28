@@ -27,6 +27,9 @@ import { getActiveSet } from "@/lib/utils";
 
 const BATCH_SIZE = 30;
 const TOTAL_TIMEOUT_MS = 50_000; // leave 10s buffer before Vercel's 60s limit
+// Consecutive foreign-set matches that mean we have paged past the set boundary.
+// Generous enough to absorb the genuine pre-patch cluster at a rollover.
+const FOREIGN_RUN_LIMIT = 15;
 
 export async function POST() {
   const syncStart = Date.now();
@@ -135,8 +138,10 @@ export async function POST() {
       let offset = 0;
       let batches = 0;
       let matchErrors = 0;
+      let consecutiveForeign = 0;
+      let walkedOffTheSet = false;
 
-      while (offset < allNewMatchIds.length && Date.now() < deadline) {
+      while (offset < allNewMatchIds.length && Date.now() < deadline && !walkedOffTheSet) {
         const batch = allNewMatchIds.slice(offset, offset + BATCH_SIZE);
         batches++;
         console.log(`[sync] ${playerLabel}: batch ${batches} — fetching matches ${offset + 1}–${offset + batch.length} of ${allNewMatchIds.length}`);
@@ -150,9 +155,19 @@ export async function POST() {
             if (match.info.tft_set_number !== activeSet.number) {
               // Remember it, or the next sync fetches it again — and every sync after that.
               foreignMatchIds.push(matchId);
+              consecutiveForeign++;
               console.warn(`[sync] ${playerLabel}: skipping match ${matchId} from set ${match.info.tft_set_number} (active is ${activeSet.number})`);
+              // IDs arrive newest-first, so a run this long means we have walked
+              // off the back of the set and everything older is foreign too.
+              // Backstop against a scoping failure draining the whole budget.
+              if (consecutiveForeign >= FOREIGN_RUN_LIMIT) {
+                walkedOffTheSet = true;
+                console.warn(`[sync] ${playerLabel}: ${consecutiveForeign} consecutive foreign-set matches — stopping; the ID window looks unscoped`);
+                break;
+              }
               continue;
             }
+            consecutiveForeign = 0;
             const participant = match.info.participants.find(
               (p) => p.puuid === player.puuid
             );
@@ -179,7 +194,9 @@ export async function POST() {
         offset += batch.length;
       }
 
-      const remaining = allNewMatchIds.length - offset;
+      // Walking off the back of the set means the unprocessed tail is all older
+      // matches we deliberately don't want — that's done, not remaining work.
+      const remaining = walkedOffTheSet ? 0 : allNewMatchIds.length - offset;
 
       if (allNewRecords.length > 0) {
         const allMatches = [...existing, ...allNewRecords].sort(

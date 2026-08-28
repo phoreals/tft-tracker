@@ -100,6 +100,14 @@ export async function getLeagueEntries(
 }
 
 // --- Matches ---
+//
+// The time filter is `startTime` (camelCase, epoch SECONDS) — TFT match-v1
+// follows match-v5's naming. Riot silently ignores unknown query params rather
+// than erroring, so a misspelling here does not fail: it returns the player's
+// entire career instead of the current set. That is not a small overshoot. It
+// once returned 911 IDs for a two-day-old set, and every one of them was
+// fetched and discarded by the tft_set_number guard, which burned the whole
+// sync budget and the rate-limit allowance on one player.
 
 export async function getMatchIds(
   puuid: string,
@@ -107,7 +115,7 @@ export async function getMatchIds(
   startTime?: number,
 ): Promise<string[]> {
   const params = new URLSearchParams({ start: "0", count: String(count) });
-  if (startTime != null) params.set("start_time", String(startTime));
+  if (startTime != null) params.set("startTime", String(startTime));
   return riotFetch<string[]>(
     `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?${params}`
   );
@@ -122,7 +130,7 @@ export async function getAllMatchIds(puuid: string, startTime?: number, deadline
   while (true) {
     if (deadlineMs !== undefined && Date.now() > deadlineMs) break;
     const params = new URLSearchParams({ start: String(start), count: String(pageSize) });
-    if (startTime != null) params.set("start_time", String(startTime));
+    if (startTime != null) params.set("startTime", String(startTime));
     const batch = await riotFetch<string[]>(
       `${REGIONAL_HOST}/tft/match/v1/matches/by-puuid/${puuid}/ids?${params}`,
       3,

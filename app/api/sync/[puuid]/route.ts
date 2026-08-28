@@ -26,6 +26,7 @@ import {
 import { getActiveSet } from "@/lib/utils";
 
 const BATCH_SIZE = 30;
+const FOREIGN_RUN_LIMIT = 15;
 const TOTAL_TIMEOUT_MS = 50_000;
 
 export async function POST(
@@ -102,8 +103,10 @@ export async function POST(
     let offset = 0;
     let batches = 0;
     let matchErrors = 0;
+    let consecutiveForeign = 0;
+    let walkedOffTheSet = false;
 
-    while (offset < allNewMatchIds.length && Date.now() < deadline) {
+    while (offset < allNewMatchIds.length && Date.now() < deadline && !walkedOffTheSet) {
       const batch = allNewMatchIds.slice(offset, offset + BATCH_SIZE);
       batches++;
       console.log(`[sync:player] ${playerLabel}: batch ${batches} — fetching matches ${offset + 1}–${offset + batch.length} of ${allNewMatchIds.length}`);
@@ -116,9 +119,17 @@ export async function POST(
           // set's archive (start_time scoping should already prevent it).
           if (match.info.tft_set_number !== activeSet.number) {
             foreignMatchIds.push(matchId);
+            consecutiveForeign++;
             console.warn(`[sync:player] ${playerLabel}: skipping match ${matchId} from set ${match.info.tft_set_number} (active is ${activeSet.number})`);
+            // See the matching guard in ../route.ts.
+            if (consecutiveForeign >= FOREIGN_RUN_LIMIT) {
+              walkedOffTheSet = true;
+              console.warn(`[sync:player] ${playerLabel}: ${consecutiveForeign} consecutive foreign-set matches — stopping; the ID window looks unscoped`);
+              break;
+            }
             continue;
           }
+          consecutiveForeign = 0;
           const participant = match.info.participants.find((p) => p.puuid === player.puuid);
           if (participant) {
             allNewRecords.push({
@@ -141,7 +152,7 @@ export async function POST(
       offset += batch.length;
     }
 
-    const matchesRemaining = allNewMatchIds.length - offset;
+    const matchesRemaining = walkedOffTheSet ? 0 : allNewMatchIds.length - offset;
 
     if (allNewRecords.length > 0) {
       const allMatches = [...existing, ...allNewRecords].sort((a, b) => a.timestamp - b.timestamp);
