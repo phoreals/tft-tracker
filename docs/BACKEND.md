@@ -97,8 +97,8 @@ Remove a player and all their data (current, history, matches) from Redis.
 Refresh data for ALL tracked players. `maxDuration = 60` (Vercel hobby limit).
 
 **Flow per player** (all writes target the active set's namespace, resolved once per request via `getActiveSet()`):
-1. Fetch league entries → update `player:{puuid}:s{active}:current`
-2. Append daily snapshot to `player:{puuid}:s{active}:history` (deduped by date)
+1. Fetch league entries → update `player:{puuid}:s{active}:current`. **If there is no `RANKED_TFT` entry the key is deleted, not left alone** — Riot omits the entry until a player finishes placements, which at a set rollover is everyone. Leaving the old value would strand the previous set's rank in the new set's namespace permanently, since sync would never get an entry to overwrite it with. Deleting makes the row read "Unranked" and lets it self-heal on the next sync.
+2. Append daily snapshot to `player:{puuid}:s{active}:history` (deduped by date). Skipped when unranked — no entry means no snapshot to record.
 3. `getAllMatchIds(puuid, activeSet.start / 1000)` — paginate active-set match IDs
 4. Diff against stored matches → collect all new match IDs
 5. Process in batches of 30 until all new matches are fetched or 50s elapsed; each stored match is guarded by `tft_set_number === activeSet.number` and carries the full `MatchRecord` (`setNumber`, `ranked`, `lastRound`, `gameType`)
@@ -202,6 +202,7 @@ for `setNumber === 17`, fall back to the legacy key and copy it up on first read
 | `removePlayer(puuid)` | SREM `players` + DEL identity, legacy keys, and every set's facet keys |
 | `getPlayerCurrent(puuid, setNumber)` | GET `player:{puuid}:s{n}:current` (legacy fallback for s17) |
 | `setPlayerCurrent(puuid, setNumber, stats)` | SET `player:{puuid}:s{n}:current` |
+| `clearPlayerCurrent(puuid, setNumber)` | DEL `player:{puuid}:s{n}:current` — active set only; on s17 the legacy fallback would resurrect it |
 | `getPlayerHistory(puuid, setNumber)` | GET `player:{puuid}:s{n}:history` (legacy fallback for s17) |
 | `appendPlayerHistory(puuid, setNumber, snap)` | Read-modify-write: dedup by date, trim to 365 |
 | `getPlayerMatches(puuid, setNumber)` | GET `player:{puuid}:s{n}:matches` (legacy fallback for s17) |

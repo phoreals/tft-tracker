@@ -5,6 +5,7 @@ import {
   getTrackedPlayers,
   addPlayer,
   setPlayerCurrent,
+  clearPlayerCurrent,
   appendPlayerHistory,
   getPlayerMatches,
   setPlayerMatches,
@@ -75,6 +76,10 @@ export async function POST(
         losses: tftEntry.losses,
       });
       console.log(`[sync:player] ${playerLabel}: rank updated (${tftEntry.tier} ${tftEntry.rank} ${tftEntry.leaguePoints} LP)`);
+    } else {
+      // See the matching branch in ../route.ts — unranked must clear, not no-op.
+      await clearPlayerCurrent(player.puuid, activeSet.number);
+      console.warn(`[sync:player] ${playerLabel}: no RANKED_TFT entry — cleared rank for set ${activeSet.number}`);
     }
 
     await delay(100);
